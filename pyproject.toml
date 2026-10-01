@@ -1,0 +1,105 @@
+[project]
+name = "credit-sentinel"
+dynamic = ["version"]
+description = "Camada de sustentação e confiabilidade de um modelo de credit scoring: contratos de dados, detecção de drift, observabilidade e governança LGPD"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Humberto Sena Santos", email = "humbertosena@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "evidently>=0.7,<0.8",
+    "jinja2>=3.1",
+    "joblib>=1.4",
+    "mlflow>=3.0",
+    "numpy>=2.0",
+    "pandas>=2.2,<3",  # Evidently 0.7.x não importa com pandas 3
+    "pandera>=0.26,<1.0",
+    "pyarrow>=17",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "pyyaml>=6.0",
+    "scikit-learn>=1.6",
+    "scipy>=1.14",
+]
+
+[project.scripts]
+credit-sentinel = "credit_sentinel.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/credit_sentinel/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/credit_sentinel"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+]
+notebook = [
+    "ipykernel>=6.29",
+    "jupyter>=1.1",
+    "matplotlib>=3.9",
+    "missingno>=0.5",
+    "nbconvert>=7.16",
+    "seaborn>=0.13",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+# Conflitos Google/formatter; política de copyright não se aplica ao projeto acadêmico.
+ignore = ["D203", "D213", "COM812", "CPY001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pylint]
+max-statements = 20
+max-branches = 6
+max-args = 5
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "INP001", "PLR2004", "D103", "PLC0415"]
+"scripts/*.py" = ["INP001", "T201"]
+"src/credit_sentinel/cli.py" = ["T201"]
+"src/credit_sentinel/**/commands.py" = ["T201"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers -ra"
+filterwarnings = ["error"]
+markers = [
+    "unit: testes unitários isolados",
+    "integration: integração entre componentes",
+    "schema: contratos e schemas de dados",
+    "smoke: verificação mínima de funcionamento",
+    "performance: medições de desempenho (fora da CI)",
+]
+
+[tool.coverage.run]
+source = ["credit_sentinel"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]

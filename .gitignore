@@ -1,0 +1,33 @@
+# Planejamento e ferramentas locais (nao versionados)
+.plan/
+.claude/
+SPEC*
+tasks/
+
+# Segredos e ambiente
+.env
+.venv/
+
+# Artefatos de execucao
+mlruns/
+mlflow.db
+logs/
+data/quarantine/
+
+# Python / notebooks
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+.coverage
+.ipynb_checkpoints/
+
+# SO
+.DS_Store
+
+# Build e cobertura
+dist/
+build/
+*.egg-info/
+htmlcov/
+coverage.xml
