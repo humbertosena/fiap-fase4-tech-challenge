@@ -23,6 +23,8 @@ def test_generate_data_writes_reference_and_dictionary(
     reference = pd.read_parquet(project_tmp.reference_dir / "credit_ref.parquet")
     assert reference.shape == (300, 18)
     assert (project_tmp.docs_dir / "data_dictionary.md").exists()
+    bad_batch = pd.read_parquet(project_tmp.corrupted_dir / "bad_batch.parquet")
+    assert bad_batch.shape == (300, 19)
     out = capsys.readouterr().out
     assert "sha256" in out
     assert "taxa base" in out

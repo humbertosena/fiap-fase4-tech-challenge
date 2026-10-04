@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 from pydantic import BaseModel
 
 from credit_sentinel.data import dictionary as dd
+from credit_sentinel.data.corruptor import corrupt_batch
 from credit_sentinel.data.generator import (
     SCENARIOS_FILE,
     generate_portfolio,
@@ -24,7 +26,10 @@ if TYPE_CHECKING:
     import pandas as pd
 
 REFERENCE_FILE = "credit_ref.parquet"
+BAD_BATCH_FILE = "bad_batch.parquet"
 DEFAULT_ROWS = 12_000
+BAD_BATCH_ROWS = 600
+BAD_BATCH_SEED = 7
 
 
 class DatasetSummary(BaseModel):
@@ -73,7 +78,9 @@ def summarize_dataset(
     )
 
 
-def materialize_reference(settings: Settings, n_rows: int) -> DatasetSummary:
+def materialize_reference(
+    settings: Settings, n_rows: int
+) -> tuple[pd.DataFrame, DatasetSummary]:
     """Gera e grava ``credit_ref.parquet`` com a semente das settings.
 
     Args:
@@ -81,13 +88,33 @@ def materialize_reference(settings: Settings, n_rows: int) -> DatasetSummary:
         n_rows: Quantidade de linhas.
 
     Returns:
-        Resumo com hash e taxa base.
+        DataFrame gerado e resumo com hash e taxa base.
     """
     config = settings.config_dir / SCENARIOS_FILE
     params = load_scenarios(config)["reference"]
     period = load_period(config, "reference")
     frame = generate_portfolio(n_rows, params, make_rng(settings.seed), period)
     path = write_parquet(frame, reference_path(settings))
+    return frame, summarize_dataset(frame, path, settings)
+
+
+def materialize_bad_batch(
+    reference: pd.DataFrame, settings: Settings
+) -> DatasetSummary:
+    """Amostra a referência (seed 7), injeta as anomalias e grava o lote.
+
+    Args:
+        reference: Dataset de referência limpo.
+        settings: Configuração do projeto.
+
+    Returns:
+        Resumo do ``bad_batch.parquet``.
+    """
+    rng = make_rng(BAD_BATCH_SEED)
+    size = min(BAD_BATCH_ROWS, len(reference))
+    picks = np.sort(rng.choice(len(reference), size=size, replace=False))
+    frame = corrupt_batch(reference.iloc[picks], rng)
+    path = write_parquet(frame, settings.corrupted_dir / BAD_BATCH_FILE)
     return summarize_dataset(frame, path, settings)
 
 
@@ -103,7 +130,9 @@ def _run(args: argparse.Namespace) -> int:
     if reference_path(settings).exists() and not args.force:
         print("erro: a referência já existe e é imutável; use --force para regerar")
         return 1
-    _print_summary("referência", materialize_reference(settings, args.rows))
+    reference, summary = materialize_reference(settings, args.rows)
+    _print_summary("referência", summary)
+    _print_summary("lote corrompido", materialize_bad_batch(reference, settings))
     dictionary_path = write_text(
         dd.render_markdown(), settings.docs_dir / "data_dictionary.md"
     )
@@ -118,7 +147,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         subparsers: Grupo de subcomandos da CLI principal.
     """
     parser = subparsers.add_parser(
-        "generate-data", help="gera a referência sintética e o dicionário de dados"
+        "generate-data", help="gera a referência, o lote corrompido e o dicionário"
     )
     parser.add_argument(
         "--rows", type=int, default=DEFAULT_ROWS, help="linhas da referência"

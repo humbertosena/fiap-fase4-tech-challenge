@@ -69,3 +69,30 @@ $ uv run credit-sentinel generate-data --force  # regeração bit a bit
 | `beta0` calibrado (bisseção, seed 2024) | −3,3067 |
 | AUC do oráculo (logit verdadeiro) | 0,832 |
 | SHA-256 em duas execuções | idêntico |
+
+## 4. Lote corrompido (T09)
+
+`generate-data` amostra 600 linhas da referência (seed 7) e injeta dez anomalias em
+blocos disjuntos de linhas (`credit_sentinel.data.corruptor.ANOMALY_PLAN`):
+
+```console
+$ uv run credit-sentinel generate-data --force
+lote corrompido: data/corrupted/bad_batch.parquet (600 linhas, 19 colunas)
+  sha256: 914ef091aa341f50b9a010ed168f7391c31d7ca98e3f45fad9ea48fad5bb8398
+```
+
+| Anomalia | Linhas | Regra que deve interceptar |
+| :--- | ---: | :--- |
+| `idade` negativa ou acima de 100 | 30 | R04 |
+| `renda_mensal` nula | 24 | R03 |
+| `score_bureau` nulo | 18 | R03 |
+| `id_cliente` duplicado | 18 | R02 |
+| `id_cliente` nulo | 6 | R02 |
+| `situacao_emprego` fora do enum (`freelancer`, `"CLT "`) | 18 | R08 |
+| `taxa_endividamento` maior que 1 | 12 | R07 |
+| `valor_parcela` maior que `renda_mensal` | 12 | R10 |
+| `tempo_emprego_meses` > 0 com `desempregado` | 6 | R11 |
+| coluna extra `cpf` (PII não prevista) | todas | R01 |
+
+Os CPFs têm o formato `000.000.000-00` com **dígito verificador propositalmente
+inválido** (`is_valid_cpf` retorna falso para todos): são fictícios por construção.
