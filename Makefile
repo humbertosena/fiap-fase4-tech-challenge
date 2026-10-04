@@ -30,8 +30,8 @@ cov: ## testes com cobertura mínima de 85 %
 mlflow: ## MLflow UI local na porta 5001
 	$(RUN) mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db --port $(MLFLOW_PORT)
 
-data: ## gera referência e lote corrompido (Etapa 1)
-	@echo "disponível a partir do subcomando generate-data"
+data: ## gera referência e lote corrompido (Etapa 1; bit a bit idênticos)
+	$(RUN) credit-sentinel generate-data --force
 
 train: ## treina o baseline (Etapa 1)
 	@echo "disponível a partir do subcomando train"

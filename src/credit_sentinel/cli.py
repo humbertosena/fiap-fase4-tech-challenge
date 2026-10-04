@@ -18,7 +18,7 @@ from credit_sentinel.utils.env_check import run_checks, summarize
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-COMMAND_MODULES: tuple[str, ...] = ()
+COMMAND_MODULES: tuple[str, ...] = ("credit_sentinel.data.commands",)
 
 
 def _env_check(_args: argparse.Namespace) -> int:

@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import shutil
 from datetime import date
 from typing import TYPE_CHECKING
 
 import pytest
 
-from credit_sentinel.settings import Settings
+from credit_sentinel.settings import Settings, get_settings
 from credit_sentinel.utils.seeds import make_rng
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
 
     import numpy as np
@@ -54,3 +56,13 @@ def df_reference_small(reference_params: ScenarioParams) -> pd.DataFrame:
 
     period = (date(2025, 7, 1), date(2026, 6, 30))
     return generate_portfolio(500, reference_params, make_rng(42), period)
+
+
+@pytest.fixture
+def project_tmp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Settings]:
+    """Projeto temporário com ``config/`` copiado, usado pelos testes da CLI."""
+    shutil.copytree(Settings(_env_file=None).config_dir, tmp_path / "config")
+    monkeypatch.setenv("CS_PROJECT_ROOT", str(tmp_path))
+    get_settings.cache_clear()
+    yield get_settings()
+    get_settings.cache_clear()

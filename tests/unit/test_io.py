@@ -9,6 +9,7 @@ import pytest
 from pydantic import BaseModel
 
 from credit_sentinel.utils.io import (
+    file_sha256,
     read_json,
     read_parquet,
     read_yaml,
@@ -48,3 +49,10 @@ def test_write_json_accepts_mapping(tmp_path: Path) -> None:
 def test_read_yaml_and_write_text(tmp_path: Path) -> None:
     path = write_text("a: 1\nb: [x, y]\n", tmp_path / "cfg" / "c.yaml")
     assert read_yaml(path) == {"a": 1, "b": ["x", "y"]}
+
+
+def test_file_sha256_is_stable_hex_digest(tmp_path: Path) -> None:
+    path = write_text("conteudo", tmp_path / "f.txt")
+    digest = file_sha256(path)
+    assert len(digest) == 64
+    assert digest == file_sha256(path)

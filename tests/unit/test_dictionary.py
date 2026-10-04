@@ -42,3 +42,10 @@ def test_render_markdown_lists_every_column() -> None:
     assert markdown.startswith("# Dicionário de dados")
     for column in dd.ALL_COLUMNS:
         assert f"`{column}`" in markdown
+
+
+def test_versioned_dictionary_is_in_sync_with_code() -> None:
+    from credit_sentinel.settings import Settings
+
+    versioned = Settings(_env_file=None).docs_dir / "data_dictionary.md"
+    assert versioned.read_text(encoding="utf-8") == dd.render_markdown()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import TYPE_CHECKING, Any
 
@@ -93,3 +94,15 @@ def write_text(text: str, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def file_sha256(path: Path) -> str:
+    """Calcula o SHA-256 de um arquivo (prova de reprodutibilidade).
+
+    Args:
+        path: Arquivo a resumir.
+
+    Returns:
+        Digest hexadecimal de 64 caracteres.
+    """
+    return hashlib.sha256(path.read_bytes()).hexdigest()
