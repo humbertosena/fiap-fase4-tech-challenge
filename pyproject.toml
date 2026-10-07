@@ -69,6 +69,10 @@ ignore = ["D203", "D213", "COM812", "CPY001"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.flake8-type-checking]
+# Modelos pydantic precisam dos tipos das anotações em tempo de execução.
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic_settings.BaseSettings"]
+
 [tool.ruff.lint.pylint]
 max-statements = 20
 max-branches = 6
