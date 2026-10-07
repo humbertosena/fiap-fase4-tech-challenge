@@ -17,9 +17,12 @@ from typing import Any, Literal
 
 import pandas as pd
 import pandera.pandas as pa
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, SecretStr
 
+from credit_sentinel.contracts.privacy_sanitizer import HASH_COLUMN, hash_identifier
 from credit_sentinel.contracts.schema import RULES_BY_ID, rule_id_for
+from credit_sentinel.data import dictionary as dd
+from credit_sentinel.settings import get_settings
 from credit_sentinel.utils.io import write_parquet
 
 SAMPLE_LIMIT = 5
@@ -34,11 +37,13 @@ class BatchContext(BaseModel):
         batch_name: Nome lógico do lote (ex.: ``bad_batch``).
         run_id: Identificador da execução (nome do arquivo de quarentena).
         quarantine_dir: Diretório da quarentena; ``None`` desliga a gravação.
+        pii_salt: Salt da pseudonimização das amostras do relatório.
     """
 
     batch_name: str
     run_id: str
     quarantine_dir: Path | None = None
+    pii_salt: SecretStr = Field(default_factory=lambda: get_settings().pii_salt)
 
 
 class ValidationPolicy(BaseModel):
@@ -146,16 +151,25 @@ def _analyze(df: pd.DataFrame, schema: pa.DataFrameSchema) -> _Outcome:
     return _Outcome(cases=cases, violations=_violations(cases), rejected=rejected)
 
 
-def _sample_failures(df: pd.DataFrame, outcome: _Outcome) -> list[dict[str, Any]]:
+def _hashed_id(df: pd.DataFrame, index: Any, salt: str) -> str | None:  # noqa: ANN401
+    value = df.loc[index].get(dd.ID_COLUMN)
+    return (
+        None if value is None or pd.isna(value) else hash_identifier(str(value), salt)
+    )
+
+
+def _sample_failures(
+    df: pd.DataFrame, outcome: _Outcome, salt: str
+) -> list[dict[str, Any]]:
     samples = []
     for index in outcome.rejected[:SAMPLE_LIMIT]:
         rows = outcome.cases[outcome.cases["index"] == index]
         rules = sorted(set(rows["rule_id"]))
-        columns = sorted(
-            {c for r in rules for c in RULES_BY_ID[r].columns} - {"id_cliente"}
-        )
+        involved = {c for rule in rules for c in RULES_BY_ID[rule].columns}
+        columns = sorted((involved - {dd.ID_COLUMN}) & set(df.columns))
         values = json.loads(df.loc[[index], columns].to_json(orient="records"))[0]
-        samples.append({"index": int(index), "regras": rules, "valores": values})
+        sample = {"index": int(index), HASH_COLUMN: _hashed_id(df, index, salt)}
+        samples.append({**sample, "regras": rules, "valores": values})
     return samples
 
 
@@ -174,7 +188,9 @@ def _report(
         rejected_ratio=rejected / total if total else 0.0,
         decision="SUCCESS",
         violations=outcome.violations,
-        sample_failures=_sample_failures(df, outcome),
+        sample_failures=_sample_failures(
+            df, outcome, context.pii_salt.get_secret_value()
+        ),
     )
 
 

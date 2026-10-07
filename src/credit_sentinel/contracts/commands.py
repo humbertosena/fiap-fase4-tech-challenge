@@ -1,10 +1,11 @@
-"""Subcomandos do contrato de dados: ``validate``."""
+"""Subcomandos do contrato de dados: ``validate`` e ``scan-pii``."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from credit_sentinel.contracts.privacy_sanitizer import scan_paths
 from credit_sentinel.contracts.schema import (
     build_inference_schema,
     build_reference_schema,
@@ -91,8 +92,20 @@ def _run_validate(args: argparse.Namespace) -> int:
     return 0 if report.decision == "SUCCESS" else EXIT_BLOCKED
 
 
+def _run_scan(args: argparse.Namespace) -> int:
+    paths = [Path(p) for p in args.paths]
+    findings = scan_paths(paths)
+    for finding in findings:
+        print(f"[{finding.kind}] {finding.location}: {finding.sample_masked}")
+    if findings:
+        print(f"{len(findings)} possível(is) dado(s) pessoal(is) encontrado(s)")
+        return 1
+    print(f"nenhum dado pessoal encontrado em: {', '.join(args.paths)}")
+    return 0
+
+
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra o subcomando ``validate``.
+    """Registra os subcomandos ``validate`` e ``scan-pii``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -106,3 +119,8 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     parser.add_argument("--report", default=None, help="caminho do relatório JSON")
     parser.set_defaults(handler=_run_validate)
+    scan = subparsers.add_parser(
+        "scan-pii", help="varre saídas textuais em busca de PII (exit 1 = achados)"
+    )
+    scan.add_argument("paths", nargs="+", help="arquivos ou diretórios")
+    scan.set_defaults(handler=_run_scan)
