@@ -139,6 +139,15 @@ def test_each_rule_is_detected_in_isolation(
 
 
 @pytest.mark.schema
+@pytest.mark.parametrize("column", ["valor_parcela", "tempo_emprego_meses"])
+def test_missing_column_is_structural_and_cross_checks_do_not_crash(
+    df_reference_small: pd.DataFrame, column: str
+) -> None:
+    batch = df_reference_small.drop(columns=[column])
+    assert _failed_rules(batch, build_reference_schema()) == {"R01"}
+
+
+@pytest.mark.schema
 def test_rules_metadata_covers_twelve_rules_with_severity() -> None:
     assert [rule.id for rule in RULES] == [f"R{n:02d}" for n in range(1, 13)]
     structural = {rule.id for rule in RULES if rule.severity == "estrutural"}

@@ -1,10 +1,11 @@
-"""Subcomandos do contrato de dados: ``validate`` e ``scan-pii``."""
+"""Subcomandos do contrato: ``validate``, ``scan-pii`` e ``export-contract``."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from credit_sentinel.contracts.export import CONTRACT_FILE, export_contract_yaml
 from credit_sentinel.contracts.privacy_sanitizer import scan_paths
 from credit_sentinel.contracts.schema import (
     build_inference_schema,
@@ -104,8 +105,16 @@ def _run_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_export(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    default = settings.config_dir / CONTRACT_FILE
+    path = export_contract_yaml(Path(args.output) if args.output else default)
+    print(f"contrato exportado: {display_path(path, settings.project_root)}")
+    return 0
+
+
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra os subcomandos ``validate`` e ``scan-pii``.
+    """Registra ``validate``, ``scan-pii`` e ``export-contract``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -124,3 +133,8 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     scan.add_argument("paths", nargs="+", help="arquivos ou diretórios")
     scan.set_defaults(handler=_run_scan)
+    export = subparsers.add_parser(
+        "export-contract", help="exporta o contrato para config/data_contract.yaml"
+    )
+    export.add_argument("--output", default=None, help="arquivo YAML de destino")
+    export.set_defaults(handler=_run_export)
