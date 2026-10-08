@@ -96,3 +96,60 @@ lote corrompido: data/corrupted/bad_batch.parquet (600 linhas, 19 colunas)
 
 Os CPFs têm o formato `000.000.000-00` com **dígito verificador propositalmente
 inválido** (`is_valid_cpf` retorna falso para todos): são fictícios por construção.
+
+## 5. Contrato de dados e circuit breaker (T10 a T13)
+
+O lote corrompido é **bloqueado** (exit 2) por violação estrutural, e o relatório ainda
+inventaria todas as violações de linha (`lazy=True`):
+
+```console
+$ uv run credit-sentinel validate --input data/corrupted/bad_batch.parquet
+lote: bad_batch (600 linhas)
+schema: credit_scoring_inference
+decisão: BLOCKED — violação estrutural (R01, R02): lote bloqueado
+regra  coluna                   falhas  check
+R01    cpf                           1  column_in_schema
+R01    score_bureau                 18  dtype('int64')
+R02    id_cliente                   36  field_uniqueness
+R02    id_cliente                    6  not_nullable
+R03    renda_mensal                 24  not_nullable
+R03    score_bureau                 18  not_nullable
+R04    idade                        30  R04 · idade fora da faixa
+R07    taxa_endividamento           12  R07 · taxa_endividamento fora da faixa
+R08    situacao_emprego             18  R08 · situacao_emprego fora do domínio
+R10    —                            12  R10 · valor_parcela <= renda_mensal
+R11    —                             6  R11 · situacao_emprego == 'desempregado' => tempo_emprego_meses == 0
+rejeitadas: 162 (27.00%) · válidas: 438
+relatório: reports/validation/bad_batch_report.json
+$ echo $?
+2
+```
+
+A referência passa em 100 % das regras (exit 0):
+
+```console
+$ uv run credit-sentinel validate --input data/reference/credit_ref.parquet --schema reference
+lote: credit_ref (12000 linhas)
+schema: credit_scoring_reference
+decisão: SUCCESS
+rejeitadas: 0 (0.00%) · válidas: 12000
+relatório: reports/validation/credit_ref_report.json
+```
+
+Leitura do inventário:
+
+- **162 linhas rejeitadas** = 144 linhas com anomalia injetada + as 18 linhas
+  originais cujos ids foram duplicados (a unicidade marca as duas ocorrências: 36).
+- `score_bureau` aparece também em **R01** (`dtype('int64')`): os nulos transformam a
+  coluna inteira em `float64`, o que viola o tipo exato do contrato.
+- As amostras de falha do relatório trazem apenas `id_cliente_hash` (HMAC-SHA-256);
+  o `id_cliente` em claro nunca é gravado. Os relatórios versionados usam o salt de
+  desenvolvimento (`dev-salt-nao-usar-em-producao`), aceitável porque os dados são
+  sintéticos; em produção o salt vem de `CS_PII_SALT` (segredo fora do git).
+
+Varredura de PII nos relatórios versionados:
+
+```console
+$ uv run credit-sentinel scan-pii reports
+nenhum dado pessoal encontrado em: reports
+```

@@ -158,6 +158,13 @@ def _hashed_id(df: pd.DataFrame, index: Any, salt: str) -> str | None:  # noqa: 
     )
 
 
+def _failing_columns(rows: pd.DataFrame) -> set[str]:
+    named = {str(c) for c in rows["column"].dropna()}
+    cross = rows.loc[rows["column"].isna(), "rule_id"]
+    involved = {c for rule in cross for c in RULES_BY_ID[rule].columns}
+    return (named | involved) - {dd.ID_COLUMN}
+
+
 def _sample_failures(
     df: pd.DataFrame, outcome: _Outcome, salt: str
 ) -> list[dict[str, Any]]:
@@ -165,8 +172,7 @@ def _sample_failures(
     for index in outcome.rejected[:SAMPLE_LIMIT]:
         rows = outcome.cases[outcome.cases["index"] == index]
         rules = sorted(set(rows["rule_id"]))
-        involved = {c for rule in rules for c in RULES_BY_ID[rule].columns}
-        columns = sorted((involved - {dd.ID_COLUMN}) & set(df.columns))
+        columns = sorted(_failing_columns(rows) & set(df.columns))
         values = json.loads(df.loc[[index], columns].to_json(orient="records"))[0]
         sample = {"index": int(index), HASH_COLUMN: _hashed_id(df, index, salt)}
         samples.append({**sample, "regras": rules, "valores": values})
