@@ -94,7 +94,7 @@ lote corrompido: data/corrupted/bad_batch.parquet (600 linhas, 19 colunas)
 | `tempo_emprego_meses` > 0 com `desempregado` | 6 | R11 |
 | coluna extra `cpf` (PII não prevista) | todas | R01 |
 
-Os CPFs têm o formato `000.000.000-00` com **dígito verificador propositalmente
+Os CPFs têm o formato `NNN.NNN.NNN-DD` com **dígito verificador propositalmente
 inválido** (`is_valid_cpf` retorna falso para todos): são fictícios por construção.
 
 ## 5. Contrato de dados e circuit breaker (T10 a T13)
