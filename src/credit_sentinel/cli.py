@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 from typing import TYPE_CHECKING
 
@@ -18,9 +19,13 @@ from credit_sentinel.utils.env_check import run_checks, summarize
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+# Silencia a dica informativa que o MLflow 3.x imprime ao ser importado.
+os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
+
 COMMAND_MODULES: tuple[str, ...] = (
     "credit_sentinel.data.commands",
     "credit_sentinel.contracts.commands",
+    "credit_sentinel.ml.commands",
 )
 
 
