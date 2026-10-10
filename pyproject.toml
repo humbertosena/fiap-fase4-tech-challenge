@@ -90,7 +90,13 @@ max-complexity = 5
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-config --strict-markers -ra"
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # MLflow 3.18 usa a estratégia `noload` do SQLAlchemy 2.1 no tracking SQLite.
+    "ignore:The ``noload`` loader strategy is deprecated:DeprecationWarning",
+    # Aviso interno do MLflow 3.x ao inspecionar o `predict` do pyfunc sklearn.
+    "ignore:.*Any type hint is inferred as AnyType:UserWarning",
+]
 markers = [
     "unit: testes unitários isolados",
     "integration: integração entre componentes",

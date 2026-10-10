@@ -16,12 +16,19 @@ from mlflow.types.schema import ColSpec, Schema
 from pydantic import BaseModel
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 from credit_sentinel.data import dictionary as dd
+from credit_sentinel.ml.evaluation import (
+    FeatureImportance,
+    ThresholdReport,
+    best_f1_threshold,
+    classification_metrics,
+    feature_importance,
+    threshold_report,
+)
 from credit_sentinel.ml.features import (
     CATEGORICAL_FEATURES,
     MODEL_FEATURES,
@@ -49,9 +56,17 @@ _MLFLOW_TYPES = {
 
 
 class TrainingMetrics(BaseModel):
-    """Métricas offline do modelo no split de validação."""
+    """Métricas offline do modelo no split de validação (limiar de F1)."""
 
     roc_auc: float
+    average_precision: float
+    f1: float
+    precision: float
+    recall: float
+    brier: float
+    ks_statistic: float
+    threshold: float
+    confusion_matrix: list[list[int]]
     n_train: int
     n_valid: int
     base_rate: float
@@ -66,12 +81,16 @@ class ModelBundle:
     Attributes:
         pipeline: Pipeline sklearn ajustado.
         metrics: Métricas de validação.
+        threshold: Limiares de F1 e de custo, com histograma de scores.
+        importance: Importância por permutação, em ordem decrescente.
         signature: Assinatura de entrada/saída (formato JSON simplificado).
         version: Versão semântica do modelo.
     """
 
     pipeline: Pipeline
     metrics: TrainingMetrics
+    threshold: ThresholdReport | None = None
+    importance: list[FeatureImportance] = field(default_factory=list)
     signature: dict[str, Any] = field(default_factory=dict)
     version: str = MODEL_VERSION
 
@@ -132,10 +151,19 @@ def model_signature() -> ModelSignature:
     return ModelSignature(inputs=Schema(inputs), outputs=Schema([ColSpec("double")]))
 
 
-def _signature_json() -> dict[str, Any]:
+def signature_json() -> dict[str, Any]:
+    """Assinatura em JSON simplificado (nomes e tipos das colunas)."""
     signature = model_signature()
     inputs = [{"name": c.name, "type": c.type.name} for c in signature.inputs.inputs]
     return {"inputs": inputs, "outputs": [{"type": "double"}]}
+
+
+def _validation_scores(
+    pipeline: Pipeline, valid: pd.DataFrame
+) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+    features = build_features(valid)
+    scores = pipeline.predict_proba(features)[:, 1]
+    return features, valid[dd.TARGET].to_numpy(), scores
 
 
 def train_baseline(
@@ -148,14 +176,15 @@ def train_baseline(
         settings: Configuração (semente).
 
     Returns:
-        Pipeline ajustado e métricas de validação.
+        Pipeline ajustado e métricas de validação no limiar de F1.
     """
     train, valid = split_reference(df_reference, seed=settings.seed)
     pipeline = build_pipeline(settings.seed)
     pipeline.fit(build_features(train), train[dd.TARGET])
-    scores = pipeline.predict_proba(build_features(valid))[:, 1]
+    _, y, scores = _validation_scores(pipeline, valid)
+    stats = classification_metrics(y, scores, threshold=best_f1_threshold(y, scores))
     metrics = TrainingMetrics(
-        roc_auc=float(roc_auc_score(valid[dd.TARGET], scores)),
+        **stats,
         n_train=len(train),
         n_valid=len(valid),
         base_rate=float(df_reference[dd.TARGET].mean()),
@@ -163,6 +192,28 @@ def train_baseline(
         model_version=MODEL_VERSION,
     )
     return pipeline, metrics
+
+
+def train_and_analyze(df_reference: pd.DataFrame, *, settings: Settings) -> ModelBundle:
+    """Treina o baseline e calcula limiares e importância de features.
+
+    Args:
+        df_reference: Dataset de referência já validado pelo contrato.
+        settings: Configuração (semente).
+
+    Returns:
+        Bundle completo, pronto para ``save_model_bundle``.
+    """
+    pipeline, metrics = train_baseline(df_reference, settings=settings)
+    _, valid = split_reference(df_reference, seed=settings.seed)
+    features, y, scores = _validation_scores(pipeline, valid)
+    return ModelBundle(
+        pipeline=pipeline,
+        metrics=metrics,
+        threshold=threshold_report(y, scores),
+        importance=feature_importance(pipeline, features, y, seed=settings.seed),
+        signature=signature_json(),
+    )
 
 
 def predict_proba(bundle: ModelBundle, df: pd.DataFrame) -> np.ndarray:
@@ -179,7 +230,7 @@ def predict_proba(bundle: ModelBundle, df: pd.DataFrame) -> np.ndarray:
 
 
 def save_model_bundle(bundle: ModelBundle, out_dir: Path) -> None:
-    """Grava ``model.joblib``, ``metrics.json`` e ``signature.json``.
+    """Grava modelo, métricas, assinatura, limiares e importância.
 
     Args:
         bundle: Modelo e metadados.
@@ -188,7 +239,26 @@ def save_model_bundle(bundle: ModelBundle, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(bundle.pipeline, out_dir / "model.joblib")
     write_json(bundle.metrics, out_dir / "metrics.json")
-    write_json(_signature_json(), out_dir / "signature.json")
+    write_json(signature_json(), out_dir / "signature.json")
+    if bundle.threshold is not None:
+        write_json(bundle.threshold, out_dir / "threshold.json")
+    if bundle.importance:
+        top = [item.feature for item in bundle.importance[:3]]
+        items = [item.model_dump() for item in bundle.importance]
+        payload = {"metric": "roc_auc", "n_repeats": 10, "top3": top, "features": items}
+        write_json(payload, out_dir / "feature_importance.json")
+
+
+def _optional_threshold(directory: Path) -> ThresholdReport | None:
+    path = directory / "threshold.json"
+    return ThresholdReport.model_validate(read_json(path)) if path.exists() else None
+
+
+def _optional_importance(directory: Path) -> list[FeatureImportance]:
+    path = directory / "feature_importance.json"
+    if not path.exists():
+        return []
+    return [FeatureImportance.model_validate(i) for i in read_json(path)["features"]]
 
 
 def load_model_bundle(directory: Path) -> ModelBundle:
@@ -204,6 +274,8 @@ def load_model_bundle(directory: Path) -> ModelBundle:
     return ModelBundle(
         pipeline=joblib.load(directory / "model.joblib"),
         metrics=metrics,
+        threshold=_optional_threshold(directory),
+        importance=_optional_importance(directory),
         signature=read_json(directory / "signature.json"),
         version=metrics.model_version,
     )
