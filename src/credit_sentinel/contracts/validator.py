@@ -165,6 +165,12 @@ def _failing_columns(rows: pd.DataFrame) -> set[str]:
     return (named | involved) - {dd.ID_COLUMN}
 
 
+def _row_values(df: pd.DataFrame, index: Any, columns: list[str]) -> dict[str, Any]:  # noqa: ANN401
+    if not columns:
+        return {}
+    return json.loads(df.loc[[index], columns].to_json(orient="records"))[0]
+
+
 def _sample_failures(
     df: pd.DataFrame, outcome: _Outcome, salt: str
 ) -> list[dict[str, Any]]:
@@ -173,7 +179,7 @@ def _sample_failures(
         rows = outcome.cases[outcome.cases["index"] == index]
         rules = sorted(set(rows["rule_id"]))
         columns = sorted(_failing_columns(rows) & set(df.columns))
-        values = json.loads(df.loc[[index], columns].to_json(orient="records"))[0]
+        values = _row_values(df, index, columns)
         sample = {"index": int(index), HASH_COLUMN: _hashed_id(df, index, salt)}
         samples.append({**sample, "regras": rules, "valores": values})
     return samples

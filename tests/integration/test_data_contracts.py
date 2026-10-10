@@ -277,3 +277,22 @@ def test_validate_cli_exit_codes_and_report(project_tmp: Settings) -> None:
     report = read_json(project_tmp.reports_dir / "validation" / "bad_batch_report.json")
     assert report["decision"] == "BLOCKED"
     assert report["batch_name"] == "bad_batch"
+
+
+@pytest.mark.integration
+def test_sample_of_row_failing_only_on_id_has_empty_values(
+    df_reference_small: pd.DataFrame, tmp_path: Path
+) -> None:
+    batch = df_reference_small.copy()
+    batch.loc[0, "id_cliente"] = None
+    with pytest.raises(ContractViolationError) as raised:
+        validate_batch(
+            batch,
+            schema=build_reference_schema(),
+            policy=ValidationPolicy(),
+            context=_context(tmp_path),
+        )
+    (sample,) = raised.value.report.sample_failures
+    assert sample["regras"] == ["R02"]
+    assert sample["valores"] == {}
+    assert sample["id_cliente_hash"] is None
