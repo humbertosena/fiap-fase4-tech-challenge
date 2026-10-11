@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Credit Sentinel{% endblock %}</title>
+<meta name="description" content="{% block description %}Camada de sustentação de um modelo de credit scoring.{% endblock %}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+{{ css|safe }}
+.skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 6px; z-index: 20; }
+.skip:focus { left: 16px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ depth }}index.html">Credit <span>Sentinel</span></a>
+    <nav class="nav" aria-label="Releases">
+      <a href="{{ depth }}index.html"{% if current_etapa is none %} aria-current="page"{% endif %}>Índice</a>
+      {% for etapa, info in releases.items() %}
+      {% if etapa in published %}
+      <a href="{{ depth }}releases/{{ info.slug }}.html"{% if current_etapa == etapa %} aria-current="page"{% endif %}>Etapa {{ etapa }}</a>
+      {% else %}
+      <span title="Em breve">Etapa {{ etapa }}</span>
+      {% endif %}
+      {% endfor %}
+      <a href="{{ repo_url }}">GitHub</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Alternar tema claro e escuro">☾ Tema escuro</button>
+  </div>
+</header>
+<p id="offline-note" class="wrap small muted" hidden>Sem acesso ao Chart.js (offline): os gráficos foram substituídos pelas tabelas com os mesmos dados.</p>
+<main id="conteudo">
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p><strong>Credit Sentinel</strong> · Tech Challenge Fase 4 · Pós-Tech FIAP Machine Learning Engineering.
+    Dados 100 % sintéticos (ADR 001); nenhum dado pessoal real.</p>
+    <p>Página gerada por <code>credit-sentinel build-explainers</code> a partir do commit
+    <code>{{ release.commit_sha }}</code> · <a href="{{ repo_url }}">repositório</a> · licença MIT.</p>
+  </div>
+</footer>
+<script type="application/json" id="payload">{{ payload_json|safe }}</script>
+<script src="{{ chart_src }}" integrity="{{ chart_integrity }}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+{{ js|safe }}
+</script>
+</body>
+</html>

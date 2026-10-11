@@ -1,0 +1,14 @@
+{
+  "batch_name": "credit_ref",
+  "run_id": "val-cb41f7d3b2",
+  "validated_at": "2026-10-08T00:44:39.963158Z",
+  "schema_name": "credit_scoring_reference",
+  "total_records": 12000,
+  "valid_records": 12000,
+  "rejected_records": 0,
+  "rejected_ratio": 0.0,
+  "decision": "SUCCESS",
+  "blocked_reason": null,
+  "violations": [],
+  "sample_failures": []
+}

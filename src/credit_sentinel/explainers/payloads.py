@@ -1,0 +1,467 @@
+"""Payloads das páginas didáticas: números lidos dos artefatos versionados.
+
+Nenhum número é digitado nos templates; tudo vem de ``reports/``, ``models/``,
+``config/`` e ``data/``. Se um artefato faltar, o erro diz como gerá-lo.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING, Any, Literal
+
+import numpy as np
+import pandas as pd
+from pydantic import BaseModel
+
+from credit_sentinel.contracts.privacy_sanitizer import hash_identifier
+from credit_sentinel.contracts.schema import RULES, RuleSpec
+from credit_sentinel.contracts.validator import ValidationReport
+from credit_sentinel.data import dictionary as dd
+from credit_sentinel.data.corruptor import ANOMALY_PLAN
+from credit_sentinel.ml.evaluation import FeatureImportance, ThresholdReport
+from credit_sentinel.ml.train_baseline import TrainingMetrics
+from credit_sentinel.utils.io import file_sha256, read_json, read_parquet
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from credit_sentinel.settings import Settings
+
+HISTOGRAM_FEATURES = [
+    "renda_mensal",
+    "score_bureau",
+    "taxa_endividamento",
+    "utilizacao_credito",
+]
+HISTOGRAM_BINS = 20
+VALIDATOR_FIELDS = [
+    "idade",
+    "renda_mensal",
+    "score_bureau",
+    "taxa_endividamento",
+    "utilizacao_credito",
+    "valor_parcela",
+    "tempo_emprego_meses",
+    "situacao_emprego",
+]
+PSEUDONYM_DEMO_INPUT = "CLI-XXXXXXXXXX"
+MIN_RULES = 3
+AUC_MIN = 0.80
+BRIER_MAX = 0.06
+KS_MIN = 0.45
+
+
+class ReleaseInfo(BaseModel):
+    """Metadados de uma release e da sua página didática."""
+
+    etapa: int
+    tag: str
+    date: str
+    title: str
+    slug: str
+    rubric: str
+    bullets: list[str]
+    commit_sha: str = "local"
+    status: Literal["publicada", "em breve"] = "publicada"
+
+
+RELEASES: dict[int, ReleaseInfo] = {
+    1: ReleaseInfo(
+        etapa=1,
+        tag="v0.1.0-alpha",
+        date="2026-10-11",
+        title="Contratos de dados e modelo baseline",
+        slug="etapa-1-contratos",
+        rubric="Validação de Dados (25 %)",
+        bullets=[
+            "Contrato Pandera com 12 regras ICRA",
+            "Circuit breaker bloqueia o lote corrompido",
+            "Baseline HistGradientBoosting com AUC 0,83",
+        ],
+    ),
+    2: ReleaseInfo(
+        etapa=2,
+        tag="v0.2.0-beta",
+        date="2026-10-21",
+        title="Simulação temporal e detecção de drift",
+        slug="etapa-2-drift",
+        rubric="Detecção de Drift (25 %)",
+        bullets=[
+            "Três janelas de produção",
+            "KS, PSI, χ² e Evidently",
+            "Degradação medida",
+        ],
+    ),
+    3: ReleaseInfo(
+        etapa=3,
+        tag="v0.3.0-rc",
+        date="2026-10-31",
+        title="Observabilidade, Data SLOs e MLflow",
+        slug="etapa-3-observabilidade",
+        rubric="Observabilidade e Logs (20 %)",
+        bullets=[
+            "Logs JSON com run_id",
+            "Error budget e alertas",
+            "Champion vs. challenger",
+        ],
+    ),
+    4: ReleaseInfo(
+        etapa=4,
+        tag="v1.0.0-ga",
+        date="2026-11-14",
+        title="Governança LGPD, análise causal e entrega final",
+        slug="etapa-4-governanca",
+        rubric="Governança LGPD (15 %) e Vídeo STAR (15 %)",
+        bullets=["Plano LGPD e retenção", "Fairness e DAG causal", "Roteiro STAR"],
+    ),
+}
+
+
+def release_info(
+    etapa: int,
+    *,
+    tag: str | None = None,
+    date: str | None = None,
+    commit_sha: str = "local",
+) -> ReleaseInfo:
+    """Metadados da release, com sobrescritas opcionais da CLI.
+
+    Args:
+        etapa: Número da etapa (1 a 4).
+        tag: Tag alternativa.
+        date: Data alternativa (``AAAA-MM-DD``).
+        commit_sha: Commit de origem dos artefatos.
+
+    Returns:
+        Cópia de ``RELEASES[etapa]`` com as sobrescritas.
+    """
+    base = RELEASES[etapa]
+    update = {
+        "tag": tag or base.tag,
+        "date": date or base.date,
+        "commit_sha": commit_sha,
+    }
+    return base.model_copy(update=update)
+
+
+class DatasetCard(BaseModel):
+    """Resumo do dataset de referência."""
+
+    rows: int
+    columns: int
+    base_rate: float
+    period_start: str
+    period_end: str
+    sha256: str
+    n_features: int
+
+
+class Histogram(BaseModel):
+    """Histograma pré-agregado com taxa de inadimplência por faixa."""
+
+    edges: list[float]
+    counts: list[int]
+    default_rate: list[float | None]
+
+
+class CategoryShare(BaseModel):
+    """Participação e taxa de inadimplência de uma categoria."""
+
+    category: str
+    share: float
+    default_rate: float
+
+
+class AnomalyRow(BaseModel):
+    """Anomalia injetada no lote corrompido."""
+
+    key: str
+    description: str
+    n_rows: int
+    rule_id: str
+
+
+class ValidatorExample(BaseModel):
+    """Linha de exemplo para o validador interativo (sem identificadores)."""
+
+    label: str
+    values: dict[str, Any]
+
+
+class AcceptanceItem(BaseModel):
+    """Critério de aceitação verificado a partir dos artefatos."""
+
+    criterion: str
+    ok: bool
+    evidence: str
+
+
+class Etapa1Payload(BaseModel):
+    """Dados da página da Etapa 1 (contratos de dados e baseline)."""
+
+    release: ReleaseInfo
+    dataset: DatasetCard
+    histograms: dict[str, Histogram]
+    employment: list[CategoryShare]
+    rules: list[RuleSpec]
+    anomalies: list[AnomalyRow]
+    bad_batch: ValidationReport
+    reference_report: ValidationReport
+    validator_fields: list[str]
+    validator_examples: list[ValidatorExample]
+    metrics: TrainingMetrics
+    thresholds: ThresholdReport
+    importance: list[FeatureImportance]
+    signature: dict[str, Any]
+    pseudonymization: dict[str, str]
+    acceptance: list[AcceptanceItem]
+    commands: list[str]
+
+
+def require(path: Path, hint: str) -> Path:
+    """Garante que um artefato existe.
+
+    Args:
+        path: Caminho esperado.
+        hint: Comando que gera o artefato.
+
+    Returns:
+        O próprio ``path``.
+
+    Raises:
+        FileNotFoundError: Com a orientação de como gerar o artefato.
+    """
+    if not path.exists():
+        msg = f"artefato ausente: {path} (gere com `{hint}`)"
+        raise FileNotFoundError(msg)
+    return path
+
+
+def _histogram(values: pd.Series, target: pd.Series) -> Histogram:
+    low, high = np.quantile(values, [0.005, 0.995])
+    edges = np.linspace(low, high, HISTOGRAM_BINS + 1)
+    bins = np.clip(np.digitize(values, edges[1:-1]), 0, HISTOGRAM_BINS - 1)
+    grouped = target.groupby(bins)
+    counts = grouped.size().reindex(range(HISTOGRAM_BINS), fill_value=0)
+    rates = grouped.mean().reindex(range(HISTOGRAM_BINS))
+    return Histogram(
+        edges=[round(float(e), 4) for e in edges],
+        counts=counts.astype(int).tolist(),
+        default_rate=[None if pd.isna(r) else round(float(r), 4) for r in rates],
+    )
+
+
+def _employment(reference: pd.DataFrame) -> list[CategoryShare]:
+    grouped = reference.groupby("situacao_emprego")[dd.TARGET]
+    shares = grouped.size() / len(reference)
+    return [
+        CategoryShare(
+            category=str(cat), share=float(shares[cat]), default_rate=float(rate)
+        )
+        for cat, rate in grouped.mean().sort_values(ascending=False).items()
+    ]
+
+
+def _row_values(row: pd.Series) -> dict[str, Any]:
+    return json.loads(row[VALIDATOR_FIELDS].to_json())
+
+
+def _examples(reference: pd.DataFrame, bad: pd.DataFrame) -> list[ValidatorExample]:
+    masks = {
+        "Idade fora do domínio (R04)": ~bad["idade"].between(18, 100),
+        "Renda nula (R03)": bad["renda_mensal"].isna(),
+        "Parcela maior que a renda (R10)": bad["valor_parcela"] > bad["renda_mensal"],
+        "Desempregado com tempo de emprego (R11)": (
+            bad["situacao_emprego"] == "desempregado"
+        )
+        & (bad["tempo_emprego_meses"] > 0),
+        "Emprego fora do domínio (R08)": ~bad["situacao_emprego"].isin(dd.EMPLOYMENT),
+    }
+    examples = [
+        ValidatorExample(
+            label="Linha válida (referência)", values=_row_values(reference.iloc[0])
+        )
+    ]
+    examples += [
+        ValidatorExample(label=label, values=_row_values(bad[mask].iloc[0]))
+        for label, mask in masks.items()
+        if mask.any()
+    ]
+    return examples
+
+
+def _dataset_card(reference: pd.DataFrame, path: Path) -> DatasetCard:
+    dates = reference[dd.DATE_COLUMN]
+    return DatasetCard(
+        rows=len(reference),
+        columns=reference.shape[1],
+        base_rate=float(reference[dd.TARGET].mean()),
+        period_start=dates.min().date().isoformat(),
+        period_end=dates.max().date().isoformat(),
+        sha256=file_sha256(path),
+        n_features=14,
+    )
+
+
+def _acceptance(payload: dict[str, Any]) -> list[AcceptanceItem]:
+    bad, ref, m = payload["bad_batch"], payload["reference_report"], payload["metrics"]
+    found = {v.rule_id for v in bad.violations}
+    expected = {a.rule_id for a in payload["anomalies"]}
+    inputs = {item["name"] for item in payload["signature"]["inputs"]}
+    return [
+        AcceptanceItem(
+            criterion="Contrato com ≥ 3 regras rígidas",
+            ok=len(payload["rules"]) >= MIN_RULES,
+            evidence=f"{len(payload['rules'])} regras (R01 a R12)",
+        ),
+        AcceptanceItem(
+            criterion="Referência aprovada em todas as regras",
+            ok=ref.decision == "SUCCESS" and ref.rejected_records == 0,
+            evidence=f"{ref.valid_records} de {ref.total_records} linhas válidas",
+        ),
+        AcceptanceItem(
+            criterion="Lote corrompido bloqueado na ingestão",
+            ok=bad.decision == "BLOCKED",
+            evidence=bad.blocked_reason or "",
+        ),
+        AcceptanceItem(
+            criterion="Inventário cobre as 10 anomalias do lote",
+            ok=expected <= found,
+            evidence=f"regras acionadas: {', '.join(sorted(found))}",
+        ),
+        AcceptanceItem(
+            criterion="ROC-AUC de validação ≥ 0,80",
+            ok=m.roc_auc >= AUC_MIN,
+            evidence=f"{m.roc_auc:.4f}",
+        ),
+        AcceptanceItem(
+            criterion="Brier ≤ 0,06 e KS ≥ 0,45",
+            ok=m.brier <= BRIER_MAX and m.ks_statistic >= KS_MIN,
+            evidence=f"Brier {m.brier:.4f} · KS {m.ks_statistic:.4f}",
+        ),
+        AcceptanceItem(
+            criterion="Atributos sensíveis fora do modelo",
+            ok=inputs.isdisjoint(dd.SENSITIVE_COLUMNS),
+            evidence=f"{len(inputs)} features de entrada",
+        ),
+    ]
+
+
+def _baseline_artifacts(settings: Settings) -> dict[str, Any]:
+    folder = settings.models_dir / "baseline"
+    hint = "uv run credit-sentinel train"
+    return {
+        "metrics": TrainingMetrics.model_validate(
+            read_json(require(folder / "metrics.json", hint))
+        ),
+        "thresholds": ThresholdReport.model_validate(
+            read_json(require(folder / "threshold.json", hint))
+        ),
+        "importance": [
+            FeatureImportance.model_validate(i)
+            for i in read_json(require(folder / "feature_importance.json", hint))[
+                "features"
+            ]
+        ],
+        "signature": read_json(require(folder / "signature.json", hint)),
+    }
+
+
+def _validation_reports(settings: Settings) -> dict[str, ValidationReport]:
+    folder = settings.reports_dir / "validation"
+    hint = "uv run credit-sentinel validate --input <lote>"
+    return {
+        "bad_batch": ValidationReport.model_validate(
+            read_json(require(folder / "bad_batch_report.json", hint))
+        ),
+        "reference_report": ValidationReport.model_validate(
+            read_json(require(folder / "credit_ref_report.json", hint))
+        ),
+    }
+
+
+def build_etapa1(settings: Settings, release: ReleaseInfo) -> Etapa1Payload:
+    """Monta o payload da Etapa 1 a partir dos artefatos.
+
+    Args:
+        settings: Configuração do projeto.
+        release: Metadados da release.
+
+    Returns:
+        Payload validado.
+    """
+    ref_path = require(
+        settings.reference_dir / "credit_ref.parquet",
+        "uv run credit-sentinel generate-data",
+    )
+    bad_path = require(
+        settings.corrupted_dir / "bad_batch.parquet",
+        "uv run credit-sentinel generate-data",
+    )
+    reference, bad = read_parquet(ref_path), read_parquet(bad_path)
+    data: dict[str, Any] = {
+        "release": release,
+        "dataset": _dataset_card(reference, ref_path),
+        "histograms": {
+            f: _histogram(reference[f], reference[dd.TARGET])
+            for f in HISTOGRAM_FEATURES
+        },
+        "employment": _employment(reference),
+        "rules": RULES,
+        "anomalies": [AnomalyRow(**vars(spec)) for spec in ANOMALY_PLAN],
+        "validator_fields": VALIDATOR_FIELDS,
+        "validator_examples": _examples(reference, bad),
+        "pseudonymization": {
+            "input": PSEUDONYM_DEMO_INPUT,
+            "output": hash_identifier(
+                PSEUDONYM_DEMO_INPUT, settings.pii_salt.get_secret_value()
+            ),
+        },
+        "commands": ETAPA1_COMMANDS,
+        **_validation_reports(settings),
+        **_baseline_artifacts(settings),
+    }
+    return Etapa1Payload(**data, acceptance=_acceptance(data))
+
+
+ETAPA1_COMMANDS = [
+    "uv sync --all-groups",
+    "uv run credit-sentinel generate-data --force",
+    "uv run credit-sentinel validate --input data/corrupted/bad_batch.parquet",
+    (
+        "uv run credit-sentinel validate --input data/reference/credit_ref.parquet"
+        " --schema reference"
+    ),
+    "uv run credit-sentinel train",
+    "uv run credit-sentinel scan-pii reports docs",
+    "uv run credit-sentinel build-explainers --etapa 1",
+]
+_BUILDERS = {1: build_etapa1}
+
+
+def build_payload(
+    etapa: int, *, settings: Settings, release: ReleaseInfo | None = None
+) -> BaseModel:
+    """Monta o payload de uma etapa.
+
+    Args:
+        etapa: Número da etapa.
+        settings: Configuração do projeto.
+        release: Metadados da release (padrão: ``RELEASES[etapa]``).
+
+    Returns:
+        Payload pydantic da etapa.
+
+    Raises:
+        ValueError: Se a etapa ainda não tiver página.
+    """
+    if etapa not in _BUILDERS:
+        msg = f"a etapa {etapa} ainda não possui página didática"
+        raise ValueError(msg)
+    return _BUILDERS[etapa](settings, release or release_info(etapa))
+
+
+class IndexPayload(BaseModel):
+    """Dados da página índice (cards das quatro releases)."""
+
+    releases: list[ReleaseInfo]

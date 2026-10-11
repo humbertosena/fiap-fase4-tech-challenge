@@ -1,0 +1,63 @@
+# Parâmetros do processo gerador de dados (ADR 001).
+# `reference` define todos os parâmetros; os cenários de produção (Etapa 2)
+# sobrescrevem apenas o que muda, sob a chave `params`.
+scenarios:
+  reference:
+    description: Carteira de referência (treino), economia estável.
+    period:
+      start: 2025-07-01
+      end: 2026-06-30
+    params:
+      female_share: 0.51
+      region_shares:
+        Sudeste: 0.42
+        Nordeste: 0.27
+        Sul: 0.14
+        Norte: 0.09
+        Centro-Oeste: 0.08
+      region_income_factor:
+        Sudeste: 1.10
+        Sul: 1.05
+        Centro-Oeste: 1.00
+        Nordeste: 0.80
+        Norte: 0.85
+      employment_shares:
+        CLT: 0.52
+        autonomo: 0.22
+        servidor_publico: 0.10
+        aposentado: 0.09
+        desempregado: 0.07
+      employment_income_factor:
+        servidor_publico: 1.25
+        aposentado: 0.80
+        desempregado: 0.35
+      purpose_shares:
+        veiculo: 0.22
+        reforma: 0.18
+        educacao: 0.10
+        consolidacao_dividas: 0.20
+        saude: 0.08
+        outros: 0.22
+      term_shares:
+        6: 0.08
+        12: 0.22
+        24: 0.30
+        36: 0.22
+        48: 0.12
+        60: 0.06
+      income_median: 3800.0
+      income_sigma: 0.55
+      income_real_factor: 1.0
+      income_min: 800.0
+      income_max: 60000.0
+      score_noise_sd: 60.0
+      debt_noise_sd: 0.5
+      debt_logit_shift: 0.0
+      utilization_shift: 0.0
+      monthly_interest: 0.025
+      max_installment_ratio: 0.6
+      # Calibrado por `calibrate_intercept(params, 0.06, make_rng(2024))`.
+      beta0: -3.3067
+      beta0_adjustment: 0.0
+      gamma_concept: 0.0
+      coef_commitment: 0.8

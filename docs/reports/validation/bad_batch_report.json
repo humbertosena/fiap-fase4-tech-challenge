@@ -1,0 +1,203 @@
+{
+  "batch_name": "bad_batch",
+  "run_id": "val-914ef091aa",
+  "validated_at": "2026-10-08T00:44:38.986835Z",
+  "schema_name": "credit_scoring_inference",
+  "total_records": 600,
+  "valid_records": 438,
+  "rejected_records": 162,
+  "rejected_ratio": 0.27,
+  "decision": "BLOCKED",
+  "blocked_reason": "violação estrutural (R01, R02): lote bloqueado",
+  "violations": [
+    {
+      "rule_id": "R01",
+      "column": "cpf",
+      "check": "column_in_schema",
+      "n_failures": 1,
+      "sample_index": []
+    },
+    {
+      "rule_id": "R01",
+      "column": "score_bureau",
+      "check": "dtype('int64')",
+      "n_failures": 18,
+      "sample_index": [
+        35,
+        71,
+        100,
+        142,
+        165
+      ]
+    },
+    {
+      "rule_id": "R02",
+      "column": "id_cliente",
+      "check": "field_uniqueness",
+      "n_failures": 36,
+      "sample_index": [
+        38,
+        51,
+        64,
+        77,
+        84
+      ]
+    },
+    {
+      "rule_id": "R02",
+      "column": "id_cliente",
+      "check": "not_nullable",
+      "n_failures": 6,
+      "sample_index": [
+        40,
+        49,
+        92,
+        265,
+        345
+      ]
+    },
+    {
+      "rule_id": "R03",
+      "column": "renda_mensal",
+      "check": "not_nullable",
+      "n_failures": 24,
+      "sample_index": [
+        24,
+        88,
+        89,
+        99,
+        178
+      ]
+    },
+    {
+      "rule_id": "R03",
+      "column": "score_bureau",
+      "check": "not_nullable",
+      "n_failures": 18,
+      "sample_index": [
+        35,
+        71,
+        100,
+        142,
+        165
+      ]
+    },
+    {
+      "rule_id": "R04",
+      "column": "idade",
+      "check": "R04 · idade fora da faixa",
+      "n_failures": 30,
+      "sample_index": [
+        17,
+        31,
+        53,
+        65,
+        80
+      ]
+    },
+    {
+      "rule_id": "R07",
+      "column": "taxa_endividamento",
+      "check": "R07 · taxa_endividamento fora da faixa",
+      "n_failures": 12,
+      "sample_index": [
+        9,
+        46,
+        69,
+        110,
+        112
+      ]
+    },
+    {
+      "rule_id": "R08",
+      "column": "situacao_emprego",
+      "check": "R08 · situacao_emprego fora do domínio",
+      "n_failures": 18,
+      "sample_index": [
+        11,
+        13,
+        32,
+        39,
+        105
+      ]
+    },
+    {
+      "rule_id": "R10",
+      "column": null,
+      "check": "R10 · valor_parcela <= renda_mensal",
+      "n_failures": 12,
+      "sample_index": [
+        93,
+        123,
+        212,
+        228,
+        237
+      ]
+    },
+    {
+      "rule_id": "R11",
+      "column": null,
+      "check": "R11 · situacao_emprego == 'desempregado' => tempo_emprego_meses == 0",
+      "n_failures": 6,
+      "sample_index": [
+        37,
+        62,
+        301,
+        393,
+        452
+      ]
+    }
+  ],
+  "sample_failures": [
+    {
+      "index": 9,
+      "id_cliente_hash": "cead1b315a09b9c82deafc75f018c35bc8dc6867dc679b5f5883c4fd87d186b5",
+      "regras": [
+        "R07"
+      ],
+      "valores": {
+        "taxa_endividamento": 1.0754
+      }
+    },
+    {
+      "index": 11,
+      "id_cliente_hash": "d5e05b8226253f0206af03f8de00a6e05ee2caf6442aa0df7c2e4cd4d5ba1aff",
+      "regras": [
+        "R08"
+      ],
+      "valores": {
+        "situacao_emprego": "CLT "
+      }
+    },
+    {
+      "index": 13,
+      "id_cliente_hash": "c61d216b7526f7313e405d345c7a47ea6b4ac35e86c8d56ac3fd16d3a26dca99",
+      "regras": [
+        "R08"
+      ],
+      "valores": {
+        "situacao_emprego": "CLT "
+      }
+    },
+    {
+      "index": 17,
+      "id_cliente_hash": "22bd92b93716413b5874d65d617e8d7fe68d59dba37f53324046e898241ac045",
+      "regras": [
+        "R04"
+      ],
+      "valores": {
+        "idade": -4
+      }
+    },
+    {
+      "index": 24,
+      "id_cliente_hash": "887849d89dd479e0c474c53c6cd24f1739eb805e46c1378a777cd1f3676db965",
+      "regras": [
+        "R03"
+      ],
+      "valores": {
+        "renda_mensal": null
+      }
+    }
+  ]
+}

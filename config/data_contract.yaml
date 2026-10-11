@@ -1,0 +1,391 @@
+# Gerado por `credit-sentinel export-contract`; não edite à mão.
+info:
+  name: credit_scoring_input
+  version: 1.0.0
+  owner: time-de-credito@fintech.exemplo
+  purpose: concessão de crédito pessoa física (LGPD art. 7º, incisos V, IX e X)
+  classification: dados pessoais pseudonimizados
+quality:
+  max_rejected_ratio: 0.01
+  fail_fast: true
+  quarantine: true
+rules:
+- id: R01
+  dimension: Integridade
+  description: 'Schema estrito: conjunto exato de colunas e tipos exatos'
+  columns:
+  - id_cliente
+  - data_referencia
+  - idade
+  - renda_mensal
+  - score_bureau
+  - taxa_endividamento
+  - utilizacao_credito
+  - tempo_emprego_meses
+  - qtd_parcelas_atraso_12m
+  - valor_emprestimo
+  - prazo_meses
+  - valor_parcela
+  - situacao_emprego
+  - finalidade_credito
+  - possui_imovel
+  - genero
+  - regiao
+  - inadimplente
+  kind: schema
+  severity: estrutural
+- id: R02
+  dimension: Unicidade
+  description: id_cliente único, não nulo e no formato CLI-XXXXXXXXXX
+  columns:
+  - id_cliente
+  kind: unique
+  severity: estrutural
+  expression: ^CLI-[0-9A-F]{10}$
+- id: R03
+  dimension: Completude
+  description: Campos críticos sem nulos (renda, score, idade, endividamento)
+  columns:
+  - renda_mensal
+  - score_bureau
+  - idade
+  - taxa_endividamento
+  kind: notnull
+  severity: linha
+- id: R04
+  dimension: Acurácia
+  description: Idade entre 18 e 100 anos
+  columns:
+  - idade
+  kind: range
+  severity: linha
+  bounds:
+    idade:
+      min: 18.0
+      max: 100.0
+- id: R05
+  dimension: Acurácia
+  description: Renda mensal positiva e até R$ 1.000.000
+  columns:
+  - renda_mensal
+  kind: range
+  severity: linha
+  bounds:
+    renda_mensal:
+      min: 0.0
+      max: 1000000.0
+      include_min: false
+- id: R06
+  dimension: Acurácia
+  description: Score de bureau entre 0 e 1000
+  columns:
+  - score_bureau
+  kind: range
+  severity: linha
+  bounds:
+    score_bureau:
+      min: 0.0
+      max: 1000.0
+- id: R07
+  dimension: Acurácia
+  description: Taxa de endividamento e utilização de crédito entre 0 e 1
+  columns:
+  - taxa_endividamento
+  - utilizacao_credito
+  kind: range
+  severity: linha
+  bounds:
+    taxa_endividamento:
+      min: 0.0
+      max: 1.0
+    utilizacao_credito:
+      min: 0.0
+      max: 1.0
+- id: R08
+  dimension: Acurácia
+  description: Categorias dentro dos domínios e prazo/alvo nos valores válidos
+  columns:
+  - situacao_emprego
+  - finalidade_credito
+  - genero
+  - regiao
+  - prazo_meses
+  - inadimplente
+  kind: isin
+  severity: linha
+  allowed:
+    situacao_emprego:
+    - CLT
+    - autonomo
+    - servidor_publico
+    - aposentado
+    - desempregado
+    finalidade_credito:
+    - veiculo
+    - reforma
+    - educacao
+    - consolidacao_dividas
+    - saude
+    - outros
+    genero:
+    - F
+    - M
+    regiao:
+    - Norte
+    - Nordeste
+    - Centro-Oeste
+    - Sudeste
+    - Sul
+    prazo_meses:
+    - 6
+    - 12
+    - 24
+    - 36
+    - 48
+    - 60
+    inadimplente:
+    - 0
+    - 1
+- id: R09
+  dimension: Razoabilidade
+  description: Valores da operação positivos e contadores em faixas plausíveis
+  columns:
+  - valor_emprestimo
+  - valor_parcela
+  - tempo_emprego_meses
+  - qtd_parcelas_atraso_12m
+  kind: range
+  severity: linha
+  bounds:
+    valor_emprestimo:
+      min: 0.0
+      include_min: false
+    valor_parcela:
+      min: 0.0
+      include_min: false
+    tempo_emprego_meses:
+      min: 0.0
+      max: 600.0
+    qtd_parcelas_atraso_12m:
+      min: 0.0
+      max: 12.0
+- id: R10
+  dimension: Consistência
+  description: Parcela não pode exceder a renda mensal
+  columns:
+  - valor_parcela
+  - renda_mensal
+  kind: cross
+  severity: linha
+  expression: valor_parcela <= renda_mensal
+- id: R11
+  dimension: Consistência
+  description: Desempregado não pode ter tempo de emprego
+  columns:
+  - situacao_emprego
+  - tempo_emprego_meses
+  kind: cross
+  severity: linha
+  expression: situacao_emprego == 'desempregado' => tempo_emprego_meses == 0
+- id: R12
+  dimension: Consistência
+  description: Tempo de emprego compatível com a idade (a partir dos 16 anos)
+  columns:
+  - tempo_emprego_meses
+  - idade
+  kind: cross
+  severity: linha
+  expression: tempo_emprego_meses <= (idade - 16) * 12
+schema:
+  schema_type: dataframe
+  api: pandas
+  columns:
+    id_cliente:
+      title: Identificador do cliente; pseudonimizado (HMAC-SHA-256 com salt) antes de qualquer saída
+      dtype: str
+      unique: true
+      str_matches:
+        pattern: ^CLI-[0-9A-F]{10}$
+        name: R02
+        error: R02 · formato inválido
+    data_referencia:
+      title: Data da proposta de crédito
+      dtype: datetime64[ns]
+    idade:
+      title: Idade do cliente em anos
+      dtype: int64
+      in_range:
+        min_value: 18.0
+        max_value: 100.0
+        include_min: true
+        include_max: true
+        name: R04
+        error: R04 · idade fora da faixa
+    renda_mensal:
+      title: Renda mensal declarada em reais
+      dtype: float64
+      in_range:
+        min_value: 0.0
+        max_value: 1000000.0
+        include_min: false
+        include_max: true
+        name: R05
+        error: R05 · renda_mensal fora da faixa
+    score_bureau:
+      title: Score de birô de crédito
+      dtype: int64
+      in_range:
+        min_value: 0.0
+        max_value: 1000.0
+        include_min: true
+        include_max: true
+        name: R06
+        error: R06 · score_bureau fora da faixa
+    taxa_endividamento:
+      title: Comprometimento da renda com dívidas existentes
+      dtype: float64
+      in_range:
+        min_value: 0.0
+        max_value: 1.0
+        include_min: true
+        include_max: true
+        name: R07
+        error: R07 · taxa_endividamento fora da faixa
+    utilizacao_credito:
+      title: Uso do limite de crédito rotativo disponível
+      dtype: float64
+      in_range:
+        min_value: 0.0
+        max_value: 1.0
+        include_min: true
+        include_max: true
+        name: R07
+        error: R07 · utilizacao_credito fora da faixa
+    tempo_emprego_meses:
+      title: Tempo no emprego atual em meses
+      dtype: int64
+      in_range:
+        min_value: 0.0
+        max_value: 600.0
+        include_min: true
+        include_max: true
+        name: R09
+        error: R09 · tempo_emprego_meses fora da faixa
+    qtd_parcelas_atraso_12m:
+      title: Parcelas pagas em atraso nos últimos 12 meses
+      dtype: int64
+      in_range:
+        min_value: 0.0
+        max_value: 12.0
+        include_min: true
+        include_max: true
+        name: R09
+        error: R09 · qtd_parcelas_atraso_12m fora da faixa
+    valor_emprestimo:
+      title: Valor solicitado
+      dtype: float64
+      greater_than:
+        min_value: 0.0
+        name: R09
+        error: R09 · valor_emprestimo fora da faixa
+    prazo_meses:
+      title: Prazo do empréstimo em meses
+      dtype: int64
+      isin:
+        allowed_values:
+        - 6
+        - 12
+        - 24
+        - 36
+        - 48
+        - 60
+        name: R08
+        error: R08 · prazo_meses fora do domínio
+    valor_parcela:
+      title: Parcela mensal calculada pela tabela Price
+      dtype: float64
+      greater_than:
+        min_value: 0.0
+        name: R09
+        error: R09 · valor_parcela fora da faixa
+    situacao_emprego:
+      title: Vínculo de trabalho atual
+      dtype: str
+      isin:
+        allowed_values:
+        - CLT
+        - autonomo
+        - servidor_publico
+        - aposentado
+        - desempregado
+        name: R08
+        error: R08 · situacao_emprego fora do domínio
+    finalidade_credito:
+      title: Finalidade declarada do crédito
+      dtype: str
+      isin:
+        allowed_values:
+        - veiculo
+        - reforma
+        - educacao
+        - consolidacao_dividas
+        - saude
+        - outros
+        name: R08
+        error: R08 · finalidade_credito fora do domínio
+    possui_imovel:
+      title: Tem imóvel
+      dtype: bool
+    genero:
+      title: Gênero declarado; nunca usado como feature
+      dtype: str
+      isin:
+        allowed_values:
+        - F
+        - M
+        name: R08
+        error: R08 · genero fora do domínio
+    regiao:
+      title: Região do país; nunca usada como feature
+      dtype: str
+      isin:
+        allowed_values:
+        - Norte
+        - Nordeste
+        - Centro-Oeste
+        - Sudeste
+        - Sul
+        name: R08
+        error: R08 · regiao fora do domínio
+    inadimplente:
+      title: 1 se o cliente ficou inadimplente (atraso > 90 dias)
+      dtype: int64
+      isin:
+        allowed_values:
+        - 0
+        - 1
+        name: R08
+        error: R08 · inadimplente fora do domínio
+  checks:
+  - left: valor_parcela
+    right: renda_mensal
+    options:
+      check_name: cs_column_le_column
+      error: R10 · valor_parcela <= renda_mensal
+  - status_column: situacao_emprego
+    status_value: desempregado
+    value_column: tempo_emprego_meses
+    options:
+      check_name: cs_zero_when_status
+      error: R11 · situacao_emprego == 'desempregado' => tempo_emprego_meses == 0
+  - tenure: tempo_emprego_meses
+    age: idade
+    start_age: 16
+    age_bounds:
+    - 18
+    - 100
+    options:
+      check_name: cs_tenure_within_age
+      error: R12 · tempo_emprego_meses <= (idade - 16) * 12
+  strict: true
+  name: credit_scoring_reference

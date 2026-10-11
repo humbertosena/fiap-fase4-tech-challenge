@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etapa 1 · Contratos de Dados</title>
+<meta name="description" content="Como o contrato de dados bloqueia lotes corrompidos e como o modelo baseline foi treinado e avaliado.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* Credit Sentinel — páginas didáticas. Tokens por papel; tema escuro selecionado. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6b6a65;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6;
+  --accent-soft: #cde2fb;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --critical: #d03b3b;
+  --critical-text: #b42f2f;
+  --warning: #fab219;
+  --code-bg: #f0efec;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #262624;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #a3a29b;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
+    --accent-soft: #184f95;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good-text: #0ca30c;
+    --critical-text: #e66767;
+    --code-bg: #262624;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #262624;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #a3a29b;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
+  --accent-soft: #184f95;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --good-text: #0ca30c;
+  --critical-text: #e66767;
+  --code-bg: #262624;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 16px/1.6 var(--font);
+  overflow-x: hidden;
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+code, pre { font-family: var(--mono); font-size: 0.9em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5em; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0 0 1em; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.muted { color: var(--ink-2); }
+.small { font-size: 0.875rem; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Cabeçalho e navegação */
+.site-header {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--page) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+.site-header .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; }
+.brand { font-weight: 700; color: var(--ink); text-decoration: none; margin-right: auto; }
+.brand span { color: var(--accent); }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav a, .nav span {
+  padding: 4px 10px; border-radius: 999px; font-size: 0.875rem; text-decoration: none; color: var(--ink-2);
+}
+.nav a:hover { background: var(--surface-2); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--accent); color: #fff; }
+.nav span { opacity: 0.55; }
+.theme-toggle {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.875rem; cursor: pointer;
+}
+
+/* Hero */
+.hero { padding: 40px 0 24px; }
+.eyebrow {
+  display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px;
+}
+.tag { white-space: nowrap; font-family: var(--mono); background: var(--accent-soft); color: var(--ink); padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+.lead { font-size: 1.125rem; color: var(--ink-2); max-width: 70ch; }
+
+/* Seções e cartões */
+section { padding: 24px 0; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.card h3 { margin-bottom: 0.35em; }
+.card p:last-child { margin-bottom: 0; }
+.rubric { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* KPIs */
+.kpi { padding: 16px 18px; }
+.kpi .label { font-size: 0.85rem; color: var(--ink-2); }
+.kpi .value { font-size: 2rem; font-weight: 700; line-height: 1.15; margin: 4px 0; }
+.kpi .note { font-size: 0.8rem; color: var(--ink-2); }
+
+/* Status: cor reservada + ícone + rótulo, nunca cor sozinha */
+.status { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; }
+.status::before { font-weight: 700; }
+.status.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.status.ok::before { content: "✓"; }
+.status.fail { color: var(--critical-text); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+.status.fail::before { content: "✕"; }
+.status.na { color: var(--ink-2); background: var(--surface-2); }
+.status.na::before { content: "—"; }
+
+/* Formulários e botões */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.btn {
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--ink);
+  padding: 7px 14px; border-radius: 8px; font: inherit; font-size: 0.9rem; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn[aria-pressed="true"] { outline: 2px solid var(--accent); }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--ink-2); }
+.field input, .field select, select.select {
+  font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; min-width: 0;
+}
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+/* Listas de regras e inventário */
+.rule-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rule-list li {
+  display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+}
+.rule-id { font-family: var(--mono); font-weight: 700; }
+.verdict { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--surface-2); }
+
+.progress { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 8px 0 12px; }
+.progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
+.progress.fail > span { background: var(--critical); }
+.progress.ok > span { background: var(--good); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: 0.82rem; }
+.log li { padding: 6px 10px; border-left: 3px solid var(--axis); background: var(--surface-2); border-radius: 4px; }
+.log li.structural { border-left-color: var(--critical); }
+
+/* Gráficos e tabelas */
+figure.chart { margin: 0; }
+.chart-box { position: relative; height: 260px; }
+.chart-box.tall { height: 340px; }
+figure.chart figcaption { font-size: 0.85rem; color: var(--ink-2); margin-top: 6px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.matrix { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; font-size: 0.9rem; max-width: 420px; }
+.matrix div { padding: 8px; border-radius: 6px; background: var(--surface-2); text-align: center; }
+.matrix .head { background: transparent; color: var(--ink-2); font-size: 0.8rem; }
+.matrix strong { display: block; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+/* Comandos */
+.cmd { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.cmd pre { flex: 1; margin: 0; padding: 10px 12px; background: var(--code-bg); border-radius: 8px; overflow-x: auto; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; }
+.checklist .evidence { font-size: 0.85rem; color: var(--ink-2); }
+.hash { font-family: var(--mono); font-size: 0.8rem; word-break: break-all; }
+
+.site-footer { border-top: 1px solid var(--border); margin-top: 32px; padding: 24px 0 40px; color: var(--ink-2); font-size: 0.875rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 560px) {
+  .rule-list li { grid-template-columns: 44px 1fr; }
+  .rule-list li .status { grid-column: 2; justify-self: start; }
+  .kpi .value { font-size: 1.6rem; }
+}
+
+.skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 6px; z-index: 20; }
+.skip:focus { left: 16px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html">Credit <span>Sentinel</span></a>
+    <nav class="nav" aria-label="Releases">
+      <a href="../index.html">Índice</a>
+      <a href="../releases/etapa-1-contratos.html" aria-current="page">Etapa 1</a>
+      <span title="Em breve">Etapa 2</span>
+      <span title="Em breve">Etapa 3</span>
+      <span title="Em breve">Etapa 4</span>
+      <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">GitHub</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Alternar tema claro e escuro">☾ Tema escuro</button>
+  </div>
+</header>
+<p id="offline-note" class="wrap small muted" hidden>Sem acesso ao Chart.js (offline): os gráficos foram substituídos pelas tabelas com os mesmos dados.</p>
+<main id="conteudo">
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span>Etapa 1 · Validação de dados e contratos</span><span class="tag">v0.1.0-alpha</span><span>2026-10-11</span></div>
+    <h1>Garantir que lixo não entre no modelo</h1>
+    <p class="lead">Antes de detectar degradação, é preciso confiar no dado que chega. Nesta etapa
+    criamos um dataset de referência sintético, um contrato de dados com 12 regras que
+    <strong>bloqueia</strong> lotes corrompidos e o modelo baseline que será monitorado nas próximas etapas.</p>
+  </section>
+
+  <section aria-labelledby="resumo">
+    <h2 id="resumo">Resumo em 60 segundos</h2>
+    <div class="grid grid-4">
+      <div class="panel kpi"><div class="label">Regras no contrato</div><div class="value">12</div><div class="note">Integridade, completude, razoabilidade e acurácia (ICRA)</div></div>
+      <div class="panel kpi"><div class="label">Lote corrompido</div><div class="value"><span class="status fail">BLOCKED</span></div><div class="note">162 de 600 linhas com violação, mais a coluna <code>cpf</code></div></div>
+      <div class="panel kpi"><div class="label">Referência aprovada</div><div class="value num">12.000</div><div class="note">de 12.000 propostas · SUCCESS</div></div>
+      <div class="panel kpi"><div class="label">ROC-AUC do baseline</div><div class="value num">0,829</div><div class="note">Brier 0,052 · KS 0,541 (validação)</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="implementado">
+    <h2 id="implementado">O que foi implementado</h2>
+    <div class="grid grid-3">
+      <article class="panel card"><p class="rubric">Validação de Dados (25 %)</p><h3>Dataset sintético com DGP explícito</h3>
+        <p class="small">12.000 propostas geradas por um processo gerador documentado (ADR 001): risco latente, renda, bureau, endividamento e tabela Price. Seed 42, arquivo idêntico a cada execução.</p></article>
+      <article class="panel card"><p class="rubric">Validação de Dados (25 %)</p><h3>Contrato Pandera</h3>
+        <p class="small">12 regras declaradas uma única vez, com schema estrito (<code>strict=True</code>, <code>coerce=False</code>) e exportação para <code>config/data_contract.yaml</code> (ADR 002).</p></article>
+      <article class="panel card"><p class="rubric">Validação de Dados (25 %)</p><h3>Circuit breaker em dois níveis</h3>
+        <p class="small">Violação estrutural bloqueia o lote. Erros de linha vão para a quarentena até 1 %; acima disso o breaker abre. Nunca há imputação silenciosa.</p></article>
+      <article class="panel card"><p class="rubric">Governança (apoio)</p><h3>Privacidade por padrão</h3>
+        <p class="small">Relatórios trazem só <code>id_cliente_hash</code> (HMAC-SHA-256 com salt secreto) e o comando <code>scan-pii</code> varre saídas em busca de CPF, e-mail e telefone.</p></article>
+      <article class="panel card"><p class="rubric">Base para as Etapas 2 e 3</p><h3>Modelo baseline</h3>
+        <p class="small"><code>HistGradientBoostingClassifier</code> com assinatura MLflow, limiares de F1 e de custo e importância por permutação (ADR 003).</p></article>
+      <article class="panel card"><p class="rubric">Reprodutibilidade</p><h3>Tudo por linha de comando</h3>
+        <p class="small">A CLI <code>credit-sentinel</code> gera dados, valida, treina e publica esta página. Testes automatizados cobrem cada regra.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="validador">
+    <h2 id="validador">1 · Validador interativo de uma proposta</h2>
+    <p class="muted">Edite os campos ou carregue uma linha de exemplo. As regras de linha (R03 a R12) são avaliadas
+    no navegador com os mesmos limites do contrato; R01 e R02 dependem do lote inteiro.</p>
+    <div class="grid grid-2">
+      <div class="panel">
+        <div class="controls" id="example-buttons" aria-label="Linhas de exemplo"></div>
+        <form id="validator-form" class="form-grid" autocomplete="off"></form>
+        <div class="verdict" id="validator-verdict" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h3>Regras do contrato</h3>
+        <ol class="rule-list" id="rule-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="breaker">
+    <h2 id="breaker">2 · Circuit breaker em ação</h2>
+    <p class="muted">Simulação com os números reais dos relatórios <code>reports/validation/*.json</code>.
+    O inventário é sempre completo (<code>lazy=True</code>), mesmo quando o lote é bloqueado.</p>
+    <div class="panel">
+      <div class="controls">
+        <button class="btn primary" type="button" id="ingest-bad">Ingerir lote corrompido (600 linhas)</button>
+        <button class="btn" type="button" id="ingest-ref">Ingerir referência (12.000 linhas)</button>
+      </div>
+      <div class="small muted" id="breaker-caption">Escolha um lote para ingerir.</div>
+      <div class="progress" id="breaker-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <ul class="log" id="breaker-log" aria-live="polite"></ul>
+      <div class="verdict" id="breaker-verdict" hidden></div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Anomalias injetadas no lote</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Anomalia</th><th class="num">Linhas</th><th>Regra</th></tr></thead>
+          <tbody>
+          <tr><td>idade negativa ou acima de 100</td><td class="num">30</td><td><code>R04</code></td></tr>
+          <tr><td>renda_mensal nula</td><td class="num">24</td><td><code>R03</code></td></tr>
+          <tr><td>score_bureau nulo</td><td class="num">18</td><td><code>R03</code></td></tr>
+          <tr><td>id_cliente duplicado</td><td class="num">18</td><td><code>R02</code></td></tr>
+          <tr><td>id_cliente nulo</td><td class="num">6</td><td><code>R02</code></td></tr>
+          <tr><td>situacao_emprego fora do enum</td><td class="num">18</td><td><code>R08</code></td></tr>
+          <tr><td>taxa_endividamento maior que 1</td><td class="num">12</td><td><code>R07</code></td></tr>
+          <tr><td>valor_parcela maior que renda_mensal</td><td class="num">12</td><td><code>R10</code></td></tr>
+          <tr><td>tempo_emprego_meses &gt; 0 com desempregado</td><td class="num">6</td><td><code>R11</code></td></tr>
+          <tr><td>coluna extra cpf (PII não prevista)</td><td class="num">todas</td><td><code>R01</code></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Política de decisão</h3>
+        <ul class="small">
+          <li><strong>Estrutural (R01, R02):</strong> coluna inesperada, coluna ausente, tipo errado, id nulo ou duplicado → <span class="status fail">BLOCKED</span>.</li>
+          <li><strong>Linha (R03 a R12):</strong> linhas inválidas vão para <code>data/quarantine/&lt;run_id&gt;.parquet</code> se forem até 1 % do lote.</li>
+          <li><strong>Acima de 1 %:</strong> problema sistêmico, o breaker abre → <span class="status fail">BLOCKED</span>.</li>
+          <li><strong>Exit codes:</strong> <code>0</code> sucesso · <code>2</code> lote bloqueado.</li>
+        </ul>
+        <p class="small muted">Motivo registrado no relatório do lote corrompido: <em>violação estrutural (R01, R02): lote bloqueado</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="dataset">
+    <h2 id="dataset">3 · Dataset de referência</h2>
+    <p class="muted">12.000 propostas de 2025-07-01 a 2026-06-30,
+    taxa base de inadimplência 6,45 %. Escolha uma feature para ver a distribuição e como o risco muda ao longo dela.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="feature-select">Feature
+          <select id="feature-select" class="select"></select>
+        </label>
+      </div>
+      <div class="grid grid-2">
+        <figure class="chart">
+          <div class="chart-box"><canvas id="hist-chart" role="img" aria-label="Histograma da feature selecionada"></canvas></div>
+          <figcaption>Clientes por faixa (1 % das pontas agregado nas faixas extremas).</figcaption>
+          <div class="table-wrap" id="hist-table"></div>
+        </figure>
+        <figure class="chart">
+          <div class="chart-box"><canvas id="rate-chart" role="img" aria-label="Taxa de inadimplência por faixa"></canvas></div>
+          <figcaption>Taxa de inadimplência por faixa da mesma feature.</figcaption>
+          <div class="table-wrap" id="rate-table"></div>
+        </figure>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Situação de emprego</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Categoria</th><th class="num">Participação</th><th class="num">Inadimplência</th></tr></thead>
+          <tbody>
+          <tr><td>desempregado</td><td class="num">7,1 %</td><td class="num">18,6 %</td></tr>
+          <tr><td>autonomo</td><td class="num">22,0 %</td><td class="num">5,9 %</td></tr>
+          <tr><td>servidor_publico</td><td class="num">10,0 %</td><td class="num">5,6 %</td></tr>
+          <tr><td>aposentado</td><td class="num">9,0 %</td><td class="num">5,5 %</td></tr>
+          <tr><td>CLT</td><td class="num">51,8 %</td><td class="num">5,3 %</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Como os dados nascem (ADR 001)</h3>
+        <ol class="small">
+          <li>Um risco latente <code>z ~ N(0, 1)</code> por cliente move score, endividamento, utilização e atrasos.</li>
+          <li>Renda log-normal com fatores por emprego e região; parcela pela tabela Price limitada a 60 % da renda.</li>
+          <li>Inadimplência sorteada de um logit explícito, com intercepto calibrado para 6 %.</li>
+          <li><code>genero</code> e <code>regiao</code> ficam <strong>fora</strong> do logit e do modelo.</li>
+        </ol>
+        <p class="small muted">SHA-256 do arquivo: <span class="hash">cb41f7d3b239c3ea43e100f478ef8975c6c815abbcf1f89ad018b2f2a4224ec4</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="modelo">
+    <h2 id="modelo">4 · Modelo baseline e limiar de decisão</h2>
+    <p class="muted">Mova o limiar: acima dele a proposta é negada. Precisão, recall, F1 e a matriz de confusão
+    são recalculados a partir do histograma de scores da validação (2.400 propostas, faixas de 0,02).</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="threshold" style="flex:1; min-width:220px">Limiar: <strong id="threshold-value" class="num"></strong>
+          <input type="range" id="threshold" min="0" max="49" step="1" value="6">
+        </label>
+        <button class="btn" type="button" id="goto-f1">Limiar de F1 (0,125)</button>
+        <button class="btn" type="button" id="goto-cost">Limiar de custo 5:1 (0,124)</button>
+      </div>
+      <div class="grid grid-2">
+        <div>
+          <div class="grid grid-4" id="threshold-kpis"></div>
+          <h3 style="margin-top:16px">Matriz de confusão</h3>
+          <div class="matrix" id="threshold-matrix"></div>
+        </div>
+        <figure class="chart">
+          <div class="chart-box tall"><canvas id="score-chart" role="img" aria-label="Distribuição do score por classe"></canvas></div>
+          <figcaption>Score por classe, em % de cada classe. Faixas abaixo do limiar ficam esmaecidas (aprovadas).</figcaption>
+          <div class="table-wrap" id="score-table"></div>
+        </figure>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Importância das features</h3>
+        <figure class="chart">
+          <div class="chart-box tall"><canvas id="importance-chart" role="img" aria-label="Importância por permutação"></canvas></div>
+          <figcaption>Queda média de ROC-AUC ao embaralhar cada feature (10 repetições).</figcaption>
+          <div class="table-wrap" id="importance-table"></div>
+        </figure>
+      </div>
+      <div class="panel">
+        <h3>Assinatura do modelo</h3>
+        <p class="small muted">14 colunas de entrada e saída <code>double</code> (probabilidade de inadimplência), registradas no MLflow como <code>credit-scoring-model</code>.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Entrada</th><th>Tipo</th></tr></thead>
+          <tbody>
+          <tr><td><code>idade</code></td><td>long</td></tr>
+          <tr><td><code>renda_mensal</code></td><td>double</td></tr>
+          <tr><td><code>score_bureau</code></td><td>long</td></tr>
+          <tr><td><code>taxa_endividamento</code></td><td>double</td></tr>
+          <tr><td><code>utilizacao_credito</code></td><td>double</td></tr>
+          <tr><td><code>tempo_emprego_meses</code></td><td>long</td></tr>
+          <tr><td><code>qtd_parcelas_atraso_12m</code></td><td>long</td></tr>
+          <tr><td><code>valor_emprestimo</code></td><td>double</td></tr>
+          <tr><td><code>prazo_meses</code></td><td>long</td></tr>
+          <tr><td><code>valor_parcela</code></td><td>double</td></tr>
+          <tr><td><code>possui_imovel</code></td><td>long</td></tr>
+          <tr><td><code>comprometimento_renda</code></td><td>double</td></tr>
+          <tr><td><code>situacao_emprego</code></td><td>string</td></tr>
+          <tr><td><code>finalidade_credito</code></td><td>string</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="privacidade">
+    <h2 id="privacidade">5 · Privacidade por padrão</h2>
+    <div class="grid grid-2">
+      <div class="panel">
+        <h3>Pseudonimização</h3>
+        <p class="small">O identificador nunca aparece em claro fora do dado bruto. Exemplo com o formato do id:</p>
+        <p><code>CLI-XXXXXXXXXX</code> → HMAC-SHA-256 com salt secreto →</p>
+        <p class="hash">8ab31b6ebc5cf866ae24c9ffbd70451fb806ecf49814db6255077cfc1cdd7470</p>
+      </div>
+      <div class="panel">
+        <h3>Varredura de PII</h3>
+        <p class="small">O lote corrompido traz uma coluna <code>cpf</code> fictícia (dígito verificador inválido). O contrato a bloqueia como
+        violação estrutural, e <code>credit-sentinel scan-pii reports docs</code> confere que nenhum CPF, e-mail, telefone ou id em claro
+        chegou aos relatórios ou a esta página.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="reproduzir">
+    <h2 id="reproduzir">Como reproduzir</h2>
+    <div class="panel">
+      <div class="cmd"><pre id="cmd-1">uv sync --all-groups</pre><button class="btn" type="button" data-copy="cmd-1" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-2">uv run credit-sentinel generate-data --force</pre><button class="btn" type="button" data-copy="cmd-2" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-3">uv run credit-sentinel validate --input data/corrupted/bad_batch.parquet</pre><button class="btn" type="button" data-copy="cmd-3" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-4">uv run credit-sentinel validate --input data/reference/credit_ref.parquet --schema reference</pre><button class="btn" type="button" data-copy="cmd-4" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-5">uv run credit-sentinel train</pre><button class="btn" type="button" data-copy="cmd-5" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-6">uv run credit-sentinel scan-pii reports docs</pre><button class="btn" type="button" data-copy="cmd-6" aria-label="Copiar comando">Copiar</button></div>
+      <div class="cmd"><pre id="cmd-7">uv run credit-sentinel build-explainers --etapa 1</pre><button class="btn" type="button" data-copy="cmd-7" aria-label="Copiar comando">Copiar</button></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="aceitacao">
+    <h2 id="aceitacao">Critérios de aceitação</h2>
+    <div class="panel">
+      <ul class="checklist">
+        <li><span class="status ok">OK</span>
+          <div><strong>Contrato com ≥ 3 regras rígidas</strong><div class="evidence">12 regras (R01 a R12)</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>Referência aprovada em todas as regras</strong><div class="evidence">12000 de 12000 linhas válidas</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>Lote corrompido bloqueado na ingestão</strong><div class="evidence">violação estrutural (R01, R02): lote bloqueado</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>Inventário cobre as 10 anomalias do lote</strong><div class="evidence">regras acionadas: R01, R02, R03, R04, R07, R08, R10, R11</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>ROC-AUC de validação ≥ 0,80</strong><div class="evidence">0.8291</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>Brier ≤ 0,06 e KS ≥ 0,45</strong><div class="evidence">Brier 0.0516 · KS 0.5411</div></div></li>
+        <li><span class="status ok">OK</span>
+          <div><strong>Atributos sensíveis fora do modelo</strong><div class="evidence">14 features de entrada</div></div></li>
+      </ul>
+    </div>
+  </section>
+</div>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p><strong>Credit Sentinel</strong> · Tech Challenge Fase 4 · Pós-Tech FIAP Machine Learning Engineering.
+    Dados 100 % sintéticos (ADR 001); nenhum dado pessoal real.</p>
+    <p>Página gerada por <code>credit-sentinel build-explainers</code> a partir do commit
+    <code>5e2531b</code> · <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">repositório</a> · licença MIT.</p>
+  </div>
+</footer>
+<script type="application/json" id="payload">{"release": {"etapa": 1, "tag": "v0.1.0-alpha", "date": "2026-10-11", "title": "Contratos de dados e modelo baseline", "slug": "etapa-1-contratos", "rubric": "Validação de Dados (25 %)", "bullets": ["Contrato Pandera com 12 regras ICRA", "Circuit breaker bloqueia o lote corrompido", "Baseline HistGradientBoosting com AUC 0,83"], "commit_sha": "5e2531b", "status": "publicada"}, "dataset": {"rows": 12000, "columns": 18, "base_rate": 0.0645, "period_start": "2025-07-01", "period_end": "2026-06-30", "sha256": "cb41f7d3b239c3ea43e100f478ef8975c6c815abbcf1f89ad018b2f2a4224ec4", "n_features": 14}, "histograms": {"renda_mensal": {"edges": [800.0, 1563.9914, 2327.9829, 3091.9743, 3855.9658, 4619.9572, 5383.9486, 6147.9401, 6911.9315, 7675.923, 8439.9144, 9203.9058, 9967.8973, 10731.8887, 11495.8802, 12259.8716, 13023.863, 13787.8545, 14551.8459, 15315.8374, 16079.8288], "counts": [1314, 1760, 2015, 1676, 1382, 1007, 736, 588, 385, 272, 206, 171, 123, 87, 74, 57, 27, 26, 25, 69], "default_rate": [0.1332, 0.0773, 0.0665, 0.0531, 0.0579, 0.0497, 0.038, 0.0374, 0.0312, 0.0331, 0.0583, 0.0409, 0.0488, 0.023, 0.0946, 0.0175, 0.0741, 0.0, 0.0, 0.029]}, "score_bureau": {"edges": [298.985, 334.0358, 369.0865, 404.1372, 439.188, 474.2387, 509.2895, 544.3402, 579.391, 614.4417, 649.4925, 684.5432, 719.594, 754.6448, 789.6955, 824.7463, 859.797, 894.8478, 929.8985, 964.9493, 1000.0], "counts": [126, 107, 171, 304, 444, 538, 832, 1032, 1182, 1268, 1233, 1105, 1055, 798, 625, 447, 309, 181, 122, 121], "default_rate": [0.4603, 0.3645, 0.3158, 0.2105, 0.1937, 0.1264, 0.107, 0.0707, 0.0575, 0.0568, 0.0324, 0.0172, 0.019, 0.0125, 0.0096, 0.0089, 0.0097, 0.0, 0.0, 0.0083]}, "taxa_endividamento": {"edges": [0.0574, 0.0967, 0.136, 0.1753, 0.2146, 0.2539, 0.2932, 0.3325, 0.3718, 0.4111, 0.4504, 0.4897, 0.529, 0.5683, 0.6076, 0.6469, 0.6862, 0.7255, 0.7648, 0.8041, 0.8434], "counts": [362, 530, 737, 851, 992, 1047, 1013, 1023, 894, 768, 740, 640, 570, 469, 383, 330, 228, 162, 122, 139], "default_rate": [0.0083, 0.0113, 0.0109, 0.0212, 0.0161, 0.0277, 0.0326, 0.0499, 0.0537, 0.0625, 0.0703, 0.0875, 0.1105, 0.1151, 0.1462, 0.2, 0.1754, 0.2469, 0.2295, 0.4245]}, "utilizacao_credito": {"edges": [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0], "counts": [952, 485, 602, 720, 795, 893, 879, 928, 850, 900, 731, 713, 600, 494, 397, 320, 242, 170, 137, 192], "default_rate": [0.0168, 0.0124, 0.015, 0.0333, 0.0314, 0.0347, 0.0364, 0.0431, 0.0624, 0.0744, 0.0698, 0.0589, 0.0783, 0.1235, 0.1436, 0.1969, 0.1736, 0.1118, 0.1898, 0.3281]}}, "employment": [{"category": "desempregado", "share": 0.07141666666666667, "default_rate": 0.1855309218203034}, {"category": "autonomo", "share": 0.22016666666666668, "default_rate": 0.059424678274034824}, {"category": "servidor_publico", "share": 0.10041666666666667, "default_rate": 0.05560165975103734}, {"category": "aposentado", "share": 0.09, "default_rate": 0.05462962962962963}, {"category": "CLT", "share": 0.518, "default_rate": 0.05341055341055341}], "rules": [{"id": "R01", "dimension": "Integridade", "description": "Schema estrito: conjunto exato de colunas e tipos exatos", "columns": ["id_cliente", "data_referencia", "idade", "renda_mensal", "score_bureau", "taxa_endividamento", "utilizacao_credito", "tempo_emprego_meses", "qtd_parcelas_atraso_12m", "valor_emprestimo", "prazo_meses", "valor_parcela", "situacao_emprego", "finalidade_credito", "possui_imovel", "genero", "regiao", "inadimplente"], "kind": "schema", "severity": "estrutural", "bounds": {}, "allowed": {}, "expression": null}, {"id": "R02", "dimension": "Unicidade", "description": "id_cliente único, não nulo e no formato CLI-XXXXXXXXXX", "columns": ["id_cliente"], "kind": "unique", "severity": "estrutural", "bounds": {}, "allowed": {}, "expression": "^CLI-[0-9A-F]{10}$"}, {"id": "R03", "dimension": "Completude", "description": "Campos críticos sem nulos (renda, score, idade, endividamento)", "columns": ["renda_mensal", "score_bureau", "idade", "taxa_endividamento"], "kind": "notnull", "severity": "linha", "bounds": {}, "allowed": {}, "expression": null}, {"id": "R04", "dimension": "Acurácia", "description": "Idade entre 18 e 100 anos", "columns": ["idade"], "kind": "range", "severity": "linha", "bounds": {"idade": {"min": 18.0, "max": 100.0, "include_min": true}}, "allowed": {}, "expression": null}, {"id": "R05", "dimension": "Acurácia", "description": "Renda mensal positiva e até R$ 1.000.000", "columns": ["renda_mensal"], "kind": "range", "severity": "linha", "bounds": {"renda_mensal": {"min": 0.0, "max": 1000000.0, "include_min": false}}, "allowed": {}, "expression": null}, {"id": "R06", "dimension": "Acurácia", "description": "Score de bureau entre 0 e 1000", "columns": ["score_bureau"], "kind": "range", "severity": "linha", "bounds": {"score_bureau": {"min": 0.0, "max": 1000.0, "include_min": true}}, "allowed": {}, "expression": null}, {"id": "R07", "dimension": "Acurácia", "description": "Taxa de endividamento e utilização de crédito entre 0 e 1", "columns": ["taxa_endividamento", "utilizacao_credito"], "kind": "range", "severity": "linha", "bounds": {"taxa_endividamento": {"min": 0.0, "max": 1.0, "include_min": true}, "utilizacao_credito": {"min": 0.0, "max": 1.0, "include_min": true}}, "allowed": {}, "expression": null}, {"id": "R08", "dimension": "Acurácia", "description": "Categorias dentro dos domínios e prazo/alvo nos valores válidos", "columns": ["situacao_emprego", "finalidade_credito", "genero", "regiao", "prazo_meses", "inadimplente"], "kind": "isin", "severity": "linha", "bounds": {}, "allowed": {"situacao_emprego": ["CLT", "autonomo", "servidor_publico", "aposentado", "desempregado"], "finalidade_credito": ["veiculo", "reforma", "educacao", "consolidacao_dividas", "saude", "outros"], "genero": ["F", "M"], "regiao": ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"], "prazo_meses": [6, 12, 24, 36, 48, 60], "inadimplente": [0, 1]}, "expression": null}, {"id": "R09", "dimension": "Razoabilidade", "description": "Valores da operação positivos e contadores em faixas plausíveis", "columns": ["valor_emprestimo", "valor_parcela", "tempo_emprego_meses", "qtd_parcelas_atraso_12m"], "kind": "range", "severity": "linha", "bounds": {"valor_emprestimo": {"min": 0.0, "max": null, "include_min": false}, "valor_parcela": {"min": 0.0, "max": null, "include_min": false}, "tempo_emprego_meses": {"min": 0.0, "max": 600.0, "include_min": true}, "qtd_parcelas_atraso_12m": {"min": 0.0, "max": 12.0, "include_min": true}}, "allowed": {}, "expression": null}, {"id": "R10", "dimension": "Consistência", "description": "Parcela não pode exceder a renda mensal", "columns": ["valor_parcela", "renda_mensal"], "kind": "cross", "severity": "linha", "bounds": {}, "allowed": {}, "expression": "valor_parcela \u003c= renda_mensal"}, {"id": "R11", "dimension": "Consistência", "description": "Desempregado não pode ter tempo de emprego", "columns": ["situacao_emprego", "tempo_emprego_meses"], "kind": "cross", "severity": "linha", "bounds": {}, "allowed": {}, "expression": "situacao_emprego == 'desempregado' =\u003e tempo_emprego_meses == 0"}, {"id": "R12", "dimension": "Consistência", "description": "Tempo de emprego compatível com a idade (a partir dos 16 anos)", "columns": ["tempo_emprego_meses", "idade"], "kind": "cross", "severity": "linha", "bounds": {}, "allowed": {}, "expression": "tempo_emprego_meses \u003c= (idade - 16) * 12"}], "anomalies": [{"key": "idade_fora_dominio", "description": "idade negativa ou acima de 100", "n_rows": 30, "rule_id": "R04"}, {"key": "renda_nula", "description": "renda_mensal nula", "n_rows": 24, "rule_id": "R03"}, {"key": "score_nulo", "description": "score_bureau nulo", "n_rows": 18, "rule_id": "R03"}, {"key": "id_duplicado", "description": "id_cliente duplicado", "n_rows": 18, "rule_id": "R02"}, {"key": "id_nulo", "description": "id_cliente nulo", "n_rows": 6, "rule_id": "R02"}, {"key": "emprego_fora_enum", "description": "situacao_emprego fora do enum", "n_rows": 18, "rule_id": "R08"}, {"key": "endividamento_acima_1", "description": "taxa_endividamento maior que 1", "n_rows": 12, "rule_id": "R07"}, {"key": "parcela_maior_renda", "description": "valor_parcela maior que renda_mensal", "n_rows": 12, "rule_id": "R10"}, {"key": "desempregado_com_tempo", "description": "tempo_emprego_meses \u003e 0 com desempregado", "n_rows": 6, "rule_id": "R11"}, {"key": "coluna_cpf", "description": "coluna extra cpf (PII não prevista)", "n_rows": 0, "rule_id": "R01"}], "bad_batch": {"batch_name": "bad_batch", "run_id": "val-914ef091aa", "validated_at": "2026-10-08T00:44:38.986835Z", "schema_name": "credit_scoring_inference", "total_records": 600, "valid_records": 438, "rejected_records": 162, "rejected_ratio": 0.27, "decision": "BLOCKED", "blocked_reason": "violação estrutural (R01, R02): lote bloqueado", "violations": [{"rule_id": "R01", "column": "cpf", "check": "column_in_schema", "n_failures": 1, "sample_index": []}, {"rule_id": "R01", "column": "score_bureau", "check": "dtype('int64')", "n_failures": 18, "sample_index": [35, 71, 100, 142, 165]}, {"rule_id": "R02", "column": "id_cliente", "check": "field_uniqueness", "n_failures": 36, "sample_index": [38, 51, 64, 77, 84]}, {"rule_id": "R02", "column": "id_cliente", "check": "not_nullable", "n_failures": 6, "sample_index": [40, 49, 92, 265, 345]}, {"rule_id": "R03", "column": "renda_mensal", "check": "not_nullable", "n_failures": 24, "sample_index": [24, 88, 89, 99, 178]}, {"rule_id": "R03", "column": "score_bureau", "check": "not_nullable", "n_failures": 18, "sample_index": [35, 71, 100, 142, 165]}, {"rule_id": "R04", "column": "idade", "check": "R04 · idade fora da faixa", "n_failures": 30, "sample_index": [17, 31, 53, 65, 80]}, {"rule_id": "R07", "column": "taxa_endividamento", "check": "R07 · taxa_endividamento fora da faixa", "n_failures": 12, "sample_index": [9, 46, 69, 110, 112]}, {"rule_id": "R08", "column": "situacao_emprego", "check": "R08 · situacao_emprego fora do domínio", "n_failures": 18, "sample_index": [11, 13, 32, 39, 105]}, {"rule_id": "R10", "column": null, "check": "R10 · valor_parcela \u003c= renda_mensal", "n_failures": 12, "sample_index": [93, 123, 212, 228, 237]}, {"rule_id": "R11", "column": null, "check": "R11 · situacao_emprego == 'desempregado' =\u003e tempo_emprego_meses == 0", "n_failures": 6, "sample_index": [37, 62, 301, 393, 452]}], "sample_failures": [{"index": 9, "id_cliente_hash": "cead1b315a09b9c82deafc75f018c35bc8dc6867dc679b5f5883c4fd87d186b5", "regras": ["R07"], "valores": {"taxa_endividamento": 1.0754}}, {"index": 11, "id_cliente_hash": "d5e05b8226253f0206af03f8de00a6e05ee2caf6442aa0df7c2e4cd4d5ba1aff", "regras": ["R08"], "valores": {"situacao_emprego": "CLT "}}, {"index": 13, "id_cliente_hash": "c61d216b7526f7313e405d345c7a47ea6b4ac35e86c8d56ac3fd16d3a26dca99", "regras": ["R08"], "valores": {"situacao_emprego": "CLT "}}, {"index": 17, "id_cliente_hash": "22bd92b93716413b5874d65d617e8d7fe68d59dba37f53324046e898241ac045", "regras": ["R04"], "valores": {"idade": -4}}, {"index": 24, "id_cliente_hash": "887849d89dd479e0c474c53c6cd24f1739eb805e46c1378a777cd1f3676db965", "regras": ["R03"], "valores": {"renda_mensal": null}}]}, "reference_report": {"batch_name": "credit_ref", "run_id": "val-cb41f7d3b2", "validated_at": "2026-10-08T00:44:39.963158Z", "schema_name": "credit_scoring_reference", "total_records": 12000, "valid_records": 12000, "rejected_records": 0, "rejected_ratio": 0.0, "decision": "SUCCESS", "blocked_reason": null, "violations": [], "sample_failures": []}, "validator_fields": ["idade", "renda_mensal", "score_bureau", "taxa_endividamento", "utilizacao_credito", "valor_parcela", "tempo_emprego_meses", "situacao_emprego"], "validator_examples": [{"label": "Linha válida (referência)", "values": {"idade": 35, "renda_mensal": 2613.26, "score_bureau": 680, "taxa_endividamento": 0.4647, "utilizacao_credito": 0.614, "valor_parcela": 195.16, "tempo_emprego_meses": 19, "situacao_emprego": "CLT"}}, {"label": "Idade fora do domínio (R04)", "values": {"idade": -4, "renda_mensal": 6535.9, "score_bureau": 644.0, "taxa_endividamento": 0.3716, "utilizacao_credito": 0.2446, "valor_parcela": 933.87, "tempo_emprego_meses": 48, "situacao_emprego": "CLT"}}, {"label": "Renda nula (R03)", "values": {"idade": 59, "renda_mensal": null, "score_bureau": 811.0, "taxa_endividamento": 0.2721, "utilizacao_credito": 0.0579, "valor_parcela": 1342.21, "tempo_emprego_meses": 101, "situacao_emprego": "aposentado"}}, {"label": "Parcela maior que a renda (R10)", "values": {"idade": 41, "renda_mensal": 11583.16, "score_bureau": 501.0, "taxa_endividamento": 0.4092, "utilizacao_credito": 0.2291, "valor_parcela": 16042.04, "tempo_emprego_meses": 118, "situacao_emprego": "CLT"}}, {"label": "Desempregado com tempo de emprego (R11)", "values": {"idade": 29, "renda_mensal": 3392.03, "score_bureau": 520.0, "taxa_endividamento": 0.6793, "utilizacao_credito": 0.3925, "valor_parcela": 746.77, "tempo_emprego_meses": 24, "situacao_emprego": "desempregado"}}, {"label": "Emprego fora do domínio (R08)", "values": {"idade": 20, "renda_mensal": 5490.0, "score_bureau": 471.0, "taxa_endividamento": 0.7766, "utilizacao_credito": 0.5843, "valor_parcela": 434.08, "tempo_emprego_meses": 17, "situacao_emprego": "CLT "}}], "metrics": {"roc_auc": 0.8290796752640276, "average_precision": 0.32167460715284113, "f1": 0.38317757009345793, "precision": 0.30036630036630035, "recall": 0.5290322580645161, "brier": 0.05162646015409445, "ks_statistic": 0.5410733529707594, "threshold": 0.1248178374746731, "confusion_matrix": [[2054, 191], [73, 82]], "n_train": 9600, "n_valid": 2400, "base_rate": 0.0645, "trained_at": "2026-10-10T12:56:03.889833Z", "model_version": "baseline-1.0.0"}, "thresholds": {"f1_threshold": 0.1248178374746731, "cost_threshold": 0.124, "fn_cost": 5.0, "fp_cost": 1.0, "score_histogram": {"edges": [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0], "positives": [7, 22, 11, 10, 13, 8, 12, 6, 6, 2, 5, 6, 5, 4, 4, 1, 5, 0, 1, 2, 1, 1, 5, 4, 1, 3, 2, 0, 2, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "negatives": [831, 625, 279, 148, 90, 65, 41, 26, 14, 18, 16, 9, 12, 8, 10, 7, 7, 5, 5, 8, 3, 3, 2, 3, 3, 0, 2, 1, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}}, "importance": [{"feature": "score_bureau", "importance_mean": 0.161013865938645, "importance_std": 0.015529003927997135}, {"feature": "qtd_parcelas_atraso_12m", "importance_mean": 0.01201911056828795, "importance_std": 0.002648707064756601}, {"feature": "utilizacao_credito", "importance_mean": 0.010692578489834048, "importance_std": 0.0035546937195471587}, {"feature": "renda_mensal", "importance_mean": 0.009957180831956325, "importance_std": 0.004688984454839167}, {"feature": "taxa_endividamento", "importance_mean": 0.009756879086141246, "importance_std": 0.004313818177132286}, {"feature": "possui_imovel", "importance_mean": 0.004398879229829744, "importance_std": 0.00287895761330612}, {"feature": "valor_emprestimo", "importance_mean": 0.0013917666499030478, "importance_std": 0.0009180399225511383}, {"feature": "situacao_emprego", "importance_mean": 0.0008397154968029285, "importance_std": 0.0020683673644927777}, {"feature": "valor_parcela", "importance_mean": 0.00022415403405414702, "importance_std": 0.0008343974269279441}, {"feature": "idade", "importance_mean": -0.00037991235002513555, "importance_std": 0.0010749080271113345}, {"feature": "prazo_meses", "importance_mean": -0.0009584021840648993, "importance_std": 0.0003968929776437602}, {"feature": "comprometimento_renda", "importance_mean": -0.001089733457863351, "importance_std": 0.0019184102490074346}, {"feature": "finalidade_credito", "importance_mean": -0.0014288382786119436, "importance_std": 0.000990146735785976}, {"feature": "tempo_emprego_meses", "importance_mean": -0.002203175515482414, "importance_std": 0.002218414963938298}], "signature": {"inputs": [{"name": "idade", "type": "long"}, {"name": "renda_mensal", "type": "double"}, {"name": "score_bureau", "type": "long"}, {"name": "taxa_endividamento", "type": "double"}, {"name": "utilizacao_credito", "type": "double"}, {"name": "tempo_emprego_meses", "type": "long"}, {"name": "qtd_parcelas_atraso_12m", "type": "long"}, {"name": "valor_emprestimo", "type": "double"}, {"name": "prazo_meses", "type": "long"}, {"name": "valor_parcela", "type": "double"}, {"name": "possui_imovel", "type": "long"}, {"name": "comprometimento_renda", "type": "double"}, {"name": "situacao_emprego", "type": "string"}, {"name": "finalidade_credito", "type": "string"}], "outputs": [{"type": "double"}]}, "pseudonymization": {"input": "CLI-XXXXXXXXXX", "output": "8ab31b6ebc5cf866ae24c9ffbd70451fb806ecf49814db6255077cfc1cdd7470"}, "acceptance": [{"criterion": "Contrato com ≥ 3 regras rígidas", "ok": true, "evidence": "12 regras (R01 a R12)"}, {"criterion": "Referência aprovada em todas as regras", "ok": true, "evidence": "12000 de 12000 linhas válidas"}, {"criterion": "Lote corrompido bloqueado na ingestão", "ok": true, "evidence": "violação estrutural (R01, R02): lote bloqueado"}, {"criterion": "Inventário cobre as 10 anomalias do lote", "ok": true, "evidence": "regras acionadas: R01, R02, R03, R04, R07, R08, R10, R11"}, {"criterion": "ROC-AUC de validação ≥ 0,80", "ok": true, "evidence": "0.8291"}, {"criterion": "Brier ≤ 0,06 e KS ≥ 0,45", "ok": true, "evidence": "Brier 0.0516 · KS 0.5411"}, {"criterion": "Atributos sensíveis fora do modelo", "ok": true, "evidence": "14 features de entrada"}], "commands": ["uv sync --all-groups", "uv run credit-sentinel generate-data --force", "uv run credit-sentinel validate --input data/corrupted/bad_batch.parquet", "uv run credit-sentinel validate --input data/reference/credit_ref.parquet --schema reference", "uv run credit-sentinel train", "uv run credit-sentinel scan-pii reports docs", "uv run credit-sentinel build-explainers --etapa 1"]}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+/* Credit Sentinel — utilitários comuns das páginas didáticas (JS vanilla). */
+(function () {
+  "use strict";
+  const root = document.documentElement;
+  const payloadNode = document.getElementById("payload");
+  const payload = payloadNode ? JSON.parse(payloadNode.textContent) : {};
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const charts = [];
+
+  const store = {
+    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, value) { try { window.localStorage.setItem(key, value); } catch (e) { /* sem armazenamento */ } },
+  };
+
+  const nf = (digits) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const fmt = {
+    num: (v, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? "—" : nf(d).format(v)),
+    int: (v) => (v === null || v === undefined ? "—" : new Intl.NumberFormat("pt-BR").format(Math.round(v))),
+    pct: (v, d = 1) => (v === null || v === undefined ? "—" : nf(d).format(v * 100) + " %"),
+    brl: (v) => (v === null || v === undefined ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v)),
+    compact: (v) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v),
+  };
+
+  function cssVar(name) {
+    return getComputedStyle(root).getPropertyValue(name).trim();
+  }
+
+  function el(tag, attrs, children) {
+    const node = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([key, value]) => {
+      if (key === "text") node.textContent = value;
+      else if (key === "class") node.className = value;
+      else node.setAttribute(key, value);
+    });
+    (children || []).forEach((child) => node.append(child));
+    return node;
+  }
+
+  function renderTable(container, headers, rows) {
+    if (!container) return;
+    const head = el("tr", {}, headers.map((h) => el("th", { text: h.label, class: h.num ? "num" : "" })));
+    const body = rows.map((row) => el("tr", {}, row.map((cell, i) => el("td", { text: cell, class: headers[i].num ? "num" : "" }))));
+    container.replaceChildren(el("table", {}, [el("thead", {}, [head]), el("tbody", {}, body)]));
+  }
+
+  function applyChartDefaults() {
+    if (!window.Chart) return;
+    const Chart = window.Chart;
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.color = cssVar("--ink-2");
+    Chart.defaults.borderColor = cssVar("--grid");
+    Chart.defaults.animation = reducedMotion ? false : { duration: 350 };
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    Chart.defaults.plugins.tooltip.backgroundColor = cssVar("--ink");
+    Chart.defaults.plugins.tooltip.titleColor = cssVar("--page");
+    Chart.defaults.plugins.tooltip.bodyColor = cssVar("--page");
+  }
+
+  /**
+   * Registra um gráfico com tabela equivalente. Sem Chart.js (offline), só a tabela aparece.
+   * spec: { canvasId, tableId, config: () => chartConfig, table: () => ({headers, rows}) }
+   */
+  function chart(spec) {
+    const entry = { spec, instance: null };
+    charts.push(entry);
+    draw(entry);
+    return {
+      update() { draw(entry); },
+    };
+  }
+
+  function draw(entry) {
+    const { spec } = entry;
+    const canvas = document.getElementById(spec.canvasId);
+    const table = document.getElementById(spec.tableId);
+    const data = spec.table();
+    renderTable(table, data.headers, data.rows);
+    if (!window.Chart || !canvas) {
+      if (canvas) canvas.closest(".chart-box").hidden = true;
+      return;
+    }
+    if (table) table.hidden = true;
+    if (entry.instance) entry.instance.destroy();
+    entry.instance = new window.Chart(canvas, spec.config());
+  }
+
+  function redrawAll() {
+    applyChartDefaults();
+    charts.forEach(draw);
+  }
+
+  function setupTheme() {
+    const button = document.querySelector(".theme-toggle");
+    const saved = store.get("cs-theme");
+    if (saved === "light" || saved === "dark") root.dataset.theme = saved;
+    const current = () => root.dataset.theme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const label = () => { if (button) button.textContent = current() === "dark" ? "☀︎ Tema claro" : "☾ Tema escuro"; };
+    label();
+    if (!button) return;
+    button.addEventListener("click", () => {
+      root.dataset.theme = current() === "dark" ? "light" : "dark";
+      store.set("cs-theme", root.dataset.theme);
+      label();
+      redrawAll();
+    });
+  }
+
+  function setupCopy() {
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (e) {
+          const area = el("textarea", {});
+          area.value = text;
+          document.body.append(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+        }
+        const original = button.textContent;
+        button.textContent = "Copiado ✓";
+        setTimeout(() => { button.textContent = original; }, 1400);
+      });
+    });
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : ms));
+  }
+
+  applyChartDefaults();
+  setupTheme();
+  setupCopy();
+  const offline = document.getElementById("offline-note");
+  if (offline && !window.Chart) offline.hidden = false;
+
+  window.CS = { payload, fmt, cssVar, el, renderTable, chart, sleep, reducedMotion };
+})();
+
+/* Etapa 1 — validador, circuit breaker, distribuições e limiar do modelo. */
+(function () {
+  "use strict";
+  const { payload, fmt, cssVar, el, chart, sleep } = window.CS;
+
+  const FIELD_LABELS = {
+    idade: "Idade (anos)",
+    renda_mensal: "Renda mensal (R$)",
+    score_bureau: "Score de bureau",
+    taxa_endividamento: "Taxa de endividamento (0–1)",
+    utilizacao_credito: "Utilização de crédito (0–1)",
+    valor_parcela: "Valor da parcela (R$)",
+    tempo_emprego_meses: "Tempo de emprego (meses)",
+    situacao_emprego: "Situação de emprego",
+  };
+  const FEATURE_LABELS = {
+    renda_mensal: "Renda mensal",
+    score_bureau: "Score de bureau",
+    taxa_endividamento: "Taxa de endividamento",
+    utilizacao_credito: "Utilização de crédito",
+  };
+  const CROSS = {
+    R10: (v) => v.valor_parcela === null || v.renda_mensal === null || v.valor_parcela <= v.renda_mensal,
+    R11: (v) => v.situacao_emprego !== "desempregado" || v.tempo_emprego_meses === 0,
+    R12: (v) => v.idade === null || v.idade < 18 || v.idade > 100 || v.tempo_emprego_meses === null
+      || v.tempo_emprego_meses <= (v.idade - 16) * 12,
+  };
+
+  /* ---------- 1. Validador interativo ---------- */
+  const form = document.getElementById("validator-form");
+  const enums = payload.rules.find((r) => r.id === "R08").allowed;
+
+  function buildForm() {
+    payload.validator_fields.forEach((name) => {
+      let input;
+      if (name === "situacao_emprego") {
+        const options = [...enums.situacao_emprego, "freelancer", "CLT "];
+        input = el("select", { id: "f-" + name, name }, options.map((o) =>
+          el("option", { value: o, text: enums.situacao_emprego.includes(o) ? o : `"${o}" (fora do domínio)` })));
+      } else {
+        input = el("input", { id: "f-" + name, name, type: "number", step: "any", inputmode: "decimal" });
+      }
+      form.append(el("label", { class: "field", for: "f-" + name }, [FIELD_LABELS[name], input]));
+    });
+    form.addEventListener("input", evaluateForm);
+  }
+
+  function readValues() {
+    const values = {};
+    payload.validator_fields.forEach((name) => {
+      const raw = form.elements[name].value;
+      if (name === "situacao_emprego") values[name] = raw;
+      else values[name] = raw === "" ? null : Number(raw);
+    });
+    return values;
+  }
+
+  function fillValues(values) {
+    payload.validator_fields.forEach((name) => {
+      const value = values[name];
+      if (name === "situacao_emprego" && value !== null && ![...form.elements[name].options].some((o) => o.value === value)) {
+        form.elements[name].append(el("option", { value, text: `"${value}" (fora do domínio)` }));
+      }
+      form.elements[name].value = value === null || value === undefined ? "" : value;
+    });
+    evaluateForm();
+  }
+
+  function inBound(value, bound) {
+    const lowOk = bound.include_min === false ? value > bound.min : value >= bound.min;
+    return lowOk && (bound.max === null || bound.max === undefined || value <= bound.max);
+  }
+
+  function evaluateRule(rule, v) {
+    const present = (cols) => cols.filter((c) => Object.prototype.hasOwnProperty.call(v, c));
+    if (rule.kind === "schema" || rule.kind === "unique") return { status: "na", note: "avaliada no lote inteiro" };
+    if (rule.kind === "notnull") {
+      const cols = present(rule.columns);
+      return { status: cols.every((c) => v[c] !== null) ? "ok" : "fail" };
+    }
+    if (rule.kind === "range") {
+      const cols = present(Object.keys(rule.bounds)).filter((c) => v[c] !== null);
+      if (!cols.length) return { status: "na", note: "campos fora do formulário" };
+      return { status: cols.every((c) => inBound(v[c], rule.bounds[c])) ? "ok" : "fail" };
+    }
+    if (rule.kind === "isin") {
+      const cols = present(Object.keys(rule.allowed));
+      if (!cols.length) return { status: "na" };
+      return { status: cols.every((c) => rule.allowed[c].includes(v[c])) ? "ok" : "fail" };
+    }
+    return { status: CROSS[rule.id](v) ? "ok" : "fail" };
+  }
+
+  function evaluateForm() {
+    const values = readValues();
+    const list = document.getElementById("rule-list");
+    const failed = [];
+    list.replaceChildren(...payload.rules.map((rule) => {
+      const result = evaluateRule(rule, values);
+      if (result.status === "fail") failed.push(rule.id);
+      const label = { ok: "passa", fail: "viola", na: "n/a" }[result.status];
+      const detail = el("div", {}, [el("div", { text: rule.description }), el("div", { class: "small muted", text: `${rule.dimension} · ${rule.severity}${result.note ? " · " + result.note : ""}` })]);
+      return el("li", {}, [el("span", { class: "rule-id", text: rule.id }), detail, el("span", { class: "status " + result.status, text: label })]);
+    }));
+    const verdict = document.getElementById("validator-verdict");
+    verdict.replaceChildren(failed.length
+      ? el("span", {}, [el("span", { class: "status fail", text: "Linha rejeitada" }), ` vai para a quarentena por ${failed.join(", ")} (se o lote tiver até 1 % de linhas assim).`])
+      : el("span", {}, [el("span", { class: "status ok", text: "Linha aprovada" }), " em todas as regras de linha avaliáveis."]));
+  }
+
+  function buildExamples() {
+    const box = document.getElementById("example-buttons");
+    payload.validator_examples.forEach((example, index) => {
+      const button = el("button", { class: "btn" + (index === 0 ? " primary" : ""), type: "button", text: example.label });
+      button.addEventListener("click", () => fillValues(example.values));
+      box.append(button);
+    });
+  }
+
+  /* ---------- 2. Circuit breaker ---------- */
+  let running = false;
+
+  function setProgress(ratio, state) {
+    const bar = document.getElementById("breaker-progress");
+    bar.className = "progress" + (state ? " " + state : "");
+    bar.firstElementChild.style.width = Math.min(100, ratio * 100) + "%";
+    bar.setAttribute("aria-valuenow", String(Math.round(ratio * 100)));
+  }
+
+  async function ingest(report) {
+    if (running) return;
+    running = true;
+    const log = document.getElementById("breaker-log");
+    const verdict = document.getElementById("breaker-verdict");
+    const caption = document.getElementById("breaker-caption");
+    log.replaceChildren();
+    verdict.hidden = true;
+    setProgress(0);
+    caption.textContent = `Validando ${fmt.int(report.total_records)} linhas de "${report.batch_name}" contra ${payload.rules.length} regras…`;
+    await sleep(400);
+    for (const v of report.violations) {
+      const structural = v.rule_id === "R01" || v.rule_id === "R02";
+      log.append(el("li", { class: structural ? "structural" : "", text: `${v.rule_id} · ${v.column || "regra cruzada"} · ${fmt.int(v.n_failures)} falha(s) · ${v.check.replace(/^R\d{2} · /, "")}` }));
+      await sleep(260);
+    }
+    const blocked = report.decision === "BLOCKED";
+    setProgress(blocked ? Math.max(report.rejected_ratio, 0.04) : report.valid_records / report.total_records, blocked ? "fail" : "ok");
+    caption.textContent = `${fmt.int(report.rejected_records)} linha(s) rejeitada(s) (${fmt.pct(report.rejected_ratio, 2)}) · ${fmt.int(report.valid_records)} válida(s).`;
+    verdict.replaceChildren(blocked
+      ? el("span", {}, [el("span", { class: "status fail", text: "BLOCKED" }), " " + report.blocked_reason + ". Nada chega ao modelo; exit code 2."])
+      : el("span", {}, [el("span", { class: "status ok", text: "SUCCESS" }), " lote aprovado sem violações; segue para o modelo."]));
+    verdict.hidden = false;
+    running = false;
+  }
+
+  /* ---------- 3. Distribuições da referência ---------- */
+  const select = document.getElementById("feature-select");
+
+  function binLabel(feature, low, high) {
+    const f = (x) => (feature === "renda_mensal" ? fmt.compact(x) : feature === "score_bureau" ? fmt.int(x) : fmt.num(x, 2));
+    return `${f(low)}–${f(high)}`;
+  }
+
+  function histogramRows() {
+    const feature = select.value;
+    const h = payload.histograms[feature];
+    return h.counts.map((count, i) => ({ label: binLabel(feature, h.edges[i], h.edges[i + 1]), count, rate: h.default_rate[i] }));
+  }
+
+  function setupDistributions() {
+    Object.keys(payload.histograms).forEach((name) => select.append(el("option", { value: name, text: FEATURE_LABELS[name] || name })));
+    const axisTitle = (text) => ({ display: true, text, color: cssVar("--ink-2") });
+    const hist = chart({
+      canvasId: "hist-chart",
+      tableId: "hist-table",
+      table: () => ({ headers: [{ label: "Faixa" }, { label: "Clientes", num: true }], rows: histogramRows().map((r) => [r.label, fmt.int(r.count)]) }),
+      config: () => {
+        const rows = histogramRows();
+        return {
+          type: "bar",
+          data: { labels: rows.map((r) => r.label), datasets: [{ label: "Clientes", data: rows.map((r) => r.count), backgroundColor: cssVar("--series-1"), borderRadius: 4, borderSkipped: "start", maxBarThickness: 28 }] },
+          options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmt.int(c.parsed.y)} clientes` } } }, scales: { x: { grid: { display: false }, ticks: { maxRotation: 60, autoSkip: true } }, y: { title: axisTitle("Clientes"), beginAtZero: true } } },
+        };
+      },
+    });
+    const rate = chart({
+      canvasId: "rate-chart",
+      tableId: "rate-table",
+      table: () => ({ headers: [{ label: "Faixa" }, { label: "Inadimplência", num: true }], rows: histogramRows().map((r) => [r.label, fmt.pct(r.rate, 1)]) }),
+      config: () => {
+        const rows = histogramRows();
+        return {
+          type: "line",
+          data: { labels: rows.map((r) => r.label), datasets: [{ label: "Taxa de inadimplência", data: rows.map((r) => (r.rate === null ? null : r.rate * 100)), borderColor: cssVar("--series-2"), backgroundColor: cssVar("--series-2"), borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, spanGaps: true }] },
+          options: { interaction: { mode: "index", intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `inadimplência ${fmt.num(c.parsed.y, 1)} %` } } }, scales: { x: { grid: { display: false }, ticks: { maxRotation: 60 } }, y: { title: axisTitle("Inadimplência (%)"), beginAtZero: true } } },
+        };
+      },
+    });
+    select.addEventListener("change", () => { hist.update(); rate.update(); });
+  }
+
+  /* ---------- 4. Limiar do modelo ---------- */
+  const H = payload.thresholds.score_histogram;
+  const slider = document.getElementById("threshold");
+  const totalPos = H.positives.reduce((a, b) => a + b, 0);
+  const totalNeg = H.negatives.reduce((a, b) => a + b, 0);
+  let scoreChart;
+
+  function confusionAt(index) {
+    const tp = H.positives.slice(index).reduce((a, b) => a + b, 0);
+    const fp = H.negatives.slice(index).reduce((a, b) => a + b, 0);
+    const fn = totalPos - tp;
+    const tn = totalNeg - fp;
+    const precision = tp + fp ? tp / (tp + fp) : 0;
+    const recall = totalPos ? tp / totalPos : 0;
+    const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0;
+    return { tp, fp, fn, tn, precision, recall, f1, approval: (tn + fn) / (totalPos + totalNeg), cost: 5 * fn + fp };
+  }
+
+  function renderThreshold() {
+    const index = Number(slider.value);
+    const c = confusionAt(index);
+    document.getElementById("threshold-value").textContent = fmt.num(H.edges[index], 2);
+    const kpi = (label, value) => el("div", { class: "panel kpi" }, [el("div", { class: "label", text: label }), el("div", { class: "value num", text: value })]);
+    document.getElementById("threshold-kpis").replaceChildren(
+      kpi("Precisão", fmt.num(c.precision, 3)), kpi("Recall", fmt.num(c.recall, 3)),
+      kpi("F1", fmt.num(c.f1, 3)), kpi("Aprovação", fmt.pct(c.approval, 1)));
+    const cell = (title, value, note) => el("div", {}, [title, el("strong", { text: fmt.int(value) }), el("span", { class: "small muted", text: note })]);
+    document.getElementById("threshold-matrix").replaceChildren(
+      el("div", { class: "head" }), el("div", { class: "head", text: "Previsto: bom (aprova)" }), el("div", { class: "head", text: "Previsto: inadimplente (nega)" }),
+      el("div", { class: "head", text: "Real: bom" }), cell("VN", c.tn, "aprovado corretamente"), cell("FP", c.fp, "bom pagador negado"),
+      el("div", { class: "head", text: "Real: inadimplente" }), cell("FN", c.fn, "inadimplente aprovado"), cell("VP", c.tp, "negado corretamente"));
+    if (scoreChart) scoreChart.update();
+  }
+
+  function setupThreshold() {
+    const nearest = (t) => Math.max(0, Math.min(49, Math.floor(t / 0.02 + 1e-9)));
+    slider.value = String(nearest(payload.thresholds.f1_threshold));
+    slider.addEventListener("input", renderThreshold);
+    document.getElementById("goto-f1").addEventListener("click", () => { slider.value = String(nearest(payload.thresholds.f1_threshold)); renderThreshold(); });
+    document.getElementById("goto-cost").addEventListener("click", () => { slider.value = String(nearest(payload.thresholds.cost_threshold)); renderThreshold(); });
+    const share = (counts, total) => counts.map((n) => (100 * n) / total);
+    const fade = (color, i) => (i < Number(slider.value) ? color + "55" : color);
+    scoreChart = chart({
+      canvasId: "score-chart",
+      tableId: "score-table",
+      table: () => ({
+        headers: [{ label: "Faixa de score" }, { label: "Bons (%)", num: true }, { label: "Inadimplentes (%)", num: true }],
+        rows: H.positives.map((p, i) => [`${fmt.num(H.edges[i], 2)}–${fmt.num(H.edges[i + 1], 2)}`, fmt.num((100 * H.negatives[i]) / totalNeg, 1), fmt.num((100 * p) / totalPos, 1)]),
+      }),
+      config: () => {
+        const c1 = cssVar("--series-1");
+        const c2 = cssVar("--series-2");
+        return {
+          type: "bar",
+          data: {
+            labels: H.edges.slice(0, -1).map((e) => fmt.num(e, 2)),
+            datasets: [
+              { label: "Bons pagadores", data: share(H.negatives, totalNeg), backgroundColor: H.negatives.map((_, i) => fade(c1, i)), borderRadius: 3, borderSkipped: "start" },
+              { label: "Inadimplentes", data: share(H.positives, totalPos), backgroundColor: H.positives.map((_, i) => fade(c2, i)), borderRadius: 3, borderSkipped: "start" },
+            ],
+          },
+          options: {
+            interaction: { mode: "index", intersect: false },
+            plugins: { tooltip: { callbacks: { title: (items) => `score ${items[0].label}`, label: (c) => `${c.dataset.label}: ${fmt.num(c.parsed.y, 1)} % da classe` } } },
+            scales: { x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 11 } }, y: { title: { display: true, text: "% da classe" }, beginAtZero: true } },
+          },
+        };
+      },
+    });
+    renderThreshold();
+  }
+
+  /* ---------- Importância das features ---------- */
+  function setupImportance() {
+    const top = payload.importance.slice(0, 10);
+    chart({
+      canvasId: "importance-chart",
+      tableId: "importance-table",
+      table: () => ({ headers: [{ label: "Feature" }, { label: "Queda de AUC", num: true }, { label: "Desvio", num: true }], rows: payload.importance.map((i) => [i.feature, fmt.num(i.importance_mean, 4), fmt.num(i.importance_std, 4)]) }),
+      config: () => ({
+        type: "bar",
+        data: { labels: top.map((i) => i.feature), datasets: [{ label: "Queda média de ROC-AUC", data: top.map((i) => i.importance_mean), backgroundColor: cssVar("--series-1"), borderRadius: 4, borderSkipped: "start", maxBarThickness: 22 }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `queda de AUC ${fmt.num(c.parsed.x, 4)} ± ${fmt.num(top[c.dataIndex].importance_std, 4)}` } } }, scales: { x: { beginAtZero: true, title: { display: true, text: "Queda de ROC-AUC" } }, y: { grid: { display: false } } } },
+      }),
+    });
+  }
+
+  buildForm();
+  buildExamples();
+  fillValues(payload.validator_examples[0].values);
+  document.getElementById("ingest-bad").addEventListener("click", () => ingest(payload.bad_batch));
+  document.getElementById("ingest-ref").addEventListener("click", () => ingest(payload.reference_report));
+  setupDistributions();
+  setupThreshold();
+  setupImportance();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+{% extends "base.html.j2" %}
+{% set m = payload.metrics %}
+{% set bad = payload.bad_batch %}
+{% set ref = payload.reference_report %}
+{% block title %}Etapa 1 · Contratos de Dados{% endblock %}
+{% block description %}Como o contrato de dados bloqueia lotes corrompidos e como o modelo baseline foi treinado e avaliado.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span>Etapa 1 · Validação de dados e contratos</span><span class="tag">{{ release.tag }}</span><span>{{ release.date }}</span></div>
+    <h1>Garantir que lixo não entre no modelo</h1>
+    <p class="lead">Antes de detectar degradação, é preciso confiar no dado que chega. Nesta etapa
+    criamos um dataset de referência sintético, um contrato de dados com 12 regras que
+    <strong>bloqueia</strong> lotes corrompidos e o modelo baseline que será monitorado nas próximas etapas.</p>
+  </section>
+
+  <section aria-labelledby="resumo">
+    <h2 id="resumo">Resumo em 60 segundos</h2>
+    <div class="grid grid-4">
+      <div class="panel kpi"><div class="label">Regras no contrato</div><div class="value">{{ payload.rules|length }}</div><div class="note">Integridade, completude, razoabilidade e acurácia (ICRA)</div></div>
+      <div class="panel kpi"><div class="label">Lote corrompido</div><div class="value"><span class="status fail">{{ bad.decision }}</span></div><div class="note">{{ bad.rejected_records }} de {{ bad.total_records }} linhas com violação, mais a coluna <code>cpf</code></div></div>
+      <div class="panel kpi"><div class="label">Referência aprovada</div><div class="value num">{{ ref.valid_records|thousands }}</div><div class="note">de {{ ref.total_records|thousands }} propostas · {{ ref.decision }}</div></div>
+      <div class="panel kpi"><div class="label">ROC-AUC do baseline</div><div class="value num">{{ m.roc_auc|br(3) }}</div><div class="note">Brier {{ m.brier|br(3) }} · KS {{ m.ks_statistic|br(3) }} (validação)</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="implementado">
+    <h2 id="implementado">O que foi implementado</h2>
+    <div class="grid grid-3">
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Dataset sintético com DGP explícito</h3>
+        <p class="small">{{ payload.dataset.rows|thousands }} propostas geradas por um processo gerador documentado (ADR 001): risco latente, renda, bureau, endividamento e tabela Price. Seed 42, arquivo idêntico a cada execução.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Contrato Pandera</h3>
+        <p class="small">12 regras declaradas uma única vez, com schema estrito (<code>strict=True</code>, <code>coerce=False</code>) e exportação para <code>config/data_contract.yaml</code> (ADR 002).</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Circuit breaker em dois níveis</h3>
+        <p class="small">Violação estrutural bloqueia o lote. Erros de linha vão para a quarentena até 1 %; acima disso o breaker abre. Nunca há imputação silenciosa.</p></article>
+      <article class="panel card"><p class="rubric">Governança (apoio)</p><h3>Privacidade por padrão</h3>
+        <p class="small">Relatórios trazem só <code>id_cliente_hash</code> (HMAC-SHA-256 com salt secreto) e o comando <code>scan-pii</code> varre saídas em busca de CPF, e-mail e telefone.</p></article>
+      <article class="panel card"><p class="rubric">Base para as Etapas 2 e 3</p><h3>Modelo baseline</h3>
+        <p class="small"><code>HistGradientBoostingClassifier</code> com assinatura MLflow, limiares de F1 e de custo e importância por permutação (ADR 003).</p></article>
+      <article class="panel card"><p class="rubric">Reprodutibilidade</p><h3>Tudo por linha de comando</h3>
+        <p class="small">A CLI <code>credit-sentinel</code> gera dados, valida, treina e publica esta página. Testes automatizados cobrem cada regra.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="validador">
+    <h2 id="validador">1 · Validador interativo de uma proposta</h2>
+    <p class="muted">Edite os campos ou carregue uma linha de exemplo. As regras de linha (R03 a R12) são avaliadas
+    no navegador com os mesmos limites do contrato; R01 e R02 dependem do lote inteiro.</p>
+    <div class="grid grid-2">
+      <div class="panel">
+        <div class="controls" id="example-buttons" aria-label="Linhas de exemplo"></div>
+        <form id="validator-form" class="form-grid" autocomplete="off"></form>
+        <div class="verdict" id="validator-verdict" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h3>Regras do contrato</h3>
+        <ol class="rule-list" id="rule-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="breaker">
+    <h2 id="breaker">2 · Circuit breaker em ação</h2>
+    <p class="muted">Simulação com os números reais dos relatórios <code>reports/validation/*.json</code>.
+    O inventário é sempre completo (<code>lazy=True</code>), mesmo quando o lote é bloqueado.</p>
+    <div class="panel">
+      <div class="controls">
+        <button class="btn primary" type="button" id="ingest-bad">Ingerir lote corrompido ({{ bad.total_records }} linhas)</button>
+        <button class="btn" type="button" id="ingest-ref">Ingerir referência ({{ ref.total_records|thousands }} linhas)</button>
+      </div>
+      <div class="small muted" id="breaker-caption">Escolha um lote para ingerir.</div>
+      <div class="progress" id="breaker-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <ul class="log" id="breaker-log" aria-live="polite"></ul>
+      <div class="verdict" id="breaker-verdict" hidden></div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Anomalias injetadas no lote</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Anomalia</th><th class="num">Linhas</th><th>Regra</th></tr></thead>
+          <tbody>
+          {% for a in payload.anomalies %}
+          <tr><td>{{ a.description }}</td><td class="num">{% if a.n_rows %}{{ a.n_rows }}{% else %}todas{% endif %}</td><td><code>{{ a.rule_id }}</code></td></tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Política de decisão</h3>
+        <ul class="small">
+          <li><strong>Estrutural (R01, R02):</strong> coluna inesperada, coluna ausente, tipo errado, id nulo ou duplicado → <span class="status fail">BLOCKED</span>.</li>
+          <li><strong>Linha (R03 a R12):</strong> linhas inválidas vão para <code>data/quarantine/&lt;run_id&gt;.parquet</code> se forem até 1 % do lote.</li>
+          <li><strong>Acima de 1 %:</strong> problema sistêmico, o breaker abre → <span class="status fail">BLOCKED</span>.</li>
+          <li><strong>Exit codes:</strong> <code>0</code> sucesso · <code>2</code> lote bloqueado.</li>
+        </ul>
+        <p class="small muted">Motivo registrado no relatório do lote corrompido: <em>{{ bad.blocked_reason }}</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="dataset">
+    <h2 id="dataset">3 · Dataset de referência</h2>
+    <p class="muted">{{ payload.dataset.rows|thousands }} propostas de {{ payload.dataset.period_start }} a {{ payload.dataset.period_end }},
+    taxa base de inadimplência {{ payload.dataset.base_rate|pct(2) }}. Escolha uma feature para ver a distribuição e como o risco muda ao longo dela.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="feature-select">Feature
+          <select id="feature-select" class="select"></select>
+        </label>
+      </div>
+      <div class="grid grid-2">
+        <figure class="chart">
+          <div class="chart-box"><canvas id="hist-chart" role="img" aria-label="Histograma da feature selecionada"></canvas></div>
+          <figcaption>Clientes por faixa (1 % das pontas agregado nas faixas extremas).</figcaption>
+          <div class="table-wrap" id="hist-table"></div>
+        </figure>
+        <figure class="chart">
+          <div class="chart-box"><canvas id="rate-chart" role="img" aria-label="Taxa de inadimplência por faixa"></canvas></div>
+          <figcaption>Taxa de inadimplência por faixa da mesma feature.</figcaption>
+          <div class="table-wrap" id="rate-table"></div>
+        </figure>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Situação de emprego</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Categoria</th><th class="num">Participação</th><th class="num">Inadimplência</th></tr></thead>
+          <tbody>
+          {% for row in payload.employment %}
+          <tr><td>{{ row.category }}</td><td class="num">{{ row.share|pct(1) }}</td><td class="num">{{ row.default_rate|pct(1) }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Como os dados nascem (ADR 001)</h3>
+        <ol class="small">
+          <li>Um risco latente <code>z ~ N(0, 1)</code> por cliente move score, endividamento, utilização e atrasos.</li>
+          <li>Renda log-normal com fatores por emprego e região; parcela pela tabela Price limitada a 60 % da renda.</li>
+          <li>Inadimplência sorteada de um logit explícito, com intercepto calibrado para 6 %.</li>
+          <li><code>genero</code> e <code>regiao</code> ficam <strong>fora</strong> do logit e do modelo.</li>
+        </ol>
+        <p class="small muted">SHA-256 do arquivo: <span class="hash">{{ payload.dataset.sha256 }}</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="modelo">
+    <h2 id="modelo">4 · Modelo baseline e limiar de decisão</h2>
+    <p class="muted">Mova o limiar: acima dele a proposta é negada. Precisão, recall, F1 e a matriz de confusão
+    são recalculados a partir do histograma de scores da validação ({{ m.n_valid|thousands }} propostas, faixas de 0,02).</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="threshold" style="flex:1; min-width:220px">Limiar: <strong id="threshold-value" class="num"></strong>
+          <input type="range" id="threshold" min="0" max="49" step="1" value="6">
+        </label>
+        <button class="btn" type="button" id="goto-f1">Limiar de F1 ({{ payload.thresholds.f1_threshold|br(3) }})</button>
+        <button class="btn" type="button" id="goto-cost">Limiar de custo 5:1 ({{ payload.thresholds.cost_threshold|br(3) }})</button>
+      </div>
+      <div class="grid grid-2">
+        <div>
+          <div class="grid grid-4" id="threshold-kpis"></div>
+          <h3 style="margin-top:16px">Matriz de confusão</h3>
+          <div class="matrix" id="threshold-matrix"></div>
+        </div>
+        <figure class="chart">
+          <div class="chart-box tall"><canvas id="score-chart" role="img" aria-label="Distribuição do score por classe"></canvas></div>
+          <figcaption>Score por classe, em % de cada classe. Faixas abaixo do limiar ficam esmaecidas (aprovadas).</figcaption>
+          <div class="table-wrap" id="score-table"></div>
+        </figure>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="panel">
+        <h3>Importância das features</h3>
+        <figure class="chart">
+          <div class="chart-box tall"><canvas id="importance-chart" role="img" aria-label="Importância por permutação"></canvas></div>
+          <figcaption>Queda média de ROC-AUC ao embaralhar cada feature (10 repetições).</figcaption>
+          <div class="table-wrap" id="importance-table"></div>
+        </figure>
+      </div>
+      <div class="panel">
+        <h3>Assinatura do modelo</h3>
+        <p class="small muted">{{ payload.signature.inputs|length }} colunas de entrada e saída <code>double</code> (probabilidade de inadimplência), registradas no MLflow como <code>credit-scoring-model</code>.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Entrada</th><th>Tipo</th></tr></thead>
+          <tbody>
+          {% for col in payload.signature.inputs %}
+          <tr><td><code>{{ col.name }}</code></td><td>{{ col.type }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="privacidade">
+    <h2 id="privacidade">5 · Privacidade por padrão</h2>
+    <div class="grid grid-2">
+      <div class="panel">
+        <h3>Pseudonimização</h3>
+        <p class="small">O identificador nunca aparece em claro fora do dado bruto. Exemplo com o formato do id:</p>
+        <p><code>{{ payload.pseudonymization.input }}</code> → HMAC-SHA-256 com salt secreto →</p>
+        <p class="hash">{{ payload.pseudonymization.output }}</p>
+      </div>
+      <div class="panel">
+        <h3>Varredura de PII</h3>
+        <p class="small">O lote corrompido traz uma coluna <code>cpf</code> fictícia (dígito verificador inválido). O contrato a bloqueia como
+        violação estrutural, e <code>credit-sentinel scan-pii reports docs</code> confere que nenhum CPF, e-mail, telefone ou id em claro
+        chegou aos relatórios ou a esta página.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="reproduzir">
+    <h2 id="reproduzir">Como reproduzir</h2>
+    <div class="panel">
+      {% for command in payload.commands %}
+      <div class="cmd"><pre id="cmd-{{ loop.index }}">{{ command }}</pre><button class="btn" type="button" data-copy="cmd-{{ loop.index }}" aria-label="Copiar comando">Copiar</button></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="aceitacao">
+    <h2 id="aceitacao">Critérios de aceitação</h2>
+    <div class="panel">
+      <ul class="checklist">
+        {% for item in payload.acceptance %}
+        <li><span class="status {{ 'ok' if item.ok else 'fail' }}">{{ 'OK' if item.ok else 'Falhou' }}</span>
+          <div><strong>{{ item.criterion }}</strong><div class="evidence">{{ item.evidence }}</div></div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

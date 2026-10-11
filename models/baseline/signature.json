@@ -1,0 +1,65 @@
+{
+  "inputs": [
+    {
+      "name": "idade",
+      "type": "long"
+    },
+    {
+      "name": "renda_mensal",
+      "type": "double"
+    },
+    {
+      "name": "score_bureau",
+      "type": "long"
+    },
+    {
+      "name": "taxa_endividamento",
+      "type": "double"
+    },
+    {
+      "name": "utilizacao_credito",
+      "type": "double"
+    },
+    {
+      "name": "tempo_emprego_meses",
+      "type": "long"
+    },
+    {
+      "name": "qtd_parcelas_atraso_12m",
+      "type": "long"
+    },
+    {
+      "name": "valor_emprestimo",
+      "type": "double"
+    },
+    {
+      "name": "prazo_meses",
+      "type": "long"
+    },
+    {
+      "name": "valor_parcela",
+      "type": "double"
+    },
+    {
+      "name": "possui_imovel",
+      "type": "long"
+    },
+    {
+      "name": "comprometimento_renda",
+      "type": "double"
+    },
+    {
+      "name": "situacao_emprego",
+      "type": "string"
+    },
+    {
+      "name": "finalidade_credito",
+      "type": "string"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "double"
+    }
+  ]
+}
