@@ -1,0 +1,49 @@
+{% extends "base.html.j2" %}
+{% block title %}Credit Sentinel · Releases{% endblock %}
+{% block description %}Índice das quatro releases do Tech Challenge Fase 4: contratos de dados, drift, observabilidade e governança.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Tech Challenge Fase 4 · FIAP MLET</div>
+    <h1>Sustentação e confiabilidade de um modelo de crédito</h1>
+    <p class="lead">Uma fintech fictícia tem um modelo de <em>credit scoring</em> em produção.
+    Com inflação e novos perfis de clientes, ele pode degradar em silêncio. Este projeto constrói
+    a camada que impede dados ruins de entrar, detecta o <em>drift</em>, dá visibilidade
+    operacional e documenta a governança sob a LGPD, em quatro releases.</p>
+  </section>
+
+  <section aria-labelledby="releases">
+    <h2 id="releases">Releases</h2>
+    <div class="grid grid-2">
+      {% for info in payload.releases %}
+      <article class="panel card">
+        <div class="eyebrow"><span>Etapa {{ info.etapa }}</span><span class="tag">{{ info.tag }}</span></div>
+        <h3>{{ info.title }}</h3>
+        <p class="rubric">{{ info.rubric }}</p>
+        <ul class="small">
+          {% for bullet in info.bullets %}<li>{{ bullet }}</li>{% endfor %}
+        </ul>
+        {% if info.status == "publicada" %}
+        <p><span class="status ok">Publicada</span> <span class="small muted">{{ info.date }}</span></p>
+        <a class="btn primary" href="releases/{{ info.slug }}.html">Abrir a página didática</a>
+        {% else %}
+        <p><span class="status na">Em breve</span> <span class="small muted">previsão {{ info.date }}</span></p>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="artefatos">
+    <h2 id="artefatos">Artefatos e links</h2>
+    <div class="panel">
+      <ul>
+        <li><a href="{{ repo_url }}">Repositório no GitHub</a> (código, ADRs, README com a governança)</li>
+        <li><a href="reports/validation/bad_batch_report.json">Relatório de validação do lote corrompido</a> (JSON)</li>
+        <li><a href="reports/validation/credit_ref_report.json">Relatório de validação da referência</a> (JSON)</li>
+      </ul>
+      <p class="small muted">Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem aqui quando as releases forem publicadas.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

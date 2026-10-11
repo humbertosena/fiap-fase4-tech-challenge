@@ -153,3 +153,51 @@ Varredura de PII nos relatórios versionados:
 $ uv run credit-sentinel scan-pii reports
 nenhum dado pessoal encontrado em: reports
 ```
+
+## 6. Modelo baseline e MLflow (T15 e T16)
+
+```console
+$ uv run credit-sentinel train
+Successfully registered model 'credit-scoring-model'.
+Created version '1' of model 'credit-scoring-model'.
+modelo baseline-1.0.0 salvo em models/baseline
+  roc_auc: 0.8291 · brier: 0.0516 · ks: 0.5411
+  f1: 0.3832 no limiar 0.125 (validação, n=2400)
+  limiar de custo 5:1: 0.124
+  top-3 features: score_bureau, qtd_parcelas_atraso_12m, utilizacao_credito
+  mlflow run: 69eafa342eb84b729be24612779f20b8 (experimento credit-sentinel/baseline)
+```
+
+| Critério | Meta | Obtido |
+| :--- | :--- | :--- |
+| ROC-AUC (validação) | ≥ 0,80 | 0,829 |
+| Brier | ≤ 0,06 | 0,052 |
+| KS | ≥ 0,45 | 0,541 |
+| Treino completo com análise | < 60 s | ≈ 4 s (`pytest -m performance`) |
+
+O run foi conferido no MLflow do `docker compose` (porta 5001) pela API REST: experimento
+`credit-sentinel/baseline`, métricas `roc_auc`, `brier` e `ks_statistic` e o modelo
+`credit-scoring-model` na versão 1.
+
+## 7. Página didática da Etapa 1 (T18)
+
+```console
+$ uv run credit-sentinel build-explainers --etapa 1
+página: docs/releases/etapa-1-contratos.html (68 KB)
+página: docs/index.html (22 KB)
+```
+
+Conferência no Chrome:
+
+| Verificação | Resultado |
+| :--- | :--- |
+| Console do navegador (servidor local e `file://`) | sem erros de JavaScript |
+| Validador interativo | exemplos acionam R04, R03, R10, R11 e R08; linha válida passa |
+| Circuit breaker | anima o inventário real e termina em `BLOCKED` com o motivo |
+| Distribuições e limiar | gráficos atualizam ao trocar a feature e ao mover o limiar |
+| Tema claro/escuro | gráficos são redesenhados com as cores do tema |
+| Sem acesso ao cdnjs (`--host-resolver-rules`) | 4 gráficos trocados pelas tabelas equivalentes, aviso de offline visível |
+| Largura de 360 px | sem rolagem horizontal (`scrollWidth` = 360) |
+| `scan-pii docs reports` | nenhum dado pessoal |
+
+Capturas: `pagina_etapa1_desktop.jpg`, `pagina_etapa1_mobile.jpg` e `pagina_indice.jpg`.

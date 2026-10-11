@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Sentinel · Releases</title>
+<meta name="description" content="Índice das quatro releases do Tech Challenge Fase 4: contratos de dados, drift, observabilidade e governança.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* Credit Sentinel — páginas didáticas. Tokens por papel; tema escuro selecionado. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6b6a65;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6;
+  --accent-soft: #cde2fb;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --critical: #d03b3b;
+  --critical-text: #b42f2f;
+  --warning: #fab219;
+  --code-bg: #f0efec;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #262624;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #a3a29b;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
+    --accent-soft: #184f95;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good-text: #0ca30c;
+    --critical-text: #e66767;
+    --code-bg: #262624;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #262624;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #a3a29b;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
+  --accent-soft: #184f95;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --good-text: #0ca30c;
+  --critical-text: #e66767;
+  --code-bg: #262624;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 16px/1.6 var(--font);
+  overflow-x: hidden;
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+code, pre { font-family: var(--mono); font-size: 0.9em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5em; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0 0 1em; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.muted { color: var(--ink-2); }
+.small { font-size: 0.875rem; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Cabeçalho e navegação */
+.site-header {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--page) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+.site-header .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; }
+.brand { font-weight: 700; color: var(--ink); text-decoration: none; margin-right: auto; }
+.brand span { color: var(--accent); }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav a, .nav span {
+  padding: 4px 10px; border-radius: 999px; font-size: 0.875rem; text-decoration: none; color: var(--ink-2);
+}
+.nav a:hover { background: var(--surface-2); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--accent); color: #fff; }
+.nav span { opacity: 0.55; }
+.theme-toggle {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.875rem; cursor: pointer;
+}
+
+/* Hero */
+.hero { padding: 40px 0 24px; }
+.eyebrow {
+  display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px;
+}
+.tag { white-space: nowrap; font-family: var(--mono); background: var(--accent-soft); color: var(--ink); padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+.lead { font-size: 1.125rem; color: var(--ink-2); max-width: 70ch; }
+
+/* Seções e cartões */
+section { padding: 24px 0; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.card h3 { margin-bottom: 0.35em; }
+.card p:last-child { margin-bottom: 0; }
+.rubric { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* KPIs */
+.kpi { padding: 16px 18px; }
+.kpi .label { font-size: 0.85rem; color: var(--ink-2); }
+.kpi .value { font-size: 2rem; font-weight: 700; line-height: 1.15; margin: 4px 0; }
+.kpi .note { font-size: 0.8rem; color: var(--ink-2); }
+
+/* Status: cor reservada + ícone + rótulo, nunca cor sozinha */
+.status { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; }
+.status::before { font-weight: 700; }
+.status.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.status.ok::before { content: "✓"; }
+.status.fail { color: var(--critical-text); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+.status.fail::before { content: "✕"; }
+.status.na { color: var(--ink-2); background: var(--surface-2); }
+.status.na::before { content: "—"; }
+
+/* Formulários e botões */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.btn {
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--ink);
+  padding: 7px 14px; border-radius: 8px; font: inherit; font-size: 0.9rem; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn[aria-pressed="true"] { outline: 2px solid var(--accent); }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--ink-2); }
+.field input, .field select, select.select {
+  font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; min-width: 0;
+}
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+/* Listas de regras e inventário */
+.rule-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rule-list li {
+  display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+}
+.rule-id { font-family: var(--mono); font-weight: 700; }
+.verdict { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--surface-2); }
+
+.progress { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 8px 0 12px; }
+.progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
+.progress.fail > span { background: var(--critical); }
+.progress.ok > span { background: var(--good); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: 0.82rem; }
+.log li { padding: 6px 10px; border-left: 3px solid var(--axis); background: var(--surface-2); border-radius: 4px; }
+.log li.structural { border-left-color: var(--critical); }
+
+/* Gráficos e tabelas */
+figure.chart { margin: 0; }
+.chart-box { position: relative; height: 260px; }
+.chart-box.tall { height: 340px; }
+figure.chart figcaption { font-size: 0.85rem; color: var(--ink-2); margin-top: 6px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.matrix { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; font-size: 0.9rem; max-width: 420px; }
+.matrix div { padding: 8px; border-radius: 6px; background: var(--surface-2); text-align: center; }
+.matrix .head { background: transparent; color: var(--ink-2); font-size: 0.8rem; }
+.matrix strong { display: block; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+/* Comandos */
+.cmd { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.cmd pre { flex: 1; margin: 0; padding: 10px 12px; background: var(--code-bg); border-radius: 8px; overflow-x: auto; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; }
+.checklist .evidence { font-size: 0.85rem; color: var(--ink-2); }
+.hash { font-family: var(--mono); font-size: 0.8rem; word-break: break-all; }
+
+.site-footer { border-top: 1px solid var(--border); margin-top: 32px; padding: 24px 0 40px; color: var(--ink-2); font-size: 0.875rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 560px) {
+  .rule-list li { grid-template-columns: 44px 1fr; }
+  .rule-list li .status { grid-column: 2; justify-self: start; }
+  .kpi .value { font-size: 1.6rem; }
+}
+
+.skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 6px; z-index: 20; }
+.skip:focus { left: 16px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">Credit <span>Sentinel</span></a>
+    <nav class="nav" aria-label="Releases">
+      <a href="index.html" aria-current="page">Índice</a>
+      <a href="releases/etapa-1-contratos.html">Etapa 1</a>
+      <span title="Em breve">Etapa 2</span>
+      <span title="Em breve">Etapa 3</span>
+      <span title="Em breve">Etapa 4</span>
+      <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">GitHub</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Alternar tema claro e escuro">☾ Tema escuro</button>
+  </div>
+</header>
+<p id="offline-note" class="wrap small muted" hidden>Sem acesso ao Chart.js (offline): os gráficos foram substituídos pelas tabelas com os mesmos dados.</p>
+<main id="conteudo">
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Tech Challenge Fase 4 · FIAP MLET</div>
+    <h1>Sustentação e confiabilidade de um modelo de crédito</h1>
+    <p class="lead">Uma fintech fictícia tem um modelo de <em>credit scoring</em> em produção.
+    Com inflação e novos perfis de clientes, ele pode degradar em silêncio. Este projeto constrói
+    a camada que impede dados ruins de entrar, detecta o <em>drift</em>, dá visibilidade
+    operacional e documenta a governança sob a LGPD, em quatro releases.</p>
+  </section>
+
+  <section aria-labelledby="releases">
+    <h2 id="releases">Releases</h2>
+    <div class="grid grid-2">
+      <article class="panel card">
+        <div class="eyebrow"><span>Etapa 1</span><span class="tag">v0.1.0-alpha</span></div>
+        <h3>Contratos de dados e modelo baseline</h3>
+        <p class="rubric">Validação de Dados (25 %)</p>
+        <ul class="small">
+<li>Contrato Pandera com 12 regras ICRA</li><li>Circuit breaker bloqueia o lote corrompido</li><li>Baseline HistGradientBoosting com AUC 0,83</li>        </ul>
+        <p><span class="status ok">Publicada</span> <span class="small muted">2026-10-11</span></p>
+        <a class="btn primary" href="releases/etapa-1-contratos.html">Abrir a página didática</a>
+      </article>
+      <article class="panel card">
+        <div class="eyebrow"><span>Etapa 2</span><span class="tag">v0.2.0-beta</span></div>
+        <h3>Simulação temporal e detecção de drift</h3>
+        <p class="rubric">Detecção de Drift (25 %)</p>
+        <ul class="small">
+<li>Três janelas de produção</li><li>KS, PSI, χ² e Evidently</li><li>Degradação medida</li>        </ul>
+        <p><span class="status na">Em breve</span> <span class="small muted">previsão 2026-10-21</span></p>
+      </article>
+      <article class="panel card">
+        <div class="eyebrow"><span>Etapa 3</span><span class="tag">v0.3.0-rc</span></div>
+        <h3>Observabilidade, Data SLOs e MLflow</h3>
+        <p class="rubric">Observabilidade e Logs (20 %)</p>
+        <ul class="small">
+<li>Logs JSON com run_id</li><li>Error budget e alertas</li><li>Champion vs. challenger</li>        </ul>
+        <p><span class="status na">Em breve</span> <span class="small muted">previsão 2026-10-31</span></p>
+      </article>
+      <article class="panel card">
+        <div class="eyebrow"><span>Etapa 4</span><span class="tag">v1.0.0-ga</span></div>
+        <h3>Governança LGPD, análise causal e entrega final</h3>
+        <p class="rubric">Governança LGPD (15 %) e Vídeo STAR (15 %)</p>
+        <ul class="small">
+<li>Plano LGPD e retenção</li><li>Fairness e DAG causal</li><li>Roteiro STAR</li>        </ul>
+        <p><span class="status na">Em breve</span> <span class="small muted">previsão 2026-11-14</span></p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="artefatos">
+    <h2 id="artefatos">Artefatos e links</h2>
+    <div class="panel">
+      <ul>
+        <li><a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">Repositório no GitHub</a> (código, ADRs, README com a governança)</li>
+        <li><a href="reports/validation/bad_batch_report.json">Relatório de validação do lote corrompido</a> (JSON)</li>
+        <li><a href="reports/validation/credit_ref_report.json">Relatório de validação da referência</a> (JSON)</li>
+      </ul>
+      <p class="small muted">Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem aqui quando as releases forem publicadas.</p>
+    </div>
+  </section>
+</div>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p><strong>Credit Sentinel</strong> · Tech Challenge Fase 4 · Pós-Tech FIAP Machine Learning Engineering.
+    Dados 100 % sintéticos (ADR 001); nenhum dado pessoal real.</p>
+    <p>Página gerada por <code>credit-sentinel build-explainers</code> a partir do commit
+    <code>5e2531b</code> · <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">repositório</a> · licença MIT.</p>
+  </div>
+</footer>
+<script type="application/json" id="payload">{"releases": [{"etapa": 1, "tag": "v0.1.0-alpha", "date": "2026-10-11", "title": "Contratos de dados e modelo baseline", "slug": "etapa-1-contratos", "rubric": "Validação de Dados (25 %)", "bullets": ["Contrato Pandera com 12 regras ICRA", "Circuit breaker bloqueia o lote corrompido", "Baseline HistGradientBoosting com AUC 0,83"], "commit_sha": "5e2531b", "status": "publicada"}, {"etapa": 2, "tag": "v0.2.0-beta", "date": "2026-10-21", "title": "Simulação temporal e detecção de drift", "slug": "etapa-2-drift", "rubric": "Detecção de Drift (25 %)", "bullets": ["Três janelas de produção", "KS, PSI, χ² e Evidently", "Degradação medida"], "commit_sha": "5e2531b", "status": "em breve"}, {"etapa": 3, "tag": "v0.3.0-rc", "date": "2026-10-31", "title": "Observabilidade, Data SLOs e MLflow", "slug": "etapa-3-observabilidade", "rubric": "Observabilidade e Logs (20 %)", "bullets": ["Logs JSON com run_id", "Error budget e alertas", "Champion vs. challenger"], "commit_sha": "5e2531b", "status": "em breve"}, {"etapa": 4, "tag": "v1.0.0-ga", "date": "2026-11-14", "title": "Governança LGPD, análise causal e entrega final", "slug": "etapa-4-governanca", "rubric": "Governança LGPD (15 %) e Vídeo STAR (15 %)", "bullets": ["Plano LGPD e retenção", "Fairness e DAG causal", "Roteiro STAR"], "commit_sha": "5e2531b", "status": "em breve"}]}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+/* Credit Sentinel — utilitários comuns das páginas didáticas (JS vanilla). */
+(function () {
+  "use strict";
+  const root = document.documentElement;
+  const payloadNode = document.getElementById("payload");
+  const payload = payloadNode ? JSON.parse(payloadNode.textContent) : {};
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const charts = [];
+
+  const store = {
+    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, value) { try { window.localStorage.setItem(key, value); } catch (e) { /* sem armazenamento */ } },
+  };
+
+  const nf = (digits) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const fmt = {
+    num: (v, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? "—" : nf(d).format(v)),
+    int: (v) => (v === null || v === undefined ? "—" : new Intl.NumberFormat("pt-BR").format(Math.round(v))),
+    pct: (v, d = 1) => (v === null || v === undefined ? "—" : nf(d).format(v * 100) + " %"),
+    brl: (v) => (v === null || v === undefined ? "—" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v)),
+    compact: (v) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(v),
+  };
+
+  function cssVar(name) {
+    return getComputedStyle(root).getPropertyValue(name).trim();
+  }
+
+  function el(tag, attrs, children) {
+    const node = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([key, value]) => {
+      if (key === "text") node.textContent = value;
+      else if (key === "class") node.className = value;
+      else node.setAttribute(key, value);
+    });
+    (children || []).forEach((child) => node.append(child));
+    return node;
+  }
+
+  function renderTable(container, headers, rows) {
+    if (!container) return;
+    const head = el("tr", {}, headers.map((h) => el("th", { text: h.label, class: h.num ? "num" : "" })));
+    const body = rows.map((row) => el("tr", {}, row.map((cell, i) => el("td", { text: cell, class: headers[i].num ? "num" : "" }))));
+    container.replaceChildren(el("table", {}, [el("thead", {}, [head]), el("tbody", {}, body)]));
+  }
+
+  function applyChartDefaults() {
+    if (!window.Chart) return;
+    const Chart = window.Chart;
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.color = cssVar("--ink-2");
+    Chart.defaults.borderColor = cssVar("--grid");
+    Chart.defaults.animation = reducedMotion ? false : { duration: 350 };
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    Chart.defaults.plugins.tooltip.backgroundColor = cssVar("--ink");
+    Chart.defaults.plugins.tooltip.titleColor = cssVar("--page");
+    Chart.defaults.plugins.tooltip.bodyColor = cssVar("--page");
+  }
+
+  /**
+   * Registra um gráfico com tabela equivalente. Sem Chart.js (offline), só a tabela aparece.
+   * spec: { canvasId, tableId, config: () => chartConfig, table: () => ({headers, rows}) }
+   */
+  function chart(spec) {
+    const entry = { spec, instance: null };
+    charts.push(entry);
+    draw(entry);
+    return {
+      update() { draw(entry); },
+    };
+  }
+
+  function draw(entry) {
+    const { spec } = entry;
+    const canvas = document.getElementById(spec.canvasId);
+    const table = document.getElementById(spec.tableId);
+    const data = spec.table();
+    renderTable(table, data.headers, data.rows);
+    if (!window.Chart || !canvas) {
+      if (canvas) canvas.closest(".chart-box").hidden = true;
+      return;
+    }
+    if (table) table.hidden = true;
+    if (entry.instance) entry.instance.destroy();
+    entry.instance = new window.Chart(canvas, spec.config());
+  }
+
+  function redrawAll() {
+    applyChartDefaults();
+    charts.forEach(draw);
+  }
+
+  function setupTheme() {
+    const button = document.querySelector(".theme-toggle");
+    const saved = store.get("cs-theme");
+    if (saved === "light" || saved === "dark") root.dataset.theme = saved;
+    const current = () => root.dataset.theme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const label = () => { if (button) button.textContent = current() === "dark" ? "☀︎ Tema claro" : "☾ Tema escuro"; };
+    label();
+    if (!button) return;
+    button.addEventListener("click", () => {
+      root.dataset.theme = current() === "dark" ? "light" : "dark";
+      store.set("cs-theme", root.dataset.theme);
+      label();
+      redrawAll();
+    });
+  }
+
+  function setupCopy() {
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (e) {
+          const area = el("textarea", {});
+          area.value = text;
+          document.body.append(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+        }
+        const original = button.textContent;
+        button.textContent = "Copiado ✓";
+        setTimeout(() => { button.textContent = original; }, 1400);
+      });
+    });
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : ms));
+  }
+
+  applyChartDefaults();
+  setupTheme();
+  setupCopy();
+  const offline = document.getElementById("offline-note");
+  if (offline && !window.Chart) offline.hidden = false;
+
+  window.CS = { payload, fmt, cssVar, el, renderTable, chart, sleep, reducedMotion };
+})();
+
+
+</script>
+</body>
+</html>
