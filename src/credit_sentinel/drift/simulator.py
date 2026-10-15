@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-WINDOWS = ("mes_1", "mes_2")
+WINDOWS = ("mes_1", "mes_2", "mes_3_crise")
 DEFAULT_ROWS = 5000
 
 

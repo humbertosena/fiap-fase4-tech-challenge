@@ -1,4 +1,4 @@
-"""Testes do motor de janelas temporais (covariate shift, T21)."""
+"""Testes do motor de janelas temporais (covariate, prior e concept drift)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from credit_sentinel.data import dictionary as dd
-from credit_sentinel.data.generator import generate_portfolio
+from credit_sentinel.data.generator import SCORE_BAND, generate_portfolio
 from credit_sentinel.drift.simulator import (
     WINDOWS,
     ShiftDescription,
@@ -52,8 +52,20 @@ def mes_2(specs: dict[str, WindowSpec]) -> pd.DataFrame:
     return simulate_window(specs["mes_2"].model_copy(update={"n_rows": SMALL}))
 
 
+@pytest.fixture(scope="module")
+def mes_3(specs: dict[str, WindowSpec]) -> pd.DataFrame:
+    return simulate_window(specs["mes_3_crise"].model_copy(update={"n_rows": SMALL}))
+
+
+def _band_rate(frame: pd.DataFrame) -> float:
+    band = frame[frame["score_bureau"].between(*SCORE_BAND)]
+    return float(band[dd.TARGET].mean())
+
+
 def test_windows_follow_declared_order(scenarios_path: Path) -> None:
-    assert [spec.name for spec in load_windows(scenarios_path)] == list(WINDOWS)
+    names = [spec.name for spec in load_windows(scenarios_path)]
+    assert names == ["mes_1", "mes_2", "mes_3_crise"]
+    assert tuple(names) == WINDOWS
 
 
 def test_periods_are_consecutive_calendar_months(
@@ -61,6 +73,7 @@ def test_periods_are_consecutive_calendar_months(
 ) -> None:
     assert specs["mes_1"].period == (date(2026, 7, 1), date(2026, 7, 31))
     assert specs["mes_2"].period == (date(2026, 8, 1), date(2026, 8, 31))
+    assert specs["mes_3_crise"].period == (date(2026, 9, 1), date(2026, 9, 30))
 
 
 def test_each_window_has_five_thousand_rows(specs: dict[str, WindowSpec]) -> None:
@@ -70,9 +83,9 @@ def test_each_window_has_five_thousand_rows(specs: dict[str, WindowSpec]) -> Non
 def test_seeds_are_base_plus_window_position(
     scenarios_path: Path, specs: dict[str, WindowSpec]
 ) -> None:
-    assert [spec.seed for spec in specs.values()] == [43, 44]
+    assert [spec.seed for spec in specs.values()] == [43, 44, 45]
     shifted = load_windows(scenarios_path, seed=100)
-    assert [spec.seed for spec in shifted] == [101, 102]
+    assert [spec.seed for spec in shifted] == [101, 102, 103]
 
 
 def test_mes_1_keeps_the_reference_parameters(
@@ -93,6 +106,30 @@ def test_mes_2_overrides_the_covariate_parameters(
     assert params.purpose_shares["consolidacao_dividas"] == pytest.approx(0.26)
     assert params.income_median == reference_params.income_median
     assert params.region_shares == reference_params.region_shares
+
+
+def test_mes_2_raises_the_commitment_weight_without_concept_drift(
+    specs: dict[str, WindowSpec],
+) -> None:
+    params = specs["mes_2"].params
+    assert params.coef_commitment == pytest.approx(1.0)
+    assert params.gamma_concept == 0
+
+
+def test_mes_3_crise_overrides_covariate_and_concept_parameters(
+    specs: dict[str, WindowSpec], reference_params: ScenarioParams
+) -> None:
+    params = specs["mes_3_crise"].params
+    assert params.income_real_factor == pytest.approx(0.80)
+    assert params.debt_logit_shift == pytest.approx(0.70)
+    assert params.utilization_shift == pytest.approx(0.12)
+    assert params.monthly_interest == pytest.approx(0.038)
+    assert params.employment_shares["desempregado"] == pytest.approx(0.12)
+    assert params.employment_shares["CLT"] < reference_params.employment_shares["CLT"]
+    assert params.purpose_shares["consolidacao_dividas"] == pytest.approx(0.34)
+    assert params.gamma_concept == pytest.approx(1.5)
+    assert params.coef_commitment == pytest.approx(1.6)
+    assert params.beta0_adjustment < 0
 
 
 def test_unknown_window_name_is_rejected(scenarios_path: Path) -> None:
@@ -196,3 +233,42 @@ def test_simulate_all_can_select_a_subset(scenarios_path: Path, tmp_path: Path) 
     paths = simulate_all(scenarios_path, tmp_path, windows=["mes_2"])
     assert list(paths) == ["mes_2"]
     assert [p.name for p in tmp_path.iterdir()] == ["mes_2.parquet"]
+
+
+def test_base_rate_rises_window_after_window(
+    mes_1: pd.DataFrame, mes_2: pd.DataFrame, mes_3: pd.DataFrame
+) -> None:
+    rates = [frame[dd.TARGET].mean() for frame in (mes_1, mes_2, mes_3)]
+    assert rates[0] < rates[1] < rates[2]
+    assert rates[0] == pytest.approx(0.06, abs=0.015)
+    assert rates[1] == pytest.approx(0.085, abs=0.015)
+    assert rates[2] == pytest.approx(0.13, abs=0.02)
+
+
+def test_mes_3_crise_shifts_the_covariates_hard(
+    mes_3: pd.DataFrame, reference_frame: pd.DataFrame
+) -> None:
+    income = mes_3["renda_mensal"].median() / reference_frame["renda_mensal"].median()
+    debt_gap = (
+        mes_3["taxa_endividamento"].mean()
+        - reference_frame["taxa_endividamento"].mean()
+    )
+    jobless = (mes_3["situacao_emprego"] == "desempregado").mean()
+    consolidation = (mes_3["finalidade_credito"] == "consolidacao_dividas").mean()
+    assert income <= 0.85
+    assert debt_gap >= 0.10
+    assert jobless >= 0.10
+    assert consolidation == pytest.approx(0.34, abs=0.03)
+
+
+def test_mes_3_crise_has_concept_drift_in_the_mid_score_band(
+    mes_3: pd.DataFrame, reference_frame: pd.DataFrame
+) -> None:
+    assert _band_rate(mes_3) >= 2 * _band_rate(reference_frame)
+
+
+def test_mes_1_has_no_concept_drift_in_the_mid_score_band(
+    mes_1: pd.DataFrame, reference_frame: pd.DataFrame
+) -> None:
+    ratio = _band_rate(mes_1) / _band_rate(reference_frame)
+    assert ratio == pytest.approx(1.0, abs=0.35)

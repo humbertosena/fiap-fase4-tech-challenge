@@ -98,3 +98,41 @@ scenarios:
         consolidacao_dividas: 0.26
         saude: 0.074
         outros: 0.2035
+      # Peso maior da parcela no risco. Sem ajuste residual de intercepto: os choques
+      # de covariável já levam a taxa base de 6,5 % a ~8,6 % (ADR 004).
+      coef_commitment: 1.0
+      beta0_adjustment: 0.0
+
+  mes_3_crise:
+    description: Setembro/2026 — choque de juros com covariate, prior e concept drift.
+    period:
+      start: 2026-09-01
+      end: 2026-09-30
+    rows: 5000
+    params:
+      income_real_factor: 0.80
+      debt_logit_shift: 0.70
+      utilization_shift: 0.12
+      monthly_interest: 0.038
+      # CLT cai: o desemprego sobe de 0,07 para 0,12.
+      employment_shares:
+        CLT: 0.47
+        autonomo: 0.22
+        servidor_publico: 0.10
+        aposentado: 0.09
+        desempregado: 0.12
+      # consolidação de dívidas 0,20 → 0,34; demais finalidades em proporção.
+      purpose_shares:
+        veiculo: 0.1815
+        reforma: 0.1485
+        educacao: 0.0825
+        consolidacao_dividas: 0.34
+        saude: 0.066
+        outros: 0.1815
+      # Concept drift: risco extra na faixa 550–700 de score e peso maior da parcela.
+      gamma_concept: 1.5
+      coef_commitment: 1.6
+      # Covariáveis e conceito, sozinhos, levariam a taxa a ~18 %. O intercepto
+      # residual, calibrado por bisseção na janela entregue (semente fixa) para 13 %,
+      # representa o aperto da concessão de crédito (ADR 004).
+      beta0_adjustment: -0.55

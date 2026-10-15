@@ -141,3 +141,24 @@ def test_shares_must_sum_to_one(reference_params: ScenarioParams) -> None:
     data["region_shares"] = {"Norte": 0.5, "Sul": 0.2}
     with pytest.raises(ValueError, match="somar 1"):
         ScenarioParams.model_validate(data)
+
+
+def test_beta0_adjustment_shifts_the_logit_additively(
+    portfolio: pd.DataFrame, reference_params: ScenarioParams
+) -> None:
+    shocked = reference_params.model_copy(update={"beta0_adjustment": 0.3})
+    delta = compute_logit(portfolio, shocked) - compute_logit(
+        portfolio, reference_params
+    )
+    assert np.allclose(delta, 0.3)
+
+
+def test_commitment_coefficient_scales_with_the_installment_burden(
+    portfolio: pd.DataFrame, reference_params: ScenarioParams
+) -> None:
+    heavier = reference_params.model_copy(update={"coef_commitment": 1.6})
+    delta = compute_logit(portfolio, heavier) - compute_logit(
+        portfolio, reference_params
+    )
+    commitment = portfolio["valor_parcela"] / portfolio["renda_mensal"]
+    assert np.allclose(delta, 0.8 * (commitment - 0.25))
