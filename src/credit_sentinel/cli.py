@@ -22,6 +22,7 @@ COMMAND_MODULES: tuple[str, ...] = (
     "credit_sentinel.data.commands",
     "credit_sentinel.contracts.commands",
     "credit_sentinel.ml.commands",
+    "credit_sentinel.drift.commands",
     "credit_sentinel.explainers.commands",
 )
 

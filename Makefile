@@ -40,8 +40,8 @@ validate: ## valida a referência (exit 0) e o lote corrompido (exit 2 esperado)
 train: ## valida a referência, treina o baseline e registra no MLflow (Etapa 1)
 	$(RUN) credit-sentinel train
 
-simulate: ## materializa as janelas de produção (Etapa 2)
-	@echo "disponível na Etapa 2"
+simulate: ## materializa as janelas de produção (Etapa 2; bit a bit idênticas)
+	$(RUN) credit-sentinel simulate --force
 
 drift: ## detecção de drift e relatórios Evidently (Etapa 2)
 	@echo "disponível na Etapa 2"
