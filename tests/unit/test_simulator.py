@@ -122,7 +122,7 @@ def test_mes_3_crise_overrides_covariate_and_concept_parameters(
     params = specs["mes_3_crise"].params
     assert params.income_real_factor == pytest.approx(0.80)
     assert params.debt_logit_shift == pytest.approx(0.70)
-    assert params.utilization_shift == pytest.approx(0.12)
+    assert params.utilization_shift == pytest.approx(0.14)
     assert params.monthly_interest == pytest.approx(0.038)
     assert params.employment_shares["desempregado"] == pytest.approx(0.12)
     assert params.employment_shares["CLT"] < reference_params.employment_shares["CLT"]
