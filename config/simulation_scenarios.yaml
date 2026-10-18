@@ -112,7 +112,7 @@ scenarios:
     params:
       income_real_factor: 0.80
       debt_logit_shift: 0.70
-      utilization_shift: 0.14
+      utilization_shift: 0.20
       monthly_interest: 0.038
       # CLT cai: o desemprego sobe de 0,07 para 0,12.
       employment_shares:
@@ -135,4 +135,4 @@ scenarios:
       # Covariáveis e conceito, sozinhos, levariam a taxa a ~18 %. O intercepto
       # residual, calibrado por bisseção na janela entregue (semente fixa) para 13 %,
       # representa o aperto da concessão de crédito (ADR 004).
-      beta0_adjustment: -0.57
+      beta0_adjustment: -0.64

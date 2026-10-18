@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Status | **Aceito** |
-| Data | 2026-10-14 (Etapa 2); revisado em 2026-10-17 (seção 2.3) |
+| Data | 2026-10-14 (Etapa 2); revisado em 2026-10-17 e 2026-10-18 (seção 2.3) |
 | Decisores | Humberto Sena Santos |
 | Módulos afetados | `drift-simulation`, `drift-detection`, `tracking-registry` |
 | Relacionados | ADR 001 (dataset sintético), ADR 003 (modelo baseline) |
@@ -40,13 +40,13 @@ real; a inferência do pipeline usa o `inference_schema` e ignora a coluna.
 |---|---:|---:|---:|---:|---|---|
 | `income_real_factor` | 1,00 | 1,00 | 0,90 | 0,80 | Covariate | A inflação reduz a renda real da carteira. |
 | `debt_logit_shift` | 0 | 0 | +0,35 | +0,70 | Covariate | O endividamento das famílias cresce quando a renda não acompanha os preços. |
-| `utilization_shift` | 0 | 0 | +0,06 | +0,14 | Covariate | Mais uso de limite rotativo para fechar o mês. |
+| `utilization_shift` | 0 | 0 | +0,06 | +0,20 | Covariate | Mais uso de limite rotativo para fechar o mês. |
 | `monthly_interest` (Price) | 0,025 | 0,025 | 0,030 | 0,038 | Covariate (via `valor_parcela`) | A Selic alta encarece o crédito e eleva a parcela. |
 | `employment_shares[desempregado]` | 0,07 | 0,07 | 0,09 | 0,12 | Covariate (categórica) | O emprego formal cai; a CLT absorve a diferença. |
 | `purpose_shares[consolidacao_dividas]` | 0,20 | 0,20 | 0,26 | 0,34 | Covariate (categórica) | Quem já deve toma crédito para refinanciar a dívida; as demais finalidades diminuem na mesma proporção. |
 | `coef_commitment` | 0,8 | 0,8 | 1,0 | 1,6 | Concept | Com a renda apertada, o peso da parcela no risco aumenta. |
 | `gamma_concept` (faixa 550–700) | 0 | 0 | 0 | 1,5 | Concept | A classe média "limítrofe" deixa de se comportar como em tempos estáveis; o modelo, treinado antes, subestima esse risco. O logit sobe `0,9 × γ` na faixa. |
-| `beta0_adjustment` | 0 | 0 | 0 | −0,57 | Prior (residual) | Ver a seção 2.3. |
+| `beta0_adjustment` | 0 | 0 | 0 | −0,64 | Prior (residual) | Ver a seção 2.3. |
 
 `genero` e `regiao` seguem fora do logit: nenhum cenário altera o que é sensível.
 
@@ -60,10 +60,10 @@ os choques de covariável e de conceito já elevam a inadimplência bem além do
 | Componente (acumulado) | `mes_2` | `mes_3_crise` |
 |---|---:|---:|
 | Referência (amostra grande; o arquivo tem 6,45 %) | 6,1 % | 6,1 % |
-| + covariáveis | 7,9 % | 10,4 % |
-| + `coef_commitment` | 8,0 % | 11,3 % |
-| + `gamma_concept` = 1,5 | — | 18,2 % |
-| + `beta0_adjustment` (valor adotado) | 8,0 % (0) | 12,4 % (−0,57) |
+| + covariáveis | 7,9 % | 10,8 % |
+| + `coef_commitment` | 8,0 % | 11,8 % |
+| + `gamma_concept` = 1,5 | — | 19,0 % |
+| + `beta0_adjustment` (valor adotado) | 8,0 % (0) | 12,3 % (−0,64) |
 | Valores iniciais do spec (`γ` 1,0; `β0` +0,55) | ≈ 10 % | **21,6 %** |
 
 Com os valores iniciais, `mes_3_crise` chegava a 21,6 % e `mes_2` passava de 9 %.
@@ -74,14 +74,16 @@ que o PSI e os testes de hipótese enxergam, ficaram como no spec):
    ≈ 0,77 ± 0,01 (média de 8 sementes), colado no teto de 0,779 do critério
    "AUC pelo menos 0,05 abaixo da validação". Com 1,5 fica em ≈ 0,76. É o único parâmetro que
    derruba o AUC: o `coef_commitment` maior até o eleva.
-2. **`utilization_shift` de `mes_3_crise` de 0,12 para 0,14** (revisão de 17/10, depois
-   de implementar o PSI). Com 0,12 a única feature com PSI crítico era
-   `taxa_endividamento` (0,63): `utilizacao_credito` ficava em 0,247, a um fio do corte
-   de 0,25, e `renda_mensal` em 0,16. Com 0,14 o PSI da utilização vai a 0,33 e a crise
-   passa a ter duas features críticas, como o spec exige. A renda não foi tocada: tirar
-   o PSI dela de 0,16 exigiria um fator de 0,72, uma queda de 30 % na mediana.
+2. **`utilization_shift` de `mes_3_crise` de 0,12 para 0,20** (revisões de 17 e 18/10,
+   depois de implementar o PSI e as predições). Com 0,12 a única feature com PSI crítico
+   era `taxa_endividamento` (0,63): `utilizacao_credito` ficava em 0,247, a um fio do
+   corte de 0,25, e `renda_mensal` em 0,16. Com 0,14 a utilização chegou a 0,33, mas o
+   PSI do score predito, que o spec também exige crítico, parou em 0,21: o modelo se
+   apoia sobretudo em `score_bureau` e nos atrasos, que não mudam. Com 0,20 a utilização
+   chega a 0,66 e o score a 0,255. A renda não foi tocada: levar o PSI dela a 0,25
+   exigiria um fator de 0,74, uma queda de 28 % na mediana.
 3. **`beta0_adjustment`** passa a ser o botão de calibração da taxa base. Em `mes_2`
-   não é necessário (0). Em `mes_3_crise` fica em −0,57: o choque de conceito empurra
+   não é necessário (0). Em `mes_3_crise` fica em −0,64: o choque de conceito empurra
    a taxa para ≈ 18 %, e o intercepto residual negativo representa o **aperto da
    concessão** (cortes de limite e recusas) que contém a inadimplência dos contratos
    aprovados. A bisseção rodou sobre a própria janela entregue (semente e período
@@ -100,12 +102,12 @@ observada salta de 6,5 % para 13,0 %, e é isso que o Evidently mede em
 
 | Medida | Referência | `mes_1` | `mes_2` | `mes_3_crise` |
 |---|---:|---:|---:|---:|
-| Taxa de inadimplência | 6,45 % | 6,06 % | 8,60 % | 13,00 % |
-| Inadimplência na faixa 550–700 | 4,98 % | 4,90 % | 6,94 % | 18,92 % (3,8×) |
+| Taxa de inadimplência | 6,45 % | 6,06 % | 8,60 % | 12,96 % |
+| Inadimplência na faixa 550–700 | 4,98 % | 4,90 % | 6,94 % | 18,87 % (3,8×) |
 | Mediana de `renda_mensal` (÷ referência) | 1,00 | 0,996 | 0,892 | 0,777 |
 | Média de `taxa_endividamento` (− referência) | 0 | +0,001 | +0,076 | +0,150 |
 | Share de `desempregado` | 0,071 | 0,072 | 0,085 | 0,118 |
-| AUC do baseline | 0,829 (validação) | 0,806 | 0,801 | 0,765 |
+| AUC do baseline | 0,829 (validação) | 0,806 | 0,801 | 0,764 |
 
 O AUC de validação (0,829) vem de 2.400 linhas e 155 inadimplentes; o desvio-padrão
 dessa estimativa é de cerca de 0,025. O controle `mes_1` (0,806) é a comparação mais
@@ -115,7 +117,7 @@ justa, e por isso o relatório da Etapa 2 informa a queda contra as duas bases.
 
 - Os três critérios do spec são atendidos nas janelas entregues, com `mes_2` na zona de
   atenção e `mes_3_crise` crítico, e a gradação aparece na tabela de PSI.
-- A taxa de 13,0 % e o AUC de 0,765 são **sensíveis à semente**: trocar a semente base
+- A taxa de 13,0 % e o AUC de 0,764 são **sensíveis à semente**: trocar a semente base
   move a taxa em ±0,5 p.p. e o AUC em ±0,01. Alterar qualquer parâmetro depois de os
   relatórios estarem versionados exige regenerar tudo (regra "perguntar antes", §8 do
   spec).
@@ -128,7 +130,8 @@ justa, e por isso o relatório da Etapa 2 informa a queda contra as duas bases.
 |---|---|
 | Manter `γ = 1,0` e `β0 = +0,55` | Taxa de 21,6 % em `mes_3_crise` e `mes_2` acima de 9 %; fora do alvo do spec. |
 | Manter `γ = 1,0` e só zerar o intercepto | Taxa de ≈ 15 % e AUC sem folga para o critério de queda. |
-| Manter `utilization_shift` em 0,12 | PSI de `utilizacao_credito` em 0,247: sobra uma única feature crítica na crise. |
+| Manter `utilization_shift` em 0,12 ou 0,14 | Com 0,12 o PSI da utilização é 0,247 (uma única feature crítica); com 0,14 o PSI do score fica em 0,21, abaixo do 0,25 exigido. |
+| Fator de renda 0,74 e utilização 0,16 | Também leva o score a 0,26, mas derruba a mediana da renda em 28 %, uma crise mais dura do que a narrativa pede. |
 | Enfraquecer os choques de covariável | Derruba o PSI abaixo de 0,25 e torna a detecção incerta, que é justamente o que a Etapa 2 precisa demonstrar. |
 | Concept drift com inversão de sinal em outras faixas | Exigiria mudar o gerador (ADR 001) sem ganho didático. |
 | Aumentar `coef_commitment` para derrubar o AUC | Medido: o AUC sobe de 0,771 para 0,783 com o coeficiente em 3,2. |
