@@ -1,11 +1,17 @@
-"""Subcomando ``simulate``: materializa as janelas de produção (Etapa 2)."""
+"""Subcomandos ``simulate`` e ``detect-drift`` (Etapa 2)."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from credit_sentinel.contracts.commands import EXIT_BLOCKED
 from credit_sentinel.data.commands import reference_path, summarize_dataset
 from credit_sentinel.data.generator import SCENARIOS_FILE
+from credit_sentinel.drift.detection import (
+    MissingInputError,
+    WindowBlockedError,
+    run_detection,
+)
 from credit_sentinel.drift.simulator import (
     WINDOWS,
     NumericShift,
@@ -22,6 +28,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
+    from credit_sentinel.drift.report import WindowReport
     from credit_sentinel.settings import Settings
 
 KEY_NUMERIC = (
@@ -116,8 +123,47 @@ def _run_simulate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_detection(name: str, window: WindowReport) -> None:
+    drift, predictions = window.drift, window.predictions
+    performance, evidently = window.performance, window.evidently
+    print(f"janela {name} ({drift.current_rows} linhas)")
+    drifted = ", ".join(drift.drifted_features) or "nenhuma"
+    critical = ", ".join(drift.psi_critical_features) or "nenhuma"
+    print(f"  drift nativo: {drift.n_drifted_features} feature(s): {drifted}")
+    print(f"  PSI crítico: {critical}")
+    print(
+        f"  score: P50 {predictions.p50:.3f} · P90 {predictions.p90:.3f}"
+        f" · P99 {predictions.p99:.3f} · PSI {predictions.psi_score_vs_reference:.3f}"
+    )
+    control = performance.auc_delta_vs_control
+    versus = "" if control is None else f" · {control:+.3f} vs controle"
+    print(
+        f"  performance: AUC {performance.roc_auc:.4f}"
+        f" ({performance.auc_delta_vs_reference:+.3f} vs validação{versus})"
+        f" · taxa base {performance.base_rate:.2%}"
+    )
+    print(f"  Evidently: {evidently.share_drifted:.1%} das features · {evidently.html}")
+
+
+def _run_detect(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    names = list(WINDOWS) if args.window == "all" else [args.window]
+    try:
+        report = run_detection(settings, names)
+    except MissingInputError as exc:
+        print(f"erro: {exc}")
+        return 1
+    except WindowBlockedError as exc:
+        print(f"janela {exc.window} bloqueada pelo contrato: {exc.reason}")
+        return EXIT_BLOCKED
+    for name, window in report.windows.items():
+        _print_detection(name, window)
+    print("relatórios: reports/evidently_drift_summary.json, reports/drift_table.md")
+    return 0
+
+
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra o subcomando ``simulate``.
+    """Registra os subcomandos ``simulate`` e ``detect-drift``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -133,3 +179,14 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     parser.add_argument("--force", action="store_true", help="sobrescreve janelas")
     parser.set_defaults(handler=_run_simulate)
+    detect = subparsers.add_parser(
+        "detect-drift",
+        help="detecta drift (testes nativos e Evidently) e mede a degradação",
+    )
+    detect.add_argument(
+        "--window",
+        choices=("all", *WINDOWS),
+        default="all",
+        help="janela a analisar (padrão: all)",
+    )
+    detect.set_defaults(handler=_run_detect)

@@ -96,6 +96,13 @@ filterwarnings = [
     "ignore:The ``noload`` loader strategy is deprecated:DeprecationWarning",
     # Aviso interno do MLflow 3.x ao inspecionar o `predict` do pyfunc sklearn.
     "ignore:.*Any type hint is inferred as AnyType:UserWarning",
+    # Evidently 0.7 importa `numpy.core`, renomeado para `numpy._core` no NumPy 2.
+    "ignore:numpy.core is deprecated:DeprecationWarning",
+    # Evidently 0.7 tem strings com `\\d` sem prefixo `r`; o Python 3.12 avisa ao compilar.
+    "ignore:.*invalid escape sequence:SyntaxWarning",
+    # O Evidently importa o Litestar (UI), que já avisa sobre APIs removidas na 3.0.
+    "ignore:Call to deprecated function 'Dependency':DeprecationWarning",
+    "ignore:Use of deprecated class 'DependencyKwarg':DeprecationWarning",
 ]
 markers = [
     "unit: testes unitários isolados",

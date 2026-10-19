@@ -43,8 +43,8 @@ train: ## valida a referência, treina o baseline e registra no MLflow (Etapa 1)
 simulate: ## materializa as janelas de produção (Etapa 2; bit a bit idênticas)
 	$(RUN) credit-sentinel simulate --force
 
-drift: ## detecção de drift e relatórios Evidently (Etapa 2)
-	@echo "disponível na Etapa 2"
+drift: ## testes de drift, scores e relatórios Evidently (Etapa 2)
+	$(RUN) credit-sentinel detect-drift --window all
 
 pipeline: ## pipeline instrumentado com SLOs (Etapa 3)
 	@echo "disponível na Etapa 3"
