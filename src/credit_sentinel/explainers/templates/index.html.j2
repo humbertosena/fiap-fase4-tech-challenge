@@ -41,8 +41,11 @@
         <li><a href="{{ repo_url }}">Repositório no GitHub</a> (código, ADRs, README com a governança)</li>
         <li><a href="reports/validation/bad_batch_report.json">Relatório de validação do lote corrompido</a> (JSON)</li>
         <li><a href="reports/validation/credit_ref_report.json">Relatório de validação da referência</a> (JSON)</li>
+        {% if 2 in published %}
+        <li><a href="reports/evidently_drift_report.html">Relatório do Evidently AI</a> (HTML, Mês 3 · crise) e o <a href="reports/evidently_drift_summary.json">sumário de drift</a> (JSON)</li>
+        {% endif %}
       </ul>
-      <p class="small muted">Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem aqui quando as releases forem publicadas.</p>
+      <p class="small muted">{% if 2 in published %}O painel de saúde (Etapa 3) aparece{% else %}Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem{% endif %} aqui quando as releases forem publicadas.</p>
     </div>
   </section>
 </div>

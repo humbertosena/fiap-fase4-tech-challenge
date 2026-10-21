@@ -73,7 +73,7 @@ $ uv run pytest tests/unit/test_simulator.py tests/unit/test_generator.py
 $ uv run pytest tests/smoke/test_simulate_cli.py tests/integration/test_simulated_windows.py
 16 passed
 $ uv run pytest -m "not performance"
-272 passed, 1 deselected
+288 passed, 1 deselected
 $ uv run ruff check . && uv run ruff format --check .
 All checks passed!
 ```
@@ -172,5 +172,32 @@ $ uv run pytest tests/unit/test_predictions.py
 $ uv run pytest tests/integration/test_evidently_runner.py tests/integration/test_detect_drift_cli.py
 14 passed
 $ uv run pytest -m "not performance" --cov=credit_sentinel --cov-fail-under=85
-272 passed, 1 deselected · cobertura total: 97,30 %
+288 passed, 1 deselected · cobertura total: 97,48 %
 ```
+
+## 3. Página didática da Etapa 2 (T29)
+
+`uv run credit-sentinel build-explainers` gera `docs/releases/etapa-2-drift.html` (92 KB, limite de
+2,5 MB), regera o índice e a página da Etapa 1 (a navegação passa a linkar a Etapa 2) e copia os
+relatórios de `reports/` para `docs/reports/`, onde o GitHub Pages os serve. Todos os números da
+página vêm de `reports/evidently_drift_summary.json`, de `data/` e de `config/simulation_scenarios.yaml`;
+o teste `test_explainer_numbers.py` confere o payload contra esses arquivos.
+
+Verificação no Chrome (via automação), servindo `docs/` em HTTP local:
+
+| Componente | Verificação | Resultado |
+| :--- | :--- | :---: |
+| Linha do tempo (botões de janela e seletor de feature) | Mês 2 e `taxa_endividamento`: KS p = 4,4e-103, PSI 0,171 (atenção) | ok |
+| Calculadora de PSI (controle de deslocamento) | `taxa_endividamento` a 0 dp: 0,000; a 0,25 dp: 0,078; a 0,5 dp: 0,367 (crítico) | ok |
+| Mapa de calor feature × janela | clique em `renda_mensal` no Mês 2 mostra KS, PSI 0,029, Wasserstein e o veredito do Evidently | ok |
+| Concept drift (marcadores por janela) | faixa 550 a 700: 5,0 % na referência e 18,9 % no Mês 3 (3,8×) | ok |
+| Degradação (seletor de métrica) | AUC: validação 0,829, Mês 1 0,806, Mês 2 0,801, Mês 3 0,764 | ok |
+| Tema claro e escuro | alternância persistida; gráficos redesenhados | ok |
+| Console do navegador | nenhuma mensagem de erro ou aviso | ok |
+| Sem internet (cdnjs bloqueado) | as cinco tabelas equivalentes aparecem; nenhum erro de JavaScript | ok |
+| Largura de 360 px | sem rolagem horizontal | ok |
+
+O critério de aceitação "`renda_mensal` e `taxa_endividamento` com PSI ≥ 0,10 em `mes_2`" aparece
+na página como **Falhou**, com a explicação; é o mesmo ponto da seção 2.1.
+
+Capturas: `pagina_etapa2_desktop.jpg`, `pagina_etapa2_mobile.jpg` e `pagina_indice.jpg`.

@@ -140,7 +140,9 @@ def render(
         "payload_json": embed_json(payload),
         "release": release,
         "releases": RELEASES,
-        "css": _static("explainer.css"),
+        "css": _static("explainer.css")
+        + "\n"
+        + _static(template.replace(".html.j2", ".css")),
         "js": _static("explainer.js") + "\n" + page_script,
         "chart_src": CHART_JS_SRC,
         "chart_integrity": CHART_JS_INTEGRITY,

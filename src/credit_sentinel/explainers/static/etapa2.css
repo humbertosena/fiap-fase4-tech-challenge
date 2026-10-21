@@ -1,0 +1,26 @@
+/* Etapa 2 — mapa de calor, medidor de PSI e seletores de janela. */
+table.heat { border-collapse: separate; border-spacing: 3px; }
+table.heat th { white-space: nowrap; }
+table.heat th.row { text-align: left; font-family: var(--mono); font-size: 0.85rem; color: var(--ink); }
+table.heat td { padding: 0; border-bottom: 0; }
+table.heat button {
+  width: 100%; min-width: 118px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px;
+  font: inherit; font-size: 0.85rem; color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; text-align: center;
+}
+table.heat button:hover { border-color: var(--ink-2); }
+table.heat button[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+.lvl-estavel { background: color-mix(in srgb, var(--good) 16%, var(--surface)); }
+.lvl-atencao { background: color-mix(in srgb, var(--warning) 38%, var(--surface)); }
+.lvl-critico { background: color-mix(in srgb, var(--critical) 28%, var(--surface)); }
+.lvl-na { background: var(--surface-2); color: var(--ink-2); }
+.heat .sub { display: block; font-size: 0.75rem; color: var(--ink-2); }
+
+.meter { position: relative; height: 14px; border-radius: 999px; background: color-mix(in srgb, var(--good) 22%, var(--surface-2)); margin: 18px 0 6px; overflow: visible; }
+.meter .band { position: absolute; top: 0; bottom: 0; }
+.meter .band.atencao { left: 10%; width: 15%; background: color-mix(in srgb, var(--warning) 55%, var(--surface-2)); }
+.meter .band.critico { left: 25%; right: 0; background: color-mix(in srgb, var(--critical) 45%, var(--surface-2)); border-radius: 0 999px 999px 0; }
+.meter .needle { position: absolute; top: -6px; width: 4px; height: 26px; background: var(--ink); border-radius: 2px; transform: translateX(-2px); transition: left 0.2s ease; }
+.badge { display: inline-flex; gap: 6px; align-items: baseline; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); font-size: 0.85rem; }
+.badge strong { font-variant-numeric: tabular-nums; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+@media (max-width: 560px) { table.heat button { min-width: 96px; } }
