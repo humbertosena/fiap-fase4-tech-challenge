@@ -7,6 +7,32 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.2.0-beta] - 2026-10-21
+
+Etapa 2 — simulação temporal e detecção de drift.
+
+### Adicionado
+
+- Motor de janelas temporais (`credit_sentinel.drift.simulator`) e subcomando `simulate`:
+  `mes_1` (controle), `mes_2` (inflação) e `mes_3_crise` (choque de juros), de 5.000
+  linhas cada, em `data/production/` (ADR 004).
+- Testes estatísticos nativos: KS com Bonferroni, PSI, qui-quadrado, Jensen-Shannon e
+  Wasserstein normalizado, com 100 % de cobertura.
+- Predições por janela com `id_cliente_hash` e medição da degradação (AUC, F1, Brier,
+  percentis e taxa de aprovação) contra a validação e contra o controle.
+- Integração com o Evidently AI 0.7 e subcomando `detect-drift`, que valida cada janela
+  no contrato antes de analisar e grava `reports/evidently_drift_summary.json`,
+  `reports/drift_table.md`, os relatórios HTML por janela e os scores pseudonimizados.
+- Relógio com suporte a `SOURCE_DATE_EPOCH`, também aplicado aos UUIDs v7 do HTML.
+- Página didática da Etapa 2 com cinco componentes interativos e atualização do índice.
+
+### Alterado
+
+- O sanitizador de PII ignora o e-mail do autor da biblioteca `deep-eql` no aviso de
+  licença embutido nos relatórios do Evidently.
+- `pytest` ignora três avisos de depreciação das dependências do Evidently.
+
+
 ## [0.1.0-alpha] - 2026-10-11
 
 Etapa 1 — validação de dados e contratos.
@@ -33,5 +59,6 @@ Etapa 1 — validação de dados e contratos.
 
 - Amostras do relatório de validação quando a única falha da linha é no `id_cliente`.
 
-[Unreleased]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.1.0-alpha...HEAD
+[Unreleased]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.2.0-beta...HEAD
+[0.2.0-beta]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.1.0-alpha...v0.2.0-beta
 [0.1.0-alpha]: https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.1.0-alpha
