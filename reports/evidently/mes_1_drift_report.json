@@ -1,0 +1,1234 @@
+{
+  "metrics": [
+    {
+      "id": "84c9d566c088961ab846a49d17e6bf16",
+      "metric_name": "DriftedColumnsCount(columns=idade,renda_mensal,score_bureau,taxa_endividamento,utilizacao_credito,tempo_emprego_meses,qtd_parcelas_atraso_12m,valor_emprestimo,prazo_meses,valor_parcela,possui_imovel,comprometimento_renda,situacao_emprego,finalidade_credito,drift_share=0.5)",
+      "config": {
+        "type": "evidently:metric_v2:DriftedColumnsCount",
+        "columns": [
+          "idade",
+          "renda_mensal",
+          "score_bureau",
+          "taxa_endividamento",
+          "utilizacao_credito",
+          "tempo_emprego_meses",
+          "qtd_parcelas_atraso_12m",
+          "valor_emprestimo",
+          "prazo_meses",
+          "valor_parcela",
+          "possui_imovel",
+          "comprometimento_renda",
+          "situacao_emprego",
+          "finalidade_credito"
+        ],
+        "drift_share": 0.5
+      },
+      "value": {
+        "count": 0.0,
+        "share": 0.0
+      }
+    },
+    {
+      "id": "d9d030e20342b7c64d1c3f365e1a81ab",
+      "metric_name": "ValueDrift(column=idade,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "idade",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.021184587137309193
+    },
+    {
+      "id": "14c96ef24d4cdf9c9b792a8961c564ce",
+      "metric_name": "ValueDrift(column=renda_mensal,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "renda_mensal",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.02575097550369769
+    },
+    {
+      "id": "45e207d8fc041c83e20f63b480217998",
+      "metric_name": "ValueDrift(column=score_bureau,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "score_bureau",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.022656768798614373
+    },
+    {
+      "id": "fce2e7348a490135c391041bb0e9b6a9",
+      "metric_name": "ValueDrift(column=taxa_endividamento,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "taxa_endividamento",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.04018327469790113
+    },
+    {
+      "id": "6ae13964e5e51f17bc24295055025bbd",
+      "metric_name": "ValueDrift(column=utilizacao_credito,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "utilizacao_credito",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.057546570328255296
+    },
+    {
+      "id": "409c961a252fc62a19cb76df66966f9a",
+      "metric_name": "ValueDrift(column=tempo_emprego_meses,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "tempo_emprego_meses",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.03578818159319474
+    },
+    {
+      "id": "23d086c831864977cadf043efbb70fcb",
+      "metric_name": "ValueDrift(column=qtd_parcelas_atraso_12m,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "qtd_parcelas_atraso_12m",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.03644728747811346
+    },
+    {
+      "id": "e90caacca96e147470bd64d0bd373e8c",
+      "metric_name": "ValueDrift(column=valor_emprestimo,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "valor_emprestimo",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.04068862661382747
+    },
+    {
+      "id": "d60ed5781e67df65592c4f5c4b434b67",
+      "metric_name": "ValueDrift(column=prazo_meses,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "prazo_meses",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.009497491878701443
+    },
+    {
+      "id": "979293fcc45ec4b3f53ab5c301141c1f",
+      "metric_name": "ValueDrift(column=valor_parcela,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "valor_parcela",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.05096184271374612
+    },
+    {
+      "id": "daf7ffca0fa59ffb07e9d767ab320620",
+      "metric_name": "ValueDrift(column=possui_imovel,method=Jensen-Shannon distance,threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "possui_imovel",
+        "method": "Jensen-Shannon distance",
+        "threshold": 0.1
+      },
+      "value": 0.012617776340560768
+    },
+    {
+      "id": "412f1ec72d160a649b1c732e9be1bbe1",
+      "metric_name": "ValueDrift(column=comprometimento_renda,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "comprometimento_renda",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.01961201584407574
+    },
+    {
+      "id": "3b4e3cd775e14532d5b85af8808f572f",
+      "metric_name": "ValueDrift(column=situacao_emprego,method=Jensen-Shannon distance,threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "situacao_emprego",
+        "method": "Jensen-Shannon distance",
+        "threshold": 0.1
+      },
+      "value": 0.01611257052861481
+    },
+    {
+      "id": "f7548cedbab72c2f016844d8ab73cec6",
+      "metric_name": "ValueDrift(column=finalidade_credito,method=Jensen-Shannon distance,threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "finalidade_credito",
+        "method": "Jensen-Shannon distance",
+        "threshold": 0.1
+      },
+      "value": 0.022741487208939697
+    },
+    {
+      "id": "8ce09a2fb8d9466bced1e001797d1dae",
+      "metric_name": "ValueDrift(column=inadimplente,method=z,threshold=0.05)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "inadimplente",
+        "method": "z",
+        "threshold": 0.05
+      },
+      "value": 0.505603331322841
+    },
+    {
+      "id": "90c40c3f9ee4b3d81f348068cffcf95c",
+      "metric_name": "ValueDrift(column=score,method=Wasserstein distance (normed),threshold=0.1)",
+      "config": {
+        "type": "evidently:metric_v2:ValueDrift",
+        "column": "score",
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1
+      },
+      "value": 0.03011216582141281
+    },
+    {
+      "id": "da13164239446037eb35f39dbaa3509a",
+      "metric_name": "Accuracy(classification_name=default,probas_threshold=0.1248178374746731)",
+      "config": {
+        "type": "evidently:metric_v2:Accuracy",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731
+      },
+      "value": 0.8752
+    },
+    {
+      "id": "4acaf59e13a8793b0b28d14d5f4b1b95",
+      "metric_name": "Precision(classification_name=default,probas_threshold=0.1248178374746731,conf_matrix=True,pr_curve=False,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:Precision",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "conf_matrix": true,
+        "pr_curve": false,
+        "pr_table": false
+      },
+      "value": 0.2407108239095315
+    },
+    {
+      "id": "54a861f25cd891dd7276284f16d8fe26",
+      "metric_name": "Recall(classification_name=default,probas_threshold=0.1248178374746731,conf_matrix=True,pr_curve=False,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:Recall",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "conf_matrix": true,
+        "pr_curve": false,
+        "pr_table": false
+      },
+      "value": 0.49174917491749176
+    },
+    {
+      "id": "1d2331db11d114a3445a7ab12a9ebba3",
+      "metric_name": "F1Score(classification_name=default,probas_threshold=0.1248178374746731,conf_matrix=True)",
+      "config": {
+        "type": "evidently:metric_v2:F1Score",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "conf_matrix": true
+      },
+      "value": 0.3232104121475054
+    },
+    {
+      "id": "00cc1732192ba643d99c617dac083866",
+      "metric_name": "RocAuc(classification_name=default,probas_threshold=0.1248178374746731,roc_curve=True,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:RocAuc",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "roc_curve": true,
+        "pr_table": false
+      },
+      "value": 0.8055517495543465
+    },
+    {
+      "id": "551d476f18c23ef6d44dfe1074af1b53",
+      "metric_name": "LogLoss(classification_name=default,probas_threshold=0.1248178374746731,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:LogLoss",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "pr_table": false
+      },
+      "value": 0.1880161382319148
+    },
+    {
+      "id": "3cc61470c32cd0381f0ed80fc206ee79",
+      "metric_name": "TPR(classification_name=default,probas_threshold=0.1248178374746731,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:TPR",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "pr_table": false
+      },
+      "value": 0.49174917491749176
+    },
+    {
+      "id": "17734dfc9fb1473e77fd61ddd423bfe4",
+      "metric_name": "TNR(classification_name=default,probas_threshold=0.1248178374746731,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:TNR",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "pr_table": false
+      },
+      "value": 0.8999361294443262
+    },
+    {
+      "id": "b97f3bf99c9a49a16a73b79bbf77c5e5",
+      "metric_name": "FPR(classification_name=default,probas_threshold=0.1248178374746731,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:FPR",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "pr_table": false
+      },
+      "value": 0.10006387055567384
+    },
+    {
+      "id": "cd990d6daa46751ade9028e68a526ba5",
+      "metric_name": "FNR(classification_name=default,probas_threshold=0.1248178374746731,pr_table=False)",
+      "config": {
+        "type": "evidently:metric_v2:FNR",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731,
+        "pr_table": false
+      },
+      "value": 0.5082508250825083
+    },
+    {
+      "id": "17a449bbfc43443133906da7cf784c13",
+      "metric_name": "F1ByLabel(classification_name=default,probas_threshold=0.1248178374746731)",
+      "config": {
+        "type": "evidently:metric_v2:F1ByLabel",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731
+      },
+      "value": {
+        "0": 0.9312623925974884,
+        "1": 0.3232104121475054
+      }
+    },
+    {
+      "id": "b9f8614f230a8cf620d8801a6992b4f0",
+      "metric_name": "PrecisionByLabel(classification_name=default,probas_threshold=0.1248178374746731)",
+      "config": {
+        "type": "evidently:metric_v2:PrecisionByLabel",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731
+      },
+      "value": {
+        "0": 0.9648482081716503,
+        "1": 0.2407108239095315
+      }
+    },
+    {
+      "id": "fde6650d81aaf8d131bef7e766bf2de1",
+      "metric_name": "RecallByLabel(classification_name=default,probas_threshold=0.1248178374746731)",
+      "config": {
+        "type": "evidently:metric_v2:RecallByLabel",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731
+      },
+      "value": {
+        "0": 0.8999361294443262,
+        "1": 0.49174917491749176
+      }
+    },
+    {
+      "id": "1799d0acce4f8931b294853aa60ec84e",
+      "metric_name": "RocAucByLabel(classification_name=default,probas_threshold=0.1248178374746731)",
+      "config": {
+        "type": "evidently:metric_v2:RocAucByLabel",
+        "classification_name": "default",
+        "probas_threshold": 0.1248178374746731
+      },
+      "value": {
+        "0": 0.8055517495543465,
+        "1": 0.8055517495543465
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "lt",
+      "name": "Share of Drifted Columns: Less 0.500",
+      "description": "Share of Drifted Columns: Actual value 0.000 < 0.500",
+      "metric_config": {
+        "metric_id": "84c9d566c088961ab846a49d17e6bf16",
+        "params": {
+          "type": "evidently:metric_v2:DriftedColumnsCount",
+          "columns": [
+            "idade",
+            "renda_mensal",
+            "score_bureau",
+            "taxa_endividamento",
+            "utilizacao_credito",
+            "tempo_emprego_meses",
+            "qtd_parcelas_atraso_12m",
+            "valor_emprestimo",
+            "prazo_meses",
+            "valor_parcela",
+            "possui_imovel",
+            "comprometimento_renda",
+            "situacao_emprego",
+            "finalidade_credito"
+          ],
+          "drift_share": 0.5
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:LessThanMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "threshold": 0.5
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:CountBoundTest",
+        "test": {
+          "type": "evidently:test_v2:LessThanMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "threshold": 0.5
+        },
+        "metric_fingerprint": "84c9d566c088961ab846a49d17e6bf16",
+        "is_count": false
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column idade",
+      "description": "Drift score is 0.02. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "d9d030e20342b7c64d1c3f365e1a81ab",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "idade",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "d9d030e20342b7c64d1c3f365e1a81ab"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column renda_mensal",
+      "description": "Drift score is 0.03. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "14c96ef24d4cdf9c9b792a8961c564ce",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "renda_mensal",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "14c96ef24d4cdf9c9b792a8961c564ce"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column score_bureau",
+      "description": "Drift score is 0.02. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "45e207d8fc041c83e20f63b480217998",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "score_bureau",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "45e207d8fc041c83e20f63b480217998"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column taxa_endividamento",
+      "description": "Drift score is 0.04. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "fce2e7348a490135c391041bb0e9b6a9",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "taxa_endividamento",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "fce2e7348a490135c391041bb0e9b6a9"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column utilizacao_credito",
+      "description": "Drift score is 0.06. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "6ae13964e5e51f17bc24295055025bbd",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "utilizacao_credito",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "6ae13964e5e51f17bc24295055025bbd"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column tempo_emprego_meses",
+      "description": "Drift score is 0.04. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "409c961a252fc62a19cb76df66966f9a",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "tempo_emprego_meses",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "409c961a252fc62a19cb76df66966f9a"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column qtd_parcelas_atraso_12m",
+      "description": "Drift score is 0.04. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "23d086c831864977cadf043efbb70fcb",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "qtd_parcelas_atraso_12m",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "23d086c831864977cadf043efbb70fcb"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column valor_emprestimo",
+      "description": "Drift score is 0.04. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "e90caacca96e147470bd64d0bd373e8c",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "valor_emprestimo",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "e90caacca96e147470bd64d0bd373e8c"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column prazo_meses",
+      "description": "Drift score is 0.01. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "d60ed5781e67df65592c4f5c4b434b67",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "prazo_meses",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "d60ed5781e67df65592c4f5c4b434b67"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column valor_parcela",
+      "description": "Drift score is 0.05. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "979293fcc45ec4b3f53ab5c301141c1f",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "valor_parcela",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "979293fcc45ec4b3f53ab5c301141c1f"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column possui_imovel",
+      "description": "Drift score is 0.01. The drift detection method is Jensen-Shannon distance. The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "daf7ffca0fa59ffb07e9d767ab320620",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "possui_imovel",
+          "method": "Jensen-Shannon distance",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "daf7ffca0fa59ffb07e9d767ab320620"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column comprometimento_renda",
+      "description": "Drift score is 0.02. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "412f1ec72d160a649b1c732e9be1bbe1",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "comprometimento_renda",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "412f1ec72d160a649b1c732e9be1bbe1"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column situacao_emprego",
+      "description": "Drift score is 0.02. The drift detection method is Jensen-Shannon distance. The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "3b4e3cd775e14532d5b85af8808f572f",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "situacao_emprego",
+          "method": "Jensen-Shannon distance",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "3b4e3cd775e14532d5b85af8808f572f"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column finalidade_credito",
+      "description": "Drift score is 0.02. The drift detection method is Jensen-Shannon distance. The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "f7548cedbab72c2f016844d8ab73cec6",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "finalidade_credito",
+          "method": "Jensen-Shannon distance",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "f7548cedbab72c2f016844d8ab73cec6"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column inadimplente",
+      "description": "Drift score is 0.51. The drift detection method is Z-test p_value. The drift threshold is 0.05.",
+      "metric_config": {
+        "metric_id": "8ce09a2fb8d9466bced1e001797d1dae",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "inadimplente",
+          "method": "z",
+          "threshold": 0.05
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "8ce09a2fb8d9466bced1e001797d1dae"
+      }
+    },
+    {
+      "id": "drift",
+      "name": "Value Drift for column score",
+      "description": "Drift score is 0.03. The drift detection method is Wasserstein distance (normed). The drift threshold is 0.10.",
+      "metric_config": {
+        "metric_id": "90c40c3f9ee4b3d81f348068cffcf95c",
+        "params": {
+          "type": "evidently:metric_v2:ValueDrift",
+          "column": "score",
+          "method": "Wasserstein distance (normed)",
+          "threshold": 0.1
+        }
+      },
+      "test_config": {},
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:ValueDriftBoundTest",
+        "test": {
+          "type": "evidently:test_v2:ValueDriftTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null
+        },
+        "metric_fingerprint": "90c40c3f9ee4b3d81f348068cffcf95c"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "Accuracy metric: Equal 0.890 ± 0.178",
+      "description": "Accuracy metric: Actual value 0.875  expected 0.890 ± 0.178",
+      "metric_config": {
+        "metric_id": "da13164239446037eb35f39dbaa3509a",
+        "params": {
+          "type": "evidently:metric_v2:Accuracy",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "da13164239446037eb35f39dbaa3509a"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "Precision metric: Equal 0.300 ± 0.060",
+      "description": "Precision metric: Actual value 0.241  expected 0.300 ± 0.060",
+      "metric_config": {
+        "metric_id": "4acaf59e13a8793b0b28d14d5f4b1b95",
+        "params": {
+          "type": "evidently:metric_v2:Precision",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "conf_matrix": true,
+          "pr_curve": false,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "4acaf59e13a8793b0b28d14d5f4b1b95"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "Recall metric: Equal 0.529 ± 0.106",
+      "description": "Recall metric: Actual value 0.492  expected 0.529 ± 0.106",
+      "metric_config": {
+        "metric_id": "54a861f25cd891dd7276284f16d8fe26",
+        "params": {
+          "type": "evidently:metric_v2:Recall",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "conf_matrix": true,
+          "pr_curve": false,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "54a861f25cd891dd7276284f16d8fe26"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "F1 score metric: Equal 0.383 ± 0.077",
+      "description": "F1 score metric: Actual value 0.323  expected 0.383 ± 0.077",
+      "metric_config": {
+        "metric_id": "1d2331db11d114a3445a7ab12a9ebba3",
+        "params": {
+          "type": "evidently:metric_v2:F1Score",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "conf_matrix": true
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "1d2331db11d114a3445a7ab12a9ebba3"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "RocAuc metric: Equal 0.829 ± 0.166",
+      "description": "RocAuc metric: Actual value 0.806  expected 0.829 ± 0.166",
+      "metric_config": {
+        "metric_id": "00cc1732192ba643d99c617dac083866",
+        "params": {
+          "type": "evidently:metric_v2:RocAuc",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "roc_curve": true,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "00cc1732192ba643d99c617dac083866"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "LogLoss metric: Equal 0.191 ± 0.038",
+      "description": "LogLoss metric: Actual value 0.188  expected 0.191 ± 0.038",
+      "metric_config": {
+        "metric_id": "551d476f18c23ef6d44dfe1074af1b53",
+        "params": {
+          "type": "evidently:metric_v2:LogLoss",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "551d476f18c23ef6d44dfe1074af1b53"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "TPR metric: Equal 0.529 ± 0.106",
+      "description": "TPR metric: Actual value 0.492  expected 0.529 ± 0.106",
+      "metric_config": {
+        "metric_id": "3cc61470c32cd0381f0ed80fc206ee79",
+        "params": {
+          "type": "evidently:metric_v2:TPR",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "3cc61470c32cd0381f0ed80fc206ee79"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "TNR metric: Equal 0.915 ± 0.183",
+      "description": "TNR metric: Actual value 0.900  expected 0.915 ± 0.183",
+      "metric_config": {
+        "metric_id": "17734dfc9fb1473e77fd61ddd423bfe4",
+        "params": {
+          "type": "evidently:metric_v2:TNR",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "17734dfc9fb1473e77fd61ddd423bfe4"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "FPR metric: Equal 0.085 ± 0.017",
+      "description": "FPR metric: Actual value 0.100  expected 0.085 ± 0.017",
+      "metric_config": {
+        "metric_id": "b97f3bf99c9a49a16a73b79bbf77c5e5",
+        "params": {
+          "type": "evidently:metric_v2:FPR",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "b97f3bf99c9a49a16a73b79bbf77c5e5"
+      }
+    },
+    {
+      "id": "eq",
+      "name": "FNR metric: Equal 0.471 ± 0.094",
+      "description": "FNR metric: Actual value 0.508  expected 0.471 ± 0.094",
+      "metric_config": {
+        "metric_id": "cd990d6daa46751ade9028e68a526ba5",
+        "params": {
+          "type": "evidently:metric_v2:FNR",
+          "classification_name": "default",
+          "probas_threshold": 0.1248178374746731,
+          "pr_table": false
+        }
+      },
+      "test_config": {
+        "type": "evidently:test_v2:EqualMetricTest",
+        "is_critical": true,
+        "alias": null,
+        "label_filters": null,
+        "expected": {
+          "relative": 0.2,
+          "absolute": null
+        }
+      },
+      "status": "SUCCESS",
+      "bound_test": {
+        "type": "evidently:bound_test:SingleValueBoundTest",
+        "test": {
+          "type": "evidently:test_v2:EqualMetricTest",
+          "is_critical": true,
+          "alias": null,
+          "label_filters": null,
+          "expected": {
+            "relative": 0.2,
+            "absolute": null
+          }
+        },
+        "metric_fingerprint": "cd990d6daa46751ade9028e68a526ba5"
+      }
+    }
+  ]
+}

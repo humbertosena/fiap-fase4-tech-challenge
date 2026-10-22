@@ -26,7 +26,11 @@ HASH_COLUMN = "id_cliente_hash"
 MASK = "***"
 DIRECT_IDENTIFIER_DENYLIST = ("cpf", "nome", "email", "telefone", "endereco", "rg")
 SCANNED_SUFFIXES = (".json", ".jsonl", ".html", ".md", ".csv", ".txt", ".log")
-_ALLOWED_EMAIL_DOMAINS = re.compile(r"(\.exemplo|example\.(com|org))$", re.IGNORECASE)
+# `.exemplo` e example.com/org são fictícios. alogicalparadox.com é o autor da
+# biblioteca deep-eql, citado no aviso de licença MIT que o Evidently embute no HTML.
+_ALLOWED_EMAIL_DOMAINS = re.compile(
+    r"(\.exemplo|example\.(com|org)|^alogicalparadox\.com)$", re.IGNORECASE
+)
 _DATA_URI = re.compile(r"data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+")
 PiiKind = Literal["cpf", "email", "telefone", "id_cliente"]
 _PATTERNS: tuple[tuple[PiiKind, re.Pattern[str]], ...] = (

@@ -1,0 +1,776 @@
+{
+  "generated_at": "2026-10-21T00:10:00Z",
+  "model_version": "baseline-1.0.0",
+  "reference": {
+    "rows": 12000,
+    "holdout_rows": 2400,
+    "roc_auc_validation": 0.8290796752640276
+  },
+  "windows": {
+    "mes_1": {
+      "drift": {
+        "window": "mes_1",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.011050000000000004,
+            "ks_p_value": 0.7776125523175814,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0018615865435793898,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01306793925164939,
+            "mean_ref": 43.06575,
+            "mean_cur": 43.0426
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.008483333333333287,
+            "ks_p_value": 0.9594804179949242,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002108808048324491,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01972120084292298,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 4110.330858
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.010533333333333339,
+            "ks_p_value": 0.8244301312696433,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002296834313837457,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.016509609297811468,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 651.8428
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.022883333333333256,
+            "ks_p_value": 0.04888804221894072,
+            "ks_drift": true,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0044200882729208985,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01955583920473292,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.37307444
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.015783333333333316,
+            "ks_p_value": 0.3394009967444097,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002001779958932648,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.02258035705774388,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.40427398000000003
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.010499999999999954,
+            "ks_p_value": 0.8273235944320496,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0011913696745103253,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.017900973652063487,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 64.6294
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.0030999999999999917,
+            "ks_p_value": 0.9999999999999939,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.004291079433797509,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01507644083212651,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.312
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.010083333333333333,
+            "ks_p_value": 0.861916865235196,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0022672229949246433,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01391628182424539,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 13408.318283999999
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.005166666666666653,
+            "ks_p_value": 0.9999790577230426,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.000795018772353184,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01371105965621298,
+            "mean_ref": 27.687,
+            "mean_cur": 27.5556
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.014900000000000024,
+            "ks_p_value": 0.4096050890773383,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0028208706099421225,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.023887763350659775,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 857.685192
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.0024000000000000687,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 2.3414134566260522e-05,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.004837333485691339,
+            "mean_ref": 0.438,
+            "mean_cur": 0.4356
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.009866666666666662,
+            "ks_p_value": 0.8786199248182399,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002756349101410139,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.00878309934153112,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.268267281265181
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 0.3922063444814416,
+            "chi2_p_value": 0.9831100066244616,
+            "chi2_drift": false,
+            "jensen_shannon": 0.004474905823159898,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.513,
+              "aposentado": 0.0906,
+              "autonomo": 0.2236,
+              "desempregado": 0.0718,
+              "servidor_publico": 0.101
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 4.99703765384569,
+            "chi2_p_value": 0.41624182331382087,
+            "chi2_drift": false,
+            "jensen_shannon": 0.016008768863667866,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.1928,
+              "educacao": 0.0968,
+              "outros": 0.2166,
+              "reforma": 0.189,
+              "saude": 0.0812,
+              "veiculo": 0.2236
+            }
+          }
+        ],
+        "n_drifted_features": 0,
+        "drifted_features": [],
+        "psi_critical_features": []
+      },
+      "predictions": {
+        "window": "mes_1",
+        "n": 5000,
+        "p50": 0.030083184338403523,
+        "p90": 0.14491043510873897,
+        "p99": 0.43303419554553585,
+        "mean_score": 0.06200451918624671,
+        "approval_rate": 0.8762,
+        "psi_score_vs_reference": 0.002830379546416936
+      },
+      "performance": {
+        "window": "mes_1",
+        "roc_auc": 0.8055517495543465,
+        "f1": 0.3232104121475054,
+        "precision": 0.2407108239095315,
+        "recall": 0.49174917491749176,
+        "brier": 0.049813333365751646,
+        "base_rate": 0.0606,
+        "auc_delta_vs_reference": -0.023527925709681097,
+        "auc_delta_vs_control": null
+      },
+      "evidently": {
+        "share_drifted": 0.0,
+        "flags": {
+          "idade": false,
+          "renda_mensal": false,
+          "score_bureau": false,
+          "taxa_endividamento": false,
+          "utilizacao_credito": false,
+          "tempo_emprego_meses": false,
+          "qtd_parcelas_atraso_12m": false,
+          "valor_emprestimo": false,
+          "prazo_meses": false,
+          "valor_parcela": false,
+          "possui_imovel": false,
+          "comprometimento_renda": false,
+          "situacao_emprego": false,
+          "finalidade_credito": false,
+          "inadimplente": false,
+          "score": false
+        },
+        "html": "reports/evidently/mes_1_drift_report.html",
+        "json_report": "reports/evidently/mes_1_drift_report.json"
+      }
+    },
+    "mes_2": {
+      "drift": {
+        "window": "mes_2",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.019066666666666676,
+            "ks_p_value": 0.15169303243348065,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002498695836532124,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.041861468850766664,
+            "mean_ref": 43.06575,
+            "mean_cur": 42.5874
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.07520000000000004,
+            "ks_p_value": 8.401378502902975e-18,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.029341177534493154,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.14777673526814117,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 3746.1557620000003
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.015150000000000025,
+            "ks_p_value": 0.3888958763907311,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002045577902988175,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.020566074572086743,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 647.5824
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.1822833333333333,
+            "ks_p_value": 4.353329989235256e-103,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.17137270561949552,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.428641160382848,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.44779954
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.10566666666666658,
+            "ks_p_value": 9.166113072722073e-35,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.0646069761827766,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.2522827191411274,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.46044673999999997
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.020233333333333353,
+            "ks_p_value": 0.10969543946212557,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.003813289935867375,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.03634324507080401,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 63.1184
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.001866666666666572,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0021952598849841235,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01008598132323434,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.3128
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.02423333333333333,
+            "ks_p_value": 0.031175073170269685,
+            "ks_drift": true,
+            "ks_drift_bonferroni": false,
+            "psi": 0.006071274577958403,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.05149684614582781,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 13002.54351
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.00996666666666668,
+            "ks_p_value": 0.8710287955913911,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0007880687579021916,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.022171360913230066,
+            "mean_ref": 27.687,
+            "mean_cur": 27.3828
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.04028333333333331,
+            "ks_p_value": 2.0594607795896484e-05,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.013755664510354,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.05436281295928638,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 865.9746539999999
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.0009999999999998899,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 4.061447069720115e-06,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.002015555619038095,
+            "mean_ref": 0.438,
+            "mean_cur": 0.439
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.06976666666666664,
+            "ks_p_value": 2.2171717736984803e-15,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.030730907696044116,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.16352346175669327,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.2993941173605531
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 13.333766005388592,
+            "chi2_p_value": 0.009755023868742965,
+            "chi2_drift": true,
+            "jensen_shannon": 0.02584327237010044,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.4956,
+              "aposentado": 0.088,
+              "autonomo": 0.2276,
+              "desempregado": 0.0848,
+              "servidor_publico": 0.104
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 94.57193083555164,
+            "chi2_p_value": 7.347349617045946e-19,
+            "chi2_drift": true,
+            "jensen_shannon": 0.06826393269679454,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.2644,
+              "educacao": 0.0938,
+              "outros": 0.1998,
+              "reforma": 0.167,
+              "saude": 0.0738,
+              "veiculo": 0.2012
+            }
+          }
+        ],
+        "n_drifted_features": 7,
+        "drifted_features": [
+          "renda_mensal",
+          "taxa_endividamento",
+          "utilizacao_credito",
+          "valor_parcela",
+          "comprometimento_renda",
+          "situacao_emprego",
+          "finalidade_credito"
+        ],
+        "psi_critical_features": []
+      },
+      "predictions": {
+        "window": "mes_2",
+        "n": 5000,
+        "p50": 0.03447996777438982,
+        "p90": 0.2005406714696945,
+        "p99": 0.5142108634838696,
+        "mean_score": 0.07834473068410923,
+        "approval_rate": 0.8242,
+        "psi_score_vs_reference": 0.05595562728476497
+      },
+      "performance": {
+        "window": "mes_2",
+        "roc_auc": 0.8012391226909572,
+        "f1": 0.36210847975553856,
+        "precision": 0.2696245733788396,
+        "recall": 0.5511627906976744,
+        "brier": 0.06798391853298631,
+        "base_rate": 0.086,
+        "auc_delta_vs_reference": -0.027840552573070387,
+        "auc_delta_vs_control": -0.004312626863389291
+      },
+      "evidently": {
+        "share_drifted": 0.2857142857142857,
+        "flags": {
+          "idade": false,
+          "renda_mensal": true,
+          "score_bureau": false,
+          "taxa_endividamento": true,
+          "utilizacao_credito": true,
+          "tempo_emprego_meses": false,
+          "qtd_parcelas_atraso_12m": false,
+          "valor_emprestimo": false,
+          "prazo_meses": false,
+          "valor_parcela": false,
+          "possui_imovel": false,
+          "comprometimento_renda": true,
+          "situacao_emprego": false,
+          "finalidade_credito": false,
+          "inadimplente": true,
+          "score": true
+        },
+        "html": "reports/evidently/mes_2_drift_report.html",
+        "json_report": "reports/evidently/mes_2_drift_report.json"
+      }
+    },
+    "mes_3_crise": {
+      "drift": {
+        "window": "mes_3_crise",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.006633333333333269,
+            "ks_p_value": 0.9975006880180483,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0019304526668483875,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.013120593444371585,
+            "mean_ref": 43.06575,
+            "mean_cur": 43.0122
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.16026666666666678,
+            "ks_p_value": 1.1787577890638014e-79,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.161172129915422,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.32814057174308053,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 3251.7697659999994
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.009566666666666668,
+            "ks_p_value": 0.9001010747133584,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0012686944840773129,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.013538041623617322,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 650.0154
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.3200666666666666,
+            "ks_p_value": 3.75e-322,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.632148320372331,
+            "psi_level": "critico",
+            "wasserstein_norm": 0.8456788785526975,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.5216531
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.3076666666666666,
+            "ks_p_value": 4.385610099039491e-297,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.6601694457990286,
+            "psi_level": "critico",
+            "wasserstein_norm": 0.809274087339542,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.59498804
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.0485,
+            "ks_p_value": 1.1841950937860769e-07,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.023665134721550254,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.06945711950444627,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 61.4662
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.004466666666666508,
+            "ks_p_value": 0.9999996723405492,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.003079314214159505,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.015916939275729458,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.3184
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.057616666666666705,
+            "ks_p_value": 1.2641587207036506e-10,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.027305470595478536,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.13940203891358974,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 12172.832892000002
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.0037833333333333052,
+            "ks_p_value": 0.9999999995131176,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0005041765394971766,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.008366297909716741,
+            "mean_ref": 27.687,
+            "mean_cur": 27.768
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.0688333333333333,
+            "ks_p_value": 5.5388059325747305e-15,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.03290792851088353,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.07849836097743737,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 866.5334640000001
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.00539999999999996,
+            "ks_p_value": 0.9999410364424489,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.00011830529308139631,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01088400034280585,
+            "mean_ref": 0.438,
+            "mean_cur": 0.4434
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.15789999999999993,
+            "ks_p_value": 2.5503168887786768e-77,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.1445663712201579,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.3796008703703141,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.3416464173455308
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 105.31227189256381,
+            "chi2_p_value": 7.266915560936921e-22,
+            "chi2_drift": true,
+            "jensen_shannon": 0.0704284081964114,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.4766,
+              "aposentado": 0.093,
+              "autonomo": 0.2104,
+              "desempregado": 0.1184,
+              "servidor_publico": 0.1016
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 420.7125879268569,
+            "chi2_p_value": 1.0169802434706701e-88,
+            "chi2_drift": true,
+            "jensen_shannon": 0.14175136723081275,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.3458,
+              "educacao": 0.0808,
+              "outros": 0.1804,
+              "reforma": 0.1464,
+              "saude": 0.0684,
+              "veiculo": 0.1782
+            }
+          }
+        ],
+        "n_drifted_features": 9,
+        "drifted_features": [
+          "renda_mensal",
+          "taxa_endividamento",
+          "utilizacao_credito",
+          "tempo_emprego_meses",
+          "valor_emprestimo",
+          "valor_parcela",
+          "comprometimento_renda",
+          "situacao_emprego",
+          "finalidade_credito"
+        ],
+        "psi_critical_features": [
+          "taxa_endividamento",
+          "utilizacao_credito"
+        ]
+      },
+      "predictions": {
+        "window": "mes_3_crise",
+        "n": 5000,
+        "p50": 0.04665163868416397,
+        "p90": 0.28222121306068854,
+        "p99": 0.5896264805729632,
+        "mean_score": 0.10340347606392293,
+        "approval_rate": 0.7474,
+        "psi_score_vs_reference": 0.2549288216914578
+      },
+      "performance": {
+        "window": "mes_3_crise",
+        "roc_auc": 0.7640296642383805,
+        "f1": 0.3683935112506541,
+        "precision": 0.278701504354711,
+        "recall": 0.5432098765432098,
+        "brier": 0.10250773104955208,
+        "base_rate": 0.1296,
+        "auc_delta_vs_reference": -0.06505001102564711,
+        "auc_delta_vs_control": -0.04152208531596602
+      },
+      "evidently": {
+        "share_drifted": 0.42857142857142855,
+        "flags": {
+          "idade": false,
+          "renda_mensal": true,
+          "score_bureau": false,
+          "taxa_endividamento": true,
+          "utilizacao_credito": true,
+          "tempo_emprego_meses": false,
+          "qtd_parcelas_atraso_12m": false,
+          "valor_emprestimo": true,
+          "prazo_meses": false,
+          "valor_parcela": false,
+          "possui_imovel": false,
+          "comprometimento_renda": true,
+          "situacao_emprego": false,
+          "finalidade_credito": true,
+          "inadimplente": true,
+          "score": true
+        },
+        "html": "reports/evidently/mes_3_crise_drift_report.html",
+        "json_report": "reports/evidently/mes_3_crise_drift_report.json"
+      }
+    }
+  }
+}

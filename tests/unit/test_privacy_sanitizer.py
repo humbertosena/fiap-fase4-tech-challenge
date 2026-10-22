@@ -94,6 +94,7 @@ def test_scan_detects_positive_cases(text: str, kind: str) -> None:
         "sha256 cb41f7d3b239c3ea43e100f478ef8975c6c815abbcf1f89ad018b2f2a4224ec4",
         "formato CLI-XXXXXXXXXX e regex ^CLI-[0-9A-F]{10}$",
         "dono time-de-credito@fintech.exemplo",
+        "Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com> MIT Licensed",
         "valor R$ 1.000.000,00 e 12000 linhas",
     ],
 )

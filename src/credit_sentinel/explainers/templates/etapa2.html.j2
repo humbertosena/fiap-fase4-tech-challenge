@@ -1,0 +1,249 @@
+{% extends "base.html.j2" %}
+{% set report = payload.report %}
+{% set crisis = report.windows["mes_3_crise"] %}
+{% set control = report.windows["mes_1"] %}
+{% set cards = {} %}
+{% for card in payload.windows %}{% set _ = cards.update({card.key: card}) %}{% endfor %}
+{% set scen = {} %}
+{% for row in payload.scenarios %}{% set _ = scen.update({row.parameter: row}) %}{% endfor %}
+{% block title %}Etapa 2 · Drift{% endblock %}
+{% block description %}Como simulamos uma crise econômica em três janelas mensais e como os testes estatísticos e o Evidently detectam a degradação do modelo.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span>Etapa 2 · Simulação temporal e detecção de drift</span><span class="tag">{{ release.tag }}</span><span>{{ release.date }}</span></div>
+    <h1>Ver a degradação antes que ela vire prejuízo</h1>
+    <p class="lead">Um modelo de crédito não avisa quando para de funcionar: os clientes mudam e as notas continuam
+    saindo. Simulamos três meses seguidos de uma crise de juros (controle, inflação e choque) e medimos o que
+    mudou nos dados, nos scores e no acerto do modelo, com testes estatísticos próprios e com o Evidently AI.</p>
+  </section>
+
+  <section aria-labelledby="resumo">
+    <h2 id="resumo">Resumo em 60 segundos</h2>
+    <div class="grid grid-4">
+      <div class="panel kpi"><div class="label">Features com PSI crítico na crise</div><div class="value num">{{ crisis.drift.psi_critical_features|length }}</div><div class="note">{{ crisis.drift.psi_critical_features|join(" e ") }} (PSI ≥ 0,25)</div></div>
+      <div class="panel kpi"><div class="label">Inadimplência</div><div class="value num">{{ cards["reference"].base_rate|pct(1) }} → {{ cards["mes_3_crise"].base_rate|pct(1) }}</div><div class="note">da referência ao Mês 3 (prior shift)</div></div>
+      <div class="panel kpi"><div class="label">AUC do baseline</div><div class="value num">{{ report.reference.roc_auc_validation|br(3) }} → {{ crisis.performance.roc_auc|br(3) }}</div><div class="note">{{ crisis.performance.auc_delta_vs_reference|br(3) }} contra a validação · {{ crisis.performance.auc_delta_vs_control|br(3) }} contra o controle</div></div>
+      <div class="panel kpi"><div class="label">PSI do score predito</div><div class="value num">{{ crisis.predictions.psi_score_vs_reference|br(3) }}</div><div class="note">o modelo passa a pontuar outra população (controle: {{ control.predictions.psi_score_vs_reference|br(3) }})</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="implementado">
+    <h2 id="implementado">O que foi implementado</h2>
+    <div class="grid grid-3">
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Três janelas mensais</h3>
+        <p class="small">O mesmo gerador da referência produz Mês 1 (controle), Mês 2 (inflação) e Mês 3 (crise) com {{ cards["mes_1"].rows|thousands }} clientes cada, em <code>data/production/</code>, separados fisicamente da referência (ADR 004).</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Covariate, prior e concept drift</h3>
+        <p class="small">Renda e endividamento mudam (covariate), a inadimplência sobe (prior) e a faixa de score 550 a 700 passa a se comportar de outro jeito (concept).</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Testes estatísticos nativos</h3>
+        <p class="small">KS com correção de Bonferroni, PSI, qui-quadrado, Jensen-Shannon e Wasserstein, cobertos por testes com distribuições controladas. São eles que decidem; o Evidently dá a segunda opinião.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Evidently AI</h3>
+        <p class="small">Relatório por janela com <code>DataDriftPreset</code>, drift do alvo e do score e qualidade da classificação, em <code>reports/evidently/</code>.</p></article>
+      <article class="panel card"><p class="rubric">Performance do modelo</p><h3>Degradação medida</h3>
+        <p class="small">AUC, F1, Brier, taxa de aprovação e percentis do score por janela, contra a validação e contra o controle.</p></article>
+      <article class="panel card"><p class="rubric">Governança (apoio)</p><h3>Sem identificadores em claro</h3>
+        <p class="small">Os scores gravados em <code>reports/predictions/</code> trazem só <code>id_cliente_hash</code>, e <code>scan-pii</code> confere os relatórios.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="cenarios">
+    <h2 id="cenarios">A crise que simulamos</h2>
+    <p class="muted">A inflação corrói a renda real, a Selic alta encarece a parcela e as famílias se endividam. Cada
+    linha abaixo é um parâmetro do gerador lido de <code>config/simulation_scenarios.yaml</code>; a justificativa de cada
+    um está no ADR 004.</p>
+    <div class="panel">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parâmetro</th><th>Tipo</th>{% for card in payload.windows %}<th class="num">{{ card.key }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for row in payload.scenarios %}
+        <tr><td>{{ row.label }}</td><td>{{ row.kind }}</td>
+          {% for card in payload.windows %}<td class="num">{{ row.values[card.key]|br(2) }}</td>{% endfor %}</tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="small muted">Os valores iniciais do spec levavam o Mês 3 muito acima da taxa-alvo; a calibração (ADR 004, seção 2.3) usou
+      <code>gamma_concept</code> de {{ scen["gamma_concept"].values["mes_3_crise"]|br(1) }} e um ajuste de intercepto de {{ scen["beta0_adjustment"].values["mes_3_crise"]|br(2) }}.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="linha-do-tempo">
+    <h2 id="linha-do-tempo">1 · Linha do tempo das janelas</h2>
+    <p class="muted">Escolha uma janela e uma feature: as barras comparam a distribuição da referência com a da janela, e os
+    selos mostram o que os testes concluíram.</p>
+    <div class="panel">
+      <div class="controls" id="window-buttons" role="group" aria-label="Janela"></div>
+      <div class="controls">
+        <label class="field" for="tl-feature">Feature
+          <select id="tl-feature" class="select"></select>
+        </label>
+        <div id="tl-badges" class="controls" aria-live="polite"></div>
+      </div>
+      <figure class="chart">
+        <div class="chart-box"><canvas id="tl-chart" role="img" aria-label="Distribuição da referência e da janela"></canvas></div>
+        <figcaption id="tl-caption">Clientes por faixa, em % de cada conjunto.</figcaption>
+        <div class="table-wrap" id="tl-table"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="calculadora">
+    <h2 id="calculadora">2 · Calculadora de PSI</h2>
+    <p class="muted">O PSI compara a fatia de clientes em cada decil da referência com a da janela. Arraste o deslocamento e veja
+    quando ele passa de "estável" para "atenção" e "crítico". É a mesma fórmula de <code>statistical_tests.py</code>.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="psi-feature">Feature
+          <select id="psi-feature" class="select"></select>
+        </label>
+        <button class="btn" type="button" id="psi-real-mes_2"></button>
+        <button class="btn" type="button" id="psi-real-mes_3_crise"></button>
+        <button class="btn" type="button" id="psi-zero">Sem deslocamento</button>
+      </div>
+      <label class="field" for="psi-slider" style="margin-bottom:12px">Deslocamento da média: <strong id="psi-shift" class="num"></strong>
+        <input type="range" id="psi-slider" min="-1" max="1" step="0.01" value="0">
+      </label>
+      <div class="grid grid-2">
+        <div>
+          <div class="grid grid-2">
+            <div class="panel kpi"><div class="label">PSI</div><div class="value num" id="psi-value">—</div><div class="note" id="psi-level"></div></div>
+            <div class="panel kpi"><div class="label">Faixas</div><div class="note">Estável: abaixo de 0,10<br>Atenção: de 0,10 a 0,25<br>Crítico: 0,25 ou mais</div></div>
+          </div>
+          <div class="meter" id="psi-meter" role="img" aria-label="Posição do PSI nas faixas"><span class="band atencao"></span><span class="band critico"></span><span class="needle" id="psi-needle"></span></div>
+          <p class="small muted" id="psi-note"></p>
+        </div>
+        <figure class="chart">
+          <div class="chart-box"><canvas id="psi-chart" role="img" aria-label="Referência e distribuição deslocada"></canvas></div>
+          <figcaption>Referência e a mesma distribuição deslocada pelo valor do controle.</figcaption>
+          <div class="table-wrap" id="psi-table"></div>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="mapa">
+    <h2 id="mapa">3 · Mapa de calor: feature × janela</h2>
+    <p class="muted">Cada célula traz o PSI da feature numérica (ou a distância de Jensen-Shannon, nas categóricas), com o nível por extenso.
+    Clique em uma célula para ver os testes completos e o veredito do Evidently.</p>
+    <div class="panel">
+      <div class="table-wrap"><table class="heat" id="heatmap"></table></div>
+      <div class="verdict" id="heat-detail" aria-live="polite">Clique em uma célula.</div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>Nativo e Evidently em {{ "mes_3_crise" }}</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th class="num">KS (corrigido)</th><th class="num">PSI</th><th>Evidently</th></tr></thead>
+        <tbody>
+        {% for row in crisis.drift.numeric %}
+        <tr><td><code>{{ row.feature }}</code></td>
+          <td class="num">{{ "sim" if row.ks_drift_bonferroni else "não" }}</td>
+          <td class="num">{{ row.psi|br(3) }}</td>
+          <td>{{ "drift" if crisis.evidently.flags[row.feature] else "estável" }}</td></tr>
+        {% endfor %}
+        {% for row in crisis.drift.categorical %}
+        <tr><td><code>{{ row.feature }}</code></td>
+          <td class="num">{{ "sim" if row.chi2_drift else "não" }} (χ²)</td>
+          <td class="num">JS {{ row.jensen_shannon|br(3) }}</td>
+          <td>{{ "drift" if crisis.evidently.flags[row.feature] else "estável" }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="small muted">Com 5.000 linhas, KS e qui-quadrado enxergam deslocamentos minúsculos; o Evidently usa um corte de magnitude
+      (Wasserstein e Jensen-Shannon de 0,10). Por isso os dois não coincidem em <code>tempo_emprego_meses</code>, <code>valor_parcela</code>
+      e <code>situacao_emprego</code>, e concordam nas features críticas.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="conceito">
+    <h2 id="conceito">4 · Concept drift: a faixa de score que mudou</h2>
+    <p class="muted">A taxa de inadimplência por faixa de <code>score_bureau</code>, uma linha por janela. Na crise, a faixa de 550 a 700 pontos
+    deixa de se comportar como na referência: o modelo, treinado antes, subestima esse risco.</p>
+    <div class="panel">
+      <div class="controls" id="band-toggles" role="group" aria-label="Janelas exibidas"></div>
+      <figure class="chart">
+        <div class="chart-box tall"><canvas id="band-chart" role="img" aria-label="Taxa de inadimplência por faixa de score"></canvas></div>
+        <figcaption id="band-caption"></figcaption>
+        <div class="table-wrap" id="band-table"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="degradacao">
+    <h2 id="degradacao">5 · Degradação do modelo</h2>
+    <p class="muted">O baseline continua ordenando bem, mas erra mais e pontua clientes mais arriscados. Escolha a métrica.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="perf-metric">Métrica
+          <select id="perf-metric" class="select"></select>
+        </label>
+      </div>
+      <div class="grid grid-2">
+        <figure class="chart">
+          <div class="chart-box"><canvas id="perf-chart" role="img" aria-label="Métrica por janela"></canvas></div>
+          <figcaption id="perf-caption"></figcaption>
+          <div class="table-wrap" id="perf-table"></div>
+        </figure>
+        <figure class="chart">
+          <div class="chart-box"><canvas id="pct-chart" role="img" aria-label="Percentis do score por janela"></canvas></div>
+          <figcaption>Percentis do score previsto: sobem de uma janela para a outra.</figcaption>
+          <div class="table-wrap" id="pct-table"></div>
+        </figure>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Janela</th><th class="num">AUC</th><th class="num">Δ vs validação</th><th class="num">Δ vs controle</th><th class="num">F1</th><th class="num">Brier</th><th class="num">Aprovação</th><th class="num">PSI do score</th></tr></thead>
+        <tbody>
+        {% for key, window in report.windows.items() %}
+        <tr><td>{{ cards[key].label }}</td><td class="num">{{ window.performance.roc_auc|br(3) }}</td>
+          <td class="num">{{ window.performance.auc_delta_vs_reference|br(3) }}</td>
+          <td class="num">{% if window.performance.auc_delta_vs_control is none %}—{% else %}{{ window.performance.auc_delta_vs_control|br(3) }}{% endif %}</td>
+          <td class="num">{{ window.performance.f1|br(3) }}</td><td class="num">{{ window.performance.brier|br(3) }}</td>
+          <td class="num">{{ window.predictions.approval_rate|pct(1) }}</td><td class="num">{{ window.predictions.psi_score_vs_reference|br(3) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="small muted">O AUC de validação ({{ report.reference.roc_auc_validation|br(3) }}) vem de {{ report.reference.holdout_rows|thousands }} linhas e é um pouco otimista;
+      o controle (Mês 1) é a comparação mais justa, e ambas aparecem.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="relatorios">
+    <h2 id="relatorios">Relatórios completos</h2>
+    <div class="panel">
+      <ul>
+        <li><a href="{{ depth }}reports/evidently_drift_report.html"><code>reports/evidently_drift_report.html</code></a> · relatório do Evidently do Mês 3 (crise), com as colunas em drift destacadas</li>
+        {% for key in ["mes_1", "mes_2", "mes_3_crise"] %}
+        <li><a href="{{ depth }}{{ report.windows[key].evidently.html }}"><code>{{ report.windows[key].evidently.html }}</code></a></li>
+        {% endfor %}
+        <li><a href="{{ depth }}reports/evidently_drift_summary.json"><code>reports/evidently_drift_summary.json</code></a> · o sumário que alimenta esta página</li>
+        <li><a href="{{ depth }}reports/drift_table.md"><code>reports/drift_table.md</code></a> · tabela de KS e PSI por feature e janela</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="reproduzir">
+    <h2 id="reproduzir">Como reproduzir</h2>
+    <div class="panel">
+      {% for command in payload.commands %}
+      <div class="cmd"><pre id="cmd-{{ loop.index }}">{{ command }}</pre><button class="btn" type="button" data-copy="cmd-{{ loop.index }}" aria-label="Copiar comando">Copiar</button></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="aceitacao">
+    <h2 id="aceitacao">Critérios de aceitação</h2>
+    <div class="panel">
+      <ul class="checklist">
+        {% for item in payload.acceptance %}
+        <li><span class="status {{ 'ok' if item.ok else 'fail' }}">{{ 'OK' if item.ok else 'Falhou' }}</span>
+          <div><strong>{{ item.criterion }}</strong><div class="evidence">{{ item.evidence }}</div></div></li>
+        {% endfor %}
+      </ul>
+      {% if payload.acceptance|rejectattr("ok")|list %}
+      <p class="small muted">O critério que falhou fica registrado de propósito: o KS enxerga o deslocamento da renda em agosto com folga,
+      mas a magnitude (PSI) fica abaixo de 0,10. Ler o p-valor sem a magnitude levaria a um falso alarme (ADR 004 e registro da etapa).</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
