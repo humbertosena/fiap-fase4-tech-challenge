@@ -91,6 +91,7 @@ def test_unknown_slo_id_raises_a_clear_error() -> None:
         (lambda d: d["alerts"][2].pop("value"), "value"),
         (lambda d: d["slos"][0]["objective"].update(value=0), "maior que zero"),
         (lambda d: d["slos"][0]["objective"].update(op="=="), "op"),
+        (lambda d: d["slos"][1].update(features=[]), "features"),
         (lambda d: d.update(warn_at=1.2), "warn_at"),
     ],
 )
