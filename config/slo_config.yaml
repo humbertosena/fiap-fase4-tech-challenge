@@ -1,0 +1,61 @@
+# Data SLOs do pipeline de monitoramento (ADR 005).
+#
+# Cada lote (janela) é medido contra cinco SLIs. O consumo do error budget é
+# normalizado: 0 = nada gasto, 1 = limite do SLO, acima de 1 = estourado.
+#   objetivo "<=": consumo = observado / limite
+#   objetivo ">=": consumo = (referência - observado) / (referência - limite)
+# Estado do SLO no lote: OK (< warn_at), WARN (de warn_at a breach_at) e
+# BREACHED (>= breach_at). O saldo da janela é 1 - média dos consumos.
+window_batches: 4        # bad_batch, mes_1, mes_2 e mes_3_crise
+warn_at: 0.70
+breach_at: 1.0
+
+slos:
+  - id: SLO1_integridade
+    sli: rejected_ratio            # fração rejeitada no ValidationReport
+    objective: {op: "<=", value: 0.01}
+    budget_note: "1% de registros inválidos por lote"
+  - id: SLO2_estabilidade_psi
+    sli: psi_top_features          # maior PSI entre as features abaixo
+    # Top-3 de models/baseline/feature_importance.json (um teste garante a igualdade).
+    features: [score_bureau, qtd_parcelas_atraso_12m, utilizacao_credito]
+    objective: {op: "<=", value: 0.25}
+    budget_note: "PSI crítico (0,25) nas features que mais pesam no modelo"
+  - id: SLO3_consistencia_ks
+    sli: ks_failing_share          # fração das features com p < alpha (Bonferroni)
+    features: [renda_mensal, score_bureau, taxa_endividamento, utilizacao_credito, comprometimento_renda]
+    objective: {op: "<=", value: 0.34}
+    budget_note: "tolera 1 de 5 (falso positivo); 2 ou mais estouram"
+  - id: SLO4_performance
+    sli: roc_auc                   # só existe quando há verdade de campo
+    objective: {op: ">=", value: 0.75}
+    budget_note: "piso de ROC-AUC; a referência do orçamento é o AUC de validação"
+  - id: SLO5_latencia
+    sli: batch_latency_ms
+    objective: {op: "<=", value: 60000}
+    budget_note: "lote completo em até 60 s"
+
+# Regras avaliadas da mais grave para a mais leve. `when` é um dos gatilhos:
+#   decision_blocked  o contrato bloqueou o lote (a regra encerra a avaliação)
+#   breached          algum SLO listado em `slos` estourou
+#   budget_at_least   algum SLO (ou os listados) consumiu `value` ou mais
+#   otherwise         nenhuma regra anterior disparou
+alerts:
+  - severity: P1
+    when: decision_blocked
+    action: "Circuit breaker aberto: acionar o runbook P1, isolar o lote e acionar o produtor dos dados."
+    runbook_anchor: p1-circuit-breaker
+  - severity: P2
+    when: breached
+    slos: [SLO2_estabilidade_psi, SLO4_performance]
+    action: "Drift crítico: disparar o retreino do challenger e revisar os guardrails de promoção."
+    runbook_anchor: p2-drift-critico
+  - severity: P3
+    when: budget_at_least
+    value: 0.70
+    action: "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela."
+    runbook_anchor: p3-atencao
+  - severity: P4
+    when: otherwise
+    action: "Informativo: lote dentro dos objetivos; nenhuma ação necessária."
+    runbook_anchor: p4-informativo
