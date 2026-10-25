@@ -278,7 +278,10 @@ def consumption(
     if op == "<=":
         return observed / threshold
     if reference is None or reference <= threshold:
-        msg = "objetivo '>=' exige uma referência acima do limite"
+        msg = (
+            f"objetivo '>=' exige uma referência acima do limite (referência"
+            f" {reference}, limite {threshold}): o modelo já nasce fora do SLO"
+        )
         raise ValueError(msg)
     return max(0.0, (reference - observed) / (reference - threshold))
 

@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import pytest
 
+from credit_sentinel.contracts.schema import build_reference_schema
+from credit_sentinel.contracts.validator import (
+    BatchContext,
+    ValidationPolicy,
+    validate_batch,
+)
 from credit_sentinel.utils.clock import fixed_epoch, utc_now
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 pytestmark = pytest.mark.unit
 
@@ -33,3 +43,16 @@ def test_invalid_source_date_epoch_is_rejected(
     monkeypatch.setenv("SOURCE_DATE_EPOCH", "ontem")
     with pytest.raises(ValueError, match="SOURCE_DATE_EPOCH"):
         utc_now()
+
+
+def test_validation_report_is_stamped_by_the_project_clock(
+    monkeypatch: pytest.MonkeyPatch, df_reference_small: pd.DataFrame
+) -> None:
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "1791727200")
+    _, report = validate_batch(
+        df_reference_small,
+        schema=build_reference_schema(),
+        policy=ValidationPolicy(quarantine=False),
+        context=BatchContext(batch_name="referencia", run_id="val-relogio"),
+    )
+    assert report.validated_at == datetime(2026, 10, 11, 14, 0, tzinfo=UTC)

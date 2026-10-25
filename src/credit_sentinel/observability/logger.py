@@ -136,6 +136,7 @@ class PipelineLogger:
         """
         self.run_id = run_id
         self.model_version = model_version
+        self.log_path = log_path
         log_path.parent.mkdir(parents=True, exist_ok=True)
         self._base = utc_now()
         self._started = time.perf_counter()
@@ -239,11 +240,13 @@ class StageTimer:
         self.records_processed = 0
         self.rejected_records = 0
         self.latency_ms = 0
+        self.status: Status | None = None
         self.message: str | None = None
         self.details: dict[str, Any] = {}
         self._started = 0.0
 
     def _emit(self, status: Status, message: str | None) -> None:
+        self.status = status
         self._logger.emit(
             stage=self.stage,
             status=status,

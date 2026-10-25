@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -23,6 +23,7 @@ from credit_sentinel.contracts.privacy_sanitizer import HASH_COLUMN, hash_identi
 from credit_sentinel.contracts.schema import RULES_BY_ID, rule_id_for
 from credit_sentinel.data import dictionary as dd
 from credit_sentinel.settings import get_settings
+from credit_sentinel.utils.clock import utc_now
 from credit_sentinel.utils.io import write_parquet
 
 SAMPLE_LIMIT = 5
@@ -192,7 +193,7 @@ def _report(
     return ValidationReport(
         batch_name=context.batch_name,
         run_id=context.run_id,
-        validated_at=datetime.now(UTC),
+        validated_at=utc_now(),
         schema_name=schema_name,
         total_records=total,
         valid_records=total - rejected,

@@ -201,6 +201,7 @@ def test_stage_timer_emits_started_and_success_with_latency(
     assert success.records_processed == 5000
     assert success.latency_ms >= 0
     assert timer.latency_ms == success.latency_ms
+    assert timer.status == "SUCCESS"
     assert success.details == {"arquivo": "mes_1.parquet"}
 
 
@@ -249,3 +250,12 @@ def test_stage_timer_skip_emits_skipped_without_started(
     assert event.stage == "inference"
     assert event.message == "lote bloqueado antes"
     assert event.latency_ms == 0
+
+
+def test_stage_timer_status_tracks_the_last_emitted_event(
+    logger: PipelineLogger,
+) -> None:
+    timer = StageTimer(logger, "inference", "mes_2")
+    assert timer.status is None
+    timer.skip("sem insumo")
+    assert timer.status == "SKIPPED"
