@@ -101,6 +101,7 @@ class WindowRunResult(BaseModel):
         decision: ``BLOCKED`` se o contrato bloqueou o lote.
         validation: Relatório do contrato de dados.
         drift_ref: Caminho do relatório HTML do Evidently, se gerado.
+        share_drifted_evidently: Fração das colunas com drift segundo o Evidently.
         drift: Testes nativos de drift (``None`` em lote bloqueado).
         predictions: Comportamento dos scores (``None`` em lote bloqueado).
         performance: Performance contra a verdade de campo.
@@ -115,6 +116,7 @@ class WindowRunResult(BaseModel):
     decision: Decision
     validation: ValidationReport
     drift_ref: str | None
+    share_drifted_evidently: float | None = None
     drift: DriftSummary | None
     predictions: PredictionSummary | None
     performance: PerformanceSummary | None
@@ -213,6 +215,7 @@ class _WindowRun:
         self.performance: PerformanceSummary | None = None
         self.drift: DriftSummary | None = None
         self.drift_ref: str | None = None
+        self.share_drifted: float | None = None
 
     @contextlib.contextmanager
     def _stage(self, stage: Stage) -> Iterator[StageTimer]:
@@ -327,6 +330,7 @@ class _WindowRun:
                 current = model_frame(valid, self.scores)
                 found = evidently_window(ctx.settings, ctx.baseline, self.name, current)
                 self.drift_ref = found.html
+                self.share_drifted = found.share_drifted
                 timer.details["share_drifted_evidently"] = round(found.share_drifted, 4)
 
     def _evaluate(self, report: ValidationReport) -> SloEvaluation:
@@ -362,6 +366,7 @@ class _WindowRun:
             decision=report.decision,
             validation=report,
             drift_ref=self.drift_ref,
+            share_drifted_evidently=self.share_drifted,
             drift=self.drift,
             predictions=self.predictions,
             performance=self.performance,

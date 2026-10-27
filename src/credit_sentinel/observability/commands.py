@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from credit_sentinel.contracts.commands import EXIT_BLOCKED, display_path
 from credit_sentinel.drift.detection import MissingInputError
+from credit_sentinel.ml.mlflow_baseline import resolve_tracking_uri
 from credit_sentinel.observability.pipeline_runner import (
     WINDOW_ORDER,
     AuditReport,
@@ -13,13 +14,18 @@ from credit_sentinel.observability.pipeline_runner import (
     run_pipeline,
 )
 from credit_sentinel.settings import get_settings
+from credit_sentinel.tracking.mlflow_tracking import hook_factory
 from credit_sentinel.utils.io import write_json
 
 if TYPE_CHECKING:
     import argparse
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
+    from credit_sentinel.observability.pipeline_runner import TrackingHook
     from credit_sentinel.settings import Settings
+
+    HookFactory = Callable[[str, str], Sequence[TrackingHook]]
 
 AUDIT_FILE = "slo_audit_report.json"
 _MS = 1000
@@ -32,6 +38,11 @@ def _output_dir(args: argparse.Namespace, settings: Settings) -> Path:
     if args.window == "all" and not args.quick:
         return settings.reports_dir
     return settings.logs_dir / "last_run"
+
+
+def _hook_factory(settings: Settings) -> HookFactory:
+    uri = resolve_tracking_uri(settings)
+    return hook_factory(uri, settings.project_root)
 
 
 def _print_window(result: WindowRunResult) -> None:
@@ -62,7 +73,12 @@ def _run_pipeline(args: argparse.Namespace) -> int:
     settings = get_settings()
     windows = list(WINDOW_ORDER) if args.window == "all" else [args.window]
     try:
-        report = run_pipeline(windows, settings=settings, quick=args.quick)
+        report = run_pipeline(
+            windows,
+            settings=settings,
+            quick=args.quick,
+            hook_factory=None if args.no_mlflow else _hook_factory(settings),
+        )
     except MissingInputError as exc:
         print(f"erro: {exc}")
         return 1

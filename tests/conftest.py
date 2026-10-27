@@ -114,6 +114,7 @@ def pipeline_project(
     settings = get_settings()
     _write_small_windows(settings)
     shutil.copytree(settings.production_dir, root / "pristine")
+    shutil.copytree(settings.models_dir, root / "pristine_models")
     yield settings
     patch.undo()
     get_settings.cache_clear()
@@ -121,11 +122,14 @@ def pipeline_project(
 
 @pytest.fixture
 def project_clean(pipeline_project: Settings) -> Settings:
-    """Projeto do módulo com logs, relatórios e janelas no estado inicial."""
-    shutil.rmtree(pipeline_project.logs_dir, ignore_errors=True)
-    shutil.rmtree(pipeline_project.reports_dir, ignore_errors=True)
-    shutil.rmtree(pipeline_project.production_dir)
-    shutil.copytree(
-        pipeline_project.project_root / "pristine", pipeline_project.production_dir
-    )
+    """Projeto do módulo com logs, relatórios, janelas e modelos no estado inicial."""
+    root = pipeline_project.project_root
+    for folder in (pipeline_project.logs_dir, pipeline_project.reports_dir):
+        shutil.rmtree(folder, ignore_errors=True)
+    for current, pristine in (
+        (pipeline_project.production_dir, root / "pristine"),
+        (pipeline_project.models_dir, root / "pristine_models"),
+    ):
+        shutil.rmtree(current)
+        shutil.copytree(pristine, current)
     return pipeline_project

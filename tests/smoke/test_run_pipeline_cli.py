@@ -76,3 +76,12 @@ def test_missing_model_points_to_train(
     capsys.readouterr()
     assert main(["run-pipeline", "--window", "mes_1", *ARGS]) == 1
     assert "train" in capsys.readouterr().out
+
+
+def test_mlflow_tracking_is_on_by_default_and_stays_inside_the_project(
+    project_clean: Settings,
+) -> None:
+    assert main(["run-pipeline", "--window", "mes_1", "--quick"]) == 0
+    stages = _events(project_clean, "mes_1")
+    assert stages["tracking"].status == "SUCCESS"
+    assert (project_clean.project_root / "mlruns" / "mlflow.db").exists()
