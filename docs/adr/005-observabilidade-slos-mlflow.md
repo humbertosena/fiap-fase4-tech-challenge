@@ -129,3 +129,60 @@ incidente. Cada alerta aponta para uma âncora do `docs/runbook_incidentes.md`.
 | Um alerta por SLO em todas as severidades | Triplica o ruído: o mesmo estouro apareceria como P2 e P3. |
 | Prometheus e Grafana | Exigem serviços no ar; o desafio pede evidência reproduzível com `docker compose` mínimo. |
 | Logs em texto livre | Impedem validar campos e varrer PII por regra; o JSON Lines permite as duas coisas. |
+
+## 5. Retreino do challenger e guardrails (revisão de 2026-10-28)
+
+### 5.1 Protocolo
+
+O challenger só existe porque o drift foi detectado, então ele é treinado **depois** da
+detecção, com o que já tem verdade de campo:
+
+| Conjunto | Dados |
+|---|---|
+| Treino (janela deslizante) | últimos 6 meses da referência (jan a jun/2026) + `mes_1` + `mes_2` + dias 1 a 15 de `mes_3_crise` |
+| Holdout temporal | dias 16 a 30 de `mes_3_crise` (nunca visto no treino) |
+
+Features, pipeline e hiperparâmetros são os do baseline (ADR 003); o champion e o
+challenger são comparados **no mesmo holdout**. O treino interno usa o mesmo split 80/20
+do baseline para calcular limiares e importância.
+
+### 5.2 Por que a primeira quinzena da crise entra no treino
+
+O spec original treinava o challenger só com a referência recente, `mes_1` e `mes_2`, e
+avaliava em `mes_3_crise` inteiro. Medido nos dados do projeto, esse desenho entrega
+cerca de **+0,015 de AUC** sobre o champion, abaixo dos +0,02 exigidos pelo gate G1. A
+razão é estrutural: o concept drift (ADR 004) só existe em `mes_3_crise`, e um modelo que
+nunca viu a crise não aprende a nova relação entre as variáveis e o risco. Com a primeira
+quinzena da crise no treino, o ganho no holdout é de **+0,028**.
+
+A decisão foi tomada pelo responsável do projeto em 2026-10-28, entre quatro opções:
+
+| Opção | Resultado |
+|---|---|
+| **Primeira quinzena da crise no treino, holdout na segunda** (adotada) | G1 aprova; reflete o que acontece na operação (retreinar com o que já foi rotulado) |
+| Spec literal | G1 reprova (+0,015): o guardrail bloquearia o challenger e não haveria promoção na demo |
+| Spec literal com grade de hiperparâmetros | Sem garantia de chegar a +0,02 e com risco de ajustar contra o próprio holdout |
+| Reduzir o limiar do G1 para +0,01 | Enfraquece o guardrail só para o challenger passar |
+
+### 5.3 Guardrails
+
+| Gate | Regra | Observação |
+|---|---|---|
+| G1 | AUC do challenger ≥ AUC do champion + 0,02 | no holdout temporal |
+| G2 | Brier do challenger ≤ Brier do champion | calibração não pode piorar |
+| G3 | assinatura de entrada idêntica (nomes e tipos) | o consumidor não muda nada |
+| G4 | razão de impacto na taxa de aprovação de cada grupo em [0,80, 1,25] | `genero`, `regiao` e `faixa_etaria`; o grupo de referência é o maior de cada atributo |
+| G5 | inferência de 5.000 linhas em até 5 s | amostra do holdout com reposição |
+
+`genero` e `regiao` continuam **fora** das features: só aparecem aqui, para medir o
+resultado da decisão. A auditoria completa (taxas de erro por grupo, causas) é da
+Etapa 4; o G4 usa a versão mínima de `governance/fairness_audit.py`.
+
+### 5.4 Consequências
+
+- O `gates_report.json` registra o protocolo (linhas por conjunto e datas do holdout),
+  para que o leitor saiba exatamente o que foi comparado.
+- O ganho depende do dia de corte: com o corte mais cedo haveria menos dados da crise
+  e o G1 poderia reprovar. O corte no dia 15 é uma convenção, não um parâmetro tunado.
+- Em produção real o rótulo de inadimplência chega com atraso de meses; a premissa de
+  ter a primeira quinzena rotulada é uma simplificação do cenário simulado.

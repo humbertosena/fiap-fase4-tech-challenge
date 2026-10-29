@@ -10,23 +10,29 @@ from credit_sentinel.contracts.commands import (
     run_validation,
 )
 from credit_sentinel.data.commands import reference_path
+from credit_sentinel.drift.detection import MissingInputError
 from credit_sentinel.ml.features import build_features
 from credit_sentinel.ml.model_card import render_metrics_section, update_model_card
+from credit_sentinel.ml.retrain_challenger import CHALLENGER_DIR, retrain_challenger
 from credit_sentinel.ml.train_baseline import (
     ModelBundle,
     save_model_bundle,
     train_and_analyze,
 )
 from credit_sentinel.settings import Settings, get_settings
-from credit_sentinel.utils.io import read_parquet
+from credit_sentinel.utils.io import read_parquet, write_json
 
 if TYPE_CHECKING:
     import argparse
 
     import pandas as pd
 
+    from credit_sentinel.ml.evaluate_gates import GatesReport
+
 BASELINE_DIR = "baseline"
 MODEL_CARD = "model_card.md"
+GATES_REPORT = "gates_report.json"
+EXIT_GATES_FAILED = 3
 
 
 def _print_metrics(bundle: ModelBundle) -> None:
@@ -71,8 +77,35 @@ def _run_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_gates(report: GatesReport) -> None:
+    for gate in report.results:
+        mark = "aprovado" if gate.passed else "REPROVADO"
+        print(f"  {gate.gate_id}: {mark} · {gate.detail}")
+    holdout = f"{report.holdout_window} ({report.holdout_rows} linhas)"
+    print(f"holdout temporal: {holdout}")
+    verdict = "aprovado" if report.passed else "reprovado"
+    print(f"challenger {report.challenger_model} {verdict} pelos guardrails")
+
+
+def _run_retrain(_args: argparse.Namespace) -> int:
+    settings = get_settings()
+    try:
+        challenger, report = retrain_challenger(settings=settings)
+    except MissingInputError as exc:
+        print(f"erro: {exc}")
+        return 1
+    out_dir = settings.models_dir / CHALLENGER_DIR
+    save_model_bundle(challenger, out_dir)
+    path = write_json(report, settings.reports_dir / GATES_REPORT)
+    where = display_path(out_dir, settings.project_root)
+    print(f"challenger {challenger.version} salvo em {where}")
+    _print_gates(report)
+    print(f"relatório: {display_path(path, settings.project_root)}")
+    return 0 if report.passed else EXIT_GATES_FAILED
+
+
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra o subcomando ``train``.
+    """Registra os subcomandos ``train`` e ``retrain-challenger``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -84,3 +117,8 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         "--no-mlflow", action="store_true", help="não registra o run no MLflow"
     )
     parser.set_defaults(handler=_run_train)
+    retrain = subparsers.add_parser(
+        "retrain-challenger",
+        help="retreina o challenger e avalia os guardrails (exit 3 = reprovado)",
+    )
+    retrain.set_defaults(handler=_run_retrain)
