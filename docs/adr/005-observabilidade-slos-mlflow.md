@@ -186,3 +186,26 @@ Etapa 4; o G4 usa a versão mínima de `governance/fairness_audit.py`.
   e o G1 poderia reprovar. O corte no dia 15 é uma convenção, não um parâmetro tunado.
 - Em produção real o rótulo de inadimplência chega com atraso de meses; a premissa de
   ter a primeira quinzena rotulada é uma simplificação do cenário simulado.
+
+### 5.5 Model Registry e promoção
+
+O `credit-scoring-model` guarda cada versão com o bundle completo (modelo, métricas,
+limiares e assinatura) como artefato do run, o que permite recarregar qualquer versão
+pelo alias.
+
+| Momento | Versão 1 | Versão 2 |
+|---|---|---|
+| Depois do `train` | `@champion` | - |
+| Depois do `retrain-challenger` | `@champion` | `@challenger` |
+| Depois do `retrain-challenger --promote` (gates aprovados) | tag `retired_reason=drift_mes_3_crise`, sem alias | `@champion` |
+
+- **A promoção exige os guardrails.** Com o relatório reprovado, `promote_challenger`
+  lança `PromotionRefusedError`, nenhum alias muda e o comando termina com exit 3.
+- **Um alias por papel.** Ao promover, o alias `challenger` é removido: a versão
+  promovida deixa de ser candidata.
+- **Reexecutar é seguro, mas cria versões.** Cada `train` ou `retrain-challenger` registra
+  uma nova versão; `train` recoloca `@champion` na versão recém-treinada, e o
+  `--promote` age sobre o challenger mais recente.
+- **A promoção da demo é deliberada.** O `--promote` altera o alias `champion` e por isso
+  é uma ação explícita do operador (decisão de 2026-11-08); nenhum outro comando troca
+  aliases.

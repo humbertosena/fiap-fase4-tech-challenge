@@ -14,19 +14,32 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import mlflow
 from mlflow import MlflowClient
 from mlflow.entities import Metric, Param
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+from pydantic import BaseModel, Field
 
+from credit_sentinel.ml.mlflow_baseline import (
+    bundle_metrics,
+    bundle_params,
+    ensure_experiment,
+    log_registered_model,
+    resolve_tracking_uri,
+)
 from credit_sentinel.utils.clock import utc_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    import pandas as pd
+
+    from credit_sentinel.ml.train_baseline import ModelBundle
     from credit_sentinel.observability.pipeline_runner import (
         TrackingHook,
         WindowRunResult,
     )
+    from credit_sentinel.settings import Settings
 
 EXPERIMENT_MONITORING = "credit-sentinel/monitoring"
 CURRENT_RELEASE = "v0.3.0-rc"
@@ -322,3 +335,60 @@ def hook_factory(
         return [hook]
 
     return build
+
+
+class TrainingRunSpec(BaseModel):
+    """O que registrar, além do próprio modelo, em um run de treino.
+
+    Attributes:
+        experiment: Nome do experimento (ex.: ``credit-sentinel/retraining``).
+        run_name: Nome do run.
+        tags: Tags do run.
+        params: Parâmetros adicionais do run.
+        metrics: Métricas adicionais (ex.: deltas contra o champion).
+        artifacts: Pasta de destino no run → arquivo ou diretório local.
+    """
+
+    experiment: str
+    run_name: str
+    tags: dict[str, str] = Field(default_factory=dict)
+    params: dict[str, str] = Field(default_factory=dict)
+    metrics: dict[str, float] = Field(default_factory=dict)
+    artifacts: dict[str, Path] = Field(default_factory=dict)
+
+
+def _attach_run_artifacts(artifacts: dict[str, Path]) -> None:
+    for folder, path in artifacts.items():
+        if path.is_dir():
+            mlflow.log_artifacts(str(path), folder)
+        else:
+            mlflow.log_artifact(str(path), folder)
+
+
+def log_training_run(
+    bundle: ModelBundle,
+    spec: TrainingRunSpec,
+    settings: Settings,
+    example: pd.DataFrame,
+) -> str:
+    """Registra um run de treino e a nova versão do modelo no Model Registry.
+
+    Args:
+        bundle: Modelo treinado e analisado.
+        spec: Experimento, nome, tags, métricas e artefatos adicionais.
+        settings: Configuração (URI de tracking e semente).
+        example: Algumas linhas de features (``input_example``).
+
+    Returns:
+        Id do run criado.
+    """
+    uri = resolve_tracking_uri(settings)
+    mlflow.set_tracking_uri(uri)
+    experiment = ensure_experiment(spec.experiment, uri)
+    with mlflow.start_run(experiment_id=experiment, run_name=spec.run_name) as run:
+        mlflow.set_tags({"model_version": bundle.version} | spec.tags)
+        mlflow.log_params(bundle_params(bundle, settings) | spec.params)
+        mlflow.log_metrics(bundle_metrics(bundle) | spec.metrics)
+        _attach_run_artifacts(spec.artifacts)
+        log_registered_model(bundle, example)
+    return run.info.run_id

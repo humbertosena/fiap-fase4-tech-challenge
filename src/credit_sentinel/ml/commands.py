@@ -12,6 +12,7 @@ from credit_sentinel.contracts.commands import (
 from credit_sentinel.data.commands import reference_path
 from credit_sentinel.drift.detection import MissingInputError
 from credit_sentinel.ml.features import build_features
+from credit_sentinel.ml.mlflow_baseline import log_baseline_run, resolve_tracking_uri
 from credit_sentinel.ml.model_card import render_metrics_section, update_model_card
 from credit_sentinel.ml.retrain_challenger import CHALLENGER_DIR, retrain_challenger
 from credit_sentinel.ml.train_baseline import (
@@ -20,6 +21,8 @@ from credit_sentinel.ml.train_baseline import (
     train_and_analyze,
 )
 from credit_sentinel.settings import Settings, get_settings
+from credit_sentinel.tracking.registry import ModelRegistry, PromotionRefusedError
+from credit_sentinel.tracking.retraining import register_challenger
 from credit_sentinel.utils.io import read_parquet, write_json
 
 if TYPE_CHECKING:
@@ -53,10 +56,12 @@ def _publish(
     if card.exists():
         update_model_card(card, render_metrics_section(bundle))
     if mlflow:
-        from credit_sentinel.ml.mlflow_baseline import log_baseline_run  # noqa: PLC0415
-
         run_id = log_baseline_run(bundle, build_features(reference.head(5)), settings)
         print(f"  mlflow run: {run_id} (experimento credit-sentinel/baseline)")
+        registry = ModelRegistry(resolve_tracking_uri(settings))
+        version = registry.version_for_run(run_id)
+        registry.set_alias("champion", version)
+        print(f"  registry: credit-scoring-model v{version} @champion")
 
 
 def _run_train(args: argparse.Namespace) -> int:
@@ -87,8 +92,34 @@ def _print_gates(report: GatesReport) -> None:
     print(f"challenger {report.challenger_model} {verdict} pelos guardrails")
 
 
-def _run_retrain(_args: argparse.Namespace) -> int:
+def _promote(registry: ModelRegistry, report: GatesReport) -> int:
+    try:
+        version = registry.promote_challenger(gates=report)
+    except PromotionRefusedError as exc:
+        print(f"promoção recusada: {exc}")
+        return EXIT_GATES_FAILED
+    print(f"promoção concluída: credit-scoring-model v{version} agora é @champion")
+    return 0
+
+
+def _register_and_promote(
+    challenger: ModelBundle, report: GatesReport, args: argparse.Namespace
+) -> tuple[GatesReport, int]:
     settings = get_settings()
+    path = settings.reports_dir / GATES_REPORT
+    example = build_features(read_parquet(reference_path(settings)).head(5))
+    final, registry = register_challenger(challenger, report, settings, example, path)
+    champion, new = final.champion_version, final.challenger_version
+    print(f"registry: v{new} @challenger (champion atual: v{champion})")
+    code = _promote(registry, final) if args.promote else 0
+    return final, code
+
+
+def _run_retrain(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if args.promote and args.no_mlflow:
+        print("erro: --promote exige o MLflow (retire --no-mlflow)")
+        return 1
     try:
         challenger, report = retrain_challenger(settings=settings)
     except MissingInputError as exc:
@@ -100,8 +131,11 @@ def _run_retrain(_args: argparse.Namespace) -> int:
     where = display_path(out_dir, settings.project_root)
     print(f"challenger {challenger.version} salvo em {where}")
     _print_gates(report)
+    code = 0
+    if not args.no_mlflow:
+        report, code = _register_and_promote(challenger, report, args)
     print(f"relatório: {display_path(path, settings.project_root)}")
-    return 0 if report.passed else EXIT_GATES_FAILED
+    return code or (0 if report.passed else EXIT_GATES_FAILED)
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
@@ -120,5 +154,13 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     retrain = subparsers.add_parser(
         "retrain-challenger",
         help="retreina o challenger e avalia os guardrails (exit 3 = reprovado)",
+    )
+    retrain.add_argument(
+        "--promote",
+        action="store_true",
+        help="promove o challenger a champion se os guardrails aprovarem",
+    )
+    retrain.add_argument(
+        "--no-mlflow", action="store_true", help="não usa o MLflow nem o registry"
     )
     retrain.set_defaults(handler=_run_retrain)
