@@ -114,13 +114,25 @@ class PiiRedactingFilter(logging.Filter):
         return True
 
 
+def event_json(event: PipelineEvent) -> str:
+    """Serializa um evento como uma linha JSON (sem campos vazios).
+
+    Args:
+        event: Evento do pipeline.
+
+    Returns:
+        Linha JSON no formato do ``pipeline_events.jsonl``.
+    """
+    data = event.model_dump(mode="json", exclude_none=True)
+    if not data["details"]:
+        del data["details"]
+    return json.dumps(data, ensure_ascii=False)
+
+
 class _JsonLinesFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         event: PipelineEvent = record.event  # type: ignore[attr-defined]
-        data = event.model_dump(mode="json", exclude_none=True)
-        if not data["details"]:
-            del data["details"]
-        return json.dumps(data, ensure_ascii=False)
+        return event_json(event)
 
 
 class PipelineLogger:

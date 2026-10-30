@@ -12,25 +12,30 @@ breach_at: 1.0
 
 slos:
   - id: SLO1_integridade
+    title: "Integridade dos dados"
     sli: rejected_ratio            # fração rejeitada no ValidationReport
     objective: {op: "<=", value: 0.01}
     budget_note: "1% de registros inválidos por lote"
   - id: SLO2_estabilidade_psi
+    title: "Estabilidade (PSI)"
     sli: psi_top_features          # maior PSI entre as features abaixo
     # Top-3 de models/baseline/feature_importance.json (um teste garante a igualdade).
     features: [score_bureau, qtd_parcelas_atraso_12m, utilizacao_credito]
     objective: {op: "<=", value: 0.25}
     budget_note: "PSI crítico (0,25) nas features que mais pesam no modelo"
   - id: SLO3_consistencia_ks
+    title: "Consistência (KS)"
     sli: ks_failing_share          # fração das features com p < alpha (Bonferroni)
     features: [renda_mensal, score_bureau, taxa_endividamento, utilizacao_credito, comprometimento_renda]
     objective: {op: "<=", value: 0.34}
     budget_note: "tolera 1 de 5 (falso positivo); 2 ou mais estouram"
   - id: SLO4_performance
+    title: "Performance (ROC-AUC)"
     sli: roc_auc                   # só existe quando há verdade de campo
     objective: {op: ">=", value: 0.75}
     budget_note: "piso de ROC-AUC; a referência do orçamento é o AUC de validação"
   - id: SLO5_latencia
+    title: "Latência do lote"
     sli: batch_latency_ms
     objective: {op: "<=", value: 60000}
     budget_note: "lote completo em até 60 s"

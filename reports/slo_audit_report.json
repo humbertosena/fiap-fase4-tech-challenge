@@ -1,0 +1,1370 @@
+{
+  "generated_at": "2026-10-30T22:50:00Z",
+  "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+  "model_version": "baseline-1.0.0",
+  "quick": false,
+  "reference_auc": 0.8290796752640276,
+  "windows": [
+    {
+      "window": "bad_batch",
+      "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+      "decision": "BLOCKED",
+      "validation": {
+        "batch_name": "bad_batch",
+        "run_id": "val-6e4d013f-bad_batch",
+        "validated_at": "2026-10-30T22:50:00Z",
+        "schema_name": "credit_scoring_inference",
+        "total_records": 600,
+        "valid_records": 438,
+        "rejected_records": 162,
+        "rejected_ratio": 0.27,
+        "decision": "BLOCKED",
+        "blocked_reason": "violação estrutural (R01, R02): lote bloqueado",
+        "violations": [
+          {
+            "rule_id": "R01",
+            "column": "cpf",
+            "check": "column_in_schema",
+            "n_failures": 1,
+            "sample_index": []
+          },
+          {
+            "rule_id": "R01",
+            "column": "score_bureau",
+            "check": "dtype('int64')",
+            "n_failures": 18,
+            "sample_index": [
+              35,
+              71,
+              100,
+              142,
+              165
+            ]
+          },
+          {
+            "rule_id": "R02",
+            "column": "id_cliente",
+            "check": "field_uniqueness",
+            "n_failures": 36,
+            "sample_index": [
+              38,
+              51,
+              64,
+              77,
+              84
+            ]
+          },
+          {
+            "rule_id": "R02",
+            "column": "id_cliente",
+            "check": "not_nullable",
+            "n_failures": 6,
+            "sample_index": [
+              40,
+              49,
+              92,
+              265,
+              345
+            ]
+          },
+          {
+            "rule_id": "R03",
+            "column": "renda_mensal",
+            "check": "not_nullable",
+            "n_failures": 24,
+            "sample_index": [
+              24,
+              88,
+              89,
+              99,
+              178
+            ]
+          },
+          {
+            "rule_id": "R03",
+            "column": "score_bureau",
+            "check": "not_nullable",
+            "n_failures": 18,
+            "sample_index": [
+              35,
+              71,
+              100,
+              142,
+              165
+            ]
+          },
+          {
+            "rule_id": "R04",
+            "column": "idade",
+            "check": "R04 · idade fora da faixa",
+            "n_failures": 30,
+            "sample_index": [
+              17,
+              31,
+              53,
+              65,
+              80
+            ]
+          },
+          {
+            "rule_id": "R07",
+            "column": "taxa_endividamento",
+            "check": "R07 · taxa_endividamento fora da faixa",
+            "n_failures": 12,
+            "sample_index": [
+              9,
+              46,
+              69,
+              110,
+              112
+            ]
+          },
+          {
+            "rule_id": "R08",
+            "column": "situacao_emprego",
+            "check": "R08 · situacao_emprego fora do domínio",
+            "n_failures": 18,
+            "sample_index": [
+              11,
+              13,
+              32,
+              39,
+              105
+            ]
+          },
+          {
+            "rule_id": "R10",
+            "column": null,
+            "check": "R10 · valor_parcela <= renda_mensal",
+            "n_failures": 12,
+            "sample_index": [
+              93,
+              123,
+              212,
+              228,
+              237
+            ]
+          },
+          {
+            "rule_id": "R11",
+            "column": null,
+            "check": "R11 · situacao_emprego == 'desempregado' => tempo_emprego_meses == 0",
+            "n_failures": 6,
+            "sample_index": [
+              37,
+              62,
+              301,
+              393,
+              452
+            ]
+          }
+        ],
+        "sample_failures": [
+          {
+            "index": 9,
+            "id_cliente_hash": "cead1b315a09b9c82deafc75f018c35bc8dc6867dc679b5f5883c4fd87d186b5",
+            "regras": [
+              "R07"
+            ],
+            "valores": {
+              "taxa_endividamento": 1.0754
+            }
+          },
+          {
+            "index": 11,
+            "id_cliente_hash": "d5e05b8226253f0206af03f8de00a6e05ee2caf6442aa0df7c2e4cd4d5ba1aff",
+            "regras": [
+              "R08"
+            ],
+            "valores": {
+              "situacao_emprego": "CLT "
+            }
+          },
+          {
+            "index": 13,
+            "id_cliente_hash": "c61d216b7526f7313e405d345c7a47ea6b4ac35e86c8d56ac3fd16d3a26dca99",
+            "regras": [
+              "R08"
+            ],
+            "valores": {
+              "situacao_emprego": "CLT "
+            }
+          },
+          {
+            "index": 17,
+            "id_cliente_hash": "22bd92b93716413b5874d65d617e8d7fe68d59dba37f53324046e898241ac045",
+            "regras": [
+              "R04"
+            ],
+            "valores": {
+              "idade": -4
+            }
+          },
+          {
+            "index": 24,
+            "id_cliente_hash": "887849d89dd479e0c474c53c6cd24f1739eb805e46c1378a777cd1f3676db965",
+            "regras": [
+              "R03"
+            ],
+            "valores": {
+              "renda_mensal": null
+            }
+          }
+        ]
+      },
+      "drift_ref": null,
+      "share_drifted_evidently": null,
+      "drift": null,
+      "predictions": null,
+      "performance": null,
+      "slo": {
+        "window": "bad_batch",
+        "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+        "results": [
+          {
+            "slo_id": "SLO1_integridade",
+            "sli": "rejected_ratio",
+            "observed": 0.27,
+            "threshold": 0.01,
+            "op": "<=",
+            "consumption": 27.0,
+            "status": "BREACHED",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO5_latencia",
+            "sli": "batch_latency_ms",
+            "observed": 41.0,
+            "threshold": 60000.0,
+            "op": "<=",
+            "consumption": 0.0006833333333333333,
+            "status": "OK",
+            "reference": null
+          }
+        ],
+        "alerts": [
+          {
+            "severity": "P1",
+            "slo_id": null,
+            "window": "bad_batch",
+            "message": "Lote bad_batch bloqueado pelo contrato: violação estrutural (R01, R02): lote bloqueado",
+            "recommended_action": "Circuit breaker aberto: acionar o runbook P1, isolar o lote e acionar o produtor dos dados.",
+            "runbook_anchor": "p1-circuit-breaker"
+          }
+        ],
+        "remaining_budget": -12.500341666666667,
+        "decision": "BLOCKED",
+        "blocked_reason": "violação estrutural (R01, R02): lote bloqueado"
+      },
+      "stage_latencies_ms": {
+        "ingestion": 2,
+        "contract_validation": 39,
+        "inference": 0,
+        "drift_detection": 0,
+        "slo_evaluation": 0,
+        "tracking": 494
+      },
+      "stage_status": {
+        "ingestion": "SUCCESS",
+        "contract_validation": "BLOCKED",
+        "inference": "SKIPPED",
+        "drift_detection": "SKIPPED",
+        "slo_evaluation": "SUCCESS",
+        "tracking": "SUCCESS"
+      },
+      "model_version": "baseline-1.0.0"
+    },
+    {
+      "window": "mes_1",
+      "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+      "decision": "SUCCESS",
+      "validation": {
+        "batch_name": "mes_1",
+        "run_id": "val-6e4d013f-mes_1",
+        "validated_at": "2026-10-30T22:50:00Z",
+        "schema_name": "credit_scoring_inference",
+        "total_records": 5000,
+        "valid_records": 5000,
+        "rejected_records": 0,
+        "rejected_ratio": 0.0,
+        "decision": "SUCCESS",
+        "blocked_reason": null,
+        "violations": [],
+        "sample_failures": []
+      },
+      "drift_ref": "reports/evidently/mes_1_drift_report.html",
+      "share_drifted_evidently": 0.0,
+      "drift": {
+        "window": "mes_1",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.011050000000000004,
+            "ks_p_value": 0.7776125523175814,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0018615865435793898,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01306793925164939,
+            "mean_ref": 43.06575,
+            "mean_cur": 43.0426
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.008483333333333287,
+            "ks_p_value": 0.9594804179949242,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002108808048324491,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01972120084292298,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 4110.330858
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.010533333333333339,
+            "ks_p_value": 0.8244301312696433,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002296834313837457,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.016509609297811468,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 651.8428
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.022883333333333256,
+            "ks_p_value": 0.04888804221894072,
+            "ks_drift": true,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0044200882729208985,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01955583920473292,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.37307444
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.015783333333333316,
+            "ks_p_value": 0.3394009967444097,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002001779958932648,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.02258035705774388,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.40427398000000003
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.010499999999999954,
+            "ks_p_value": 0.8273235944320496,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0011913696745103253,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.017900973652063487,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 64.6294
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.0030999999999999917,
+            "ks_p_value": 0.9999999999999939,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.004291079433797509,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01507644083212651,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.312
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.010083333333333333,
+            "ks_p_value": 0.861916865235196,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0022672229949246433,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01391628182424539,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 13408.318283999999
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.005166666666666653,
+            "ks_p_value": 0.9999790577230426,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.000795018772353184,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01371105965621298,
+            "mean_ref": 27.687,
+            "mean_cur": 27.5556
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.014900000000000024,
+            "ks_p_value": 0.4096050890773383,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0028208706099421225,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.023887763350659775,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 857.685192
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.0024000000000000687,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 2.3414134566260522e-05,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.004837333485691339,
+            "mean_ref": 0.438,
+            "mean_cur": 0.4356
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.009866666666666662,
+            "ks_p_value": 0.8786199248182399,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002756349101410139,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.00878309934153112,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.268267281265181
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 0.3922063444814416,
+            "chi2_p_value": 0.9831100066244616,
+            "chi2_drift": false,
+            "jensen_shannon": 0.004474905823159898,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.513,
+              "aposentado": 0.0906,
+              "autonomo": 0.2236,
+              "desempregado": 0.0718,
+              "servidor_publico": 0.101
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 4.99703765384569,
+            "chi2_p_value": 0.41624182331382087,
+            "chi2_drift": false,
+            "jensen_shannon": 0.016008768863667866,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.1928,
+              "educacao": 0.0968,
+              "outros": 0.2166,
+              "reforma": 0.189,
+              "saude": 0.0812,
+              "veiculo": 0.2236
+            }
+          }
+        ],
+        "n_drifted_features": 0,
+        "drifted_features": [],
+        "psi_critical_features": []
+      },
+      "predictions": {
+        "window": "mes_1",
+        "n": 5000,
+        "p50": 0.030083184338403523,
+        "p90": 0.14491043510873897,
+        "p99": 0.43303419554553585,
+        "mean_score": 0.06200451918624671,
+        "approval_rate": 0.8762,
+        "psi_score_vs_reference": 0.002830379546416936
+      },
+      "performance": {
+        "window": "mes_1",
+        "roc_auc": 0.8055517495543465,
+        "f1": 0.3232104121475054,
+        "precision": 0.2407108239095315,
+        "recall": 0.49174917491749176,
+        "brier": 0.049813333365751646,
+        "base_rate": 0.0606,
+        "auc_delta_vs_reference": -0.023527925709681097,
+        "auc_delta_vs_control": null
+      },
+      "slo": {
+        "window": "mes_1",
+        "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+        "results": [
+          {
+            "slo_id": "SLO1_integridade",
+            "sli": "rejected_ratio",
+            "observed": 0.0,
+            "threshold": 0.01,
+            "op": "<=",
+            "consumption": 0.0,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO2_estabilidade_psi",
+            "sli": "psi_top_features",
+            "observed": 0.004291079433797509,
+            "threshold": 0.25,
+            "op": "<=",
+            "consumption": 0.017164317735190036,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO3_consistencia_ks",
+            "sli": "ks_failing_share",
+            "observed": 0.0,
+            "threshold": 0.34,
+            "op": "<=",
+            "consumption": 0.0,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO4_performance",
+            "sli": "roc_auc",
+            "observed": 0.8055517495543465,
+            "threshold": 0.75,
+            "op": ">=",
+            "consumption": 0.29752177953598236,
+            "status": "OK",
+            "reference": 0.8290796752640276
+          },
+          {
+            "slo_id": "SLO5_latencia",
+            "sli": "batch_latency_ms",
+            "observed": 788.0,
+            "threshold": 60000.0,
+            "op": "<=",
+            "consumption": 0.013133333333333334,
+            "status": "OK",
+            "reference": null
+          }
+        ],
+        "alerts": [
+          {
+            "severity": "P4",
+            "slo_id": null,
+            "window": "mes_1",
+            "message": "Lote mes_1 dentro dos objetivos (93% de saldo no error budget)",
+            "recommended_action": "Informativo: lote dentro dos objetivos; nenhuma ação necessária.",
+            "runbook_anchor": "p4-informativo"
+          }
+        ],
+        "remaining_budget": 0.9344361138790989,
+        "decision": "SUCCESS",
+        "blocked_reason": null
+      },
+      "stage_latencies_ms": {
+        "ingestion": 2,
+        "contract_validation": 14,
+        "inference": 23,
+        "drift_detection": 749,
+        "slo_evaluation": 0,
+        "tracking": 21
+      },
+      "stage_status": {
+        "ingestion": "SUCCESS",
+        "contract_validation": "SUCCESS",
+        "inference": "SUCCESS",
+        "drift_detection": "SUCCESS",
+        "slo_evaluation": "SUCCESS",
+        "tracking": "SUCCESS"
+      },
+      "model_version": "baseline-1.0.0"
+    },
+    {
+      "window": "mes_2",
+      "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+      "decision": "SUCCESS",
+      "validation": {
+        "batch_name": "mes_2",
+        "run_id": "val-6e4d013f-mes_2",
+        "validated_at": "2026-10-30T22:50:00Z",
+        "schema_name": "credit_scoring_inference",
+        "total_records": 5000,
+        "valid_records": 5000,
+        "rejected_records": 0,
+        "rejected_ratio": 0.0,
+        "decision": "SUCCESS",
+        "blocked_reason": null,
+        "violations": [],
+        "sample_failures": []
+      },
+      "drift_ref": "reports/evidently/mes_2_drift_report.html",
+      "share_drifted_evidently": 0.2857142857142857,
+      "drift": {
+        "window": "mes_2",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.019066666666666676,
+            "ks_p_value": 0.15169303243348065,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002498695836532124,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.041861468850766664,
+            "mean_ref": 43.06575,
+            "mean_cur": 42.5874
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.07520000000000004,
+            "ks_p_value": 8.401378502902975e-18,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.029341177534493154,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.14777673526814117,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 3746.1557620000003
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.015150000000000025,
+            "ks_p_value": 0.3888958763907311,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.002045577902988175,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.020566074572086743,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 647.5824
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.1822833333333333,
+            "ks_p_value": 4.353329989235256e-103,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.17137270561949552,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.428641160382848,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.44779954
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.10566666666666658,
+            "ks_p_value": 9.166113072722073e-35,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.0646069761827766,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.2522827191411274,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.46044673999999997
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.020233333333333353,
+            "ks_p_value": 0.10969543946212557,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.003813289935867375,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.03634324507080401,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 63.1184
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.001866666666666572,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0021952598849841235,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01008598132323434,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.3128
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.02423333333333333,
+            "ks_p_value": 0.031175073170269685,
+            "ks_drift": true,
+            "ks_drift_bonferroni": false,
+            "psi": 0.006071274577958403,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.05149684614582781,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 13002.54351
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.00996666666666668,
+            "ks_p_value": 0.8710287955913911,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0007880687579021916,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.022171360913230066,
+            "mean_ref": 27.687,
+            "mean_cur": 27.3828
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.04028333333333331,
+            "ks_p_value": 2.0594607795896484e-05,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.013755664510354,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.05436281295928638,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 865.9746539999999
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.0009999999999998899,
+            "ks_p_value": 1.0,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 4.061447069720115e-06,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.002015555619038095,
+            "mean_ref": 0.438,
+            "mean_cur": 0.439
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.06976666666666664,
+            "ks_p_value": 2.2171717736984803e-15,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.030730907696044116,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.16352346175669327,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.2993941173605531
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 13.333766005388592,
+            "chi2_p_value": 0.009755023868742965,
+            "chi2_drift": true,
+            "jensen_shannon": 0.02584327237010044,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.4956,
+              "aposentado": 0.088,
+              "autonomo": 0.2276,
+              "desempregado": 0.0848,
+              "servidor_publico": 0.104
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 94.57193083555164,
+            "chi2_p_value": 7.347349617045946e-19,
+            "chi2_drift": true,
+            "jensen_shannon": 0.06826393269679454,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.2644,
+              "educacao": 0.0938,
+              "outros": 0.1998,
+              "reforma": 0.167,
+              "saude": 0.0738,
+              "veiculo": 0.2012
+            }
+          }
+        ],
+        "n_drifted_features": 7,
+        "drifted_features": [
+          "renda_mensal",
+          "taxa_endividamento",
+          "utilizacao_credito",
+          "valor_parcela",
+          "comprometimento_renda",
+          "situacao_emprego",
+          "finalidade_credito"
+        ],
+        "psi_critical_features": []
+      },
+      "predictions": {
+        "window": "mes_2",
+        "n": 5000,
+        "p50": 0.03447996777438982,
+        "p90": 0.2005406714696945,
+        "p99": 0.5142108634838696,
+        "mean_score": 0.07834473068410923,
+        "approval_rate": 0.8242,
+        "psi_score_vs_reference": 0.05595562728476497
+      },
+      "performance": {
+        "window": "mes_2",
+        "roc_auc": 0.8012391226909572,
+        "f1": 0.36210847975553856,
+        "precision": 0.2696245733788396,
+        "recall": 0.5511627906976744,
+        "brier": 0.06798391853298631,
+        "base_rate": 0.086,
+        "auc_delta_vs_reference": -0.027840552573070387,
+        "auc_delta_vs_control": -0.004312626863389291
+      },
+      "slo": {
+        "window": "mes_2",
+        "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+        "results": [
+          {
+            "slo_id": "SLO1_integridade",
+            "sli": "rejected_ratio",
+            "observed": 0.0,
+            "threshold": 0.01,
+            "op": "<=",
+            "consumption": 0.0,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO2_estabilidade_psi",
+            "sli": "psi_top_features",
+            "observed": 0.0646069761827766,
+            "threshold": 0.25,
+            "op": "<=",
+            "consumption": 0.2584279047311064,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO3_consistencia_ks",
+            "sli": "ks_failing_share",
+            "observed": 0.8,
+            "threshold": 0.34,
+            "op": "<=",
+            "consumption": 2.3529411764705883,
+            "status": "BREACHED",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO4_performance",
+            "sli": "roc_auc",
+            "observed": 0.8012391226909572,
+            "threshold": 0.75,
+            "op": ">=",
+            "consumption": 0.3520569916368223,
+            "status": "OK",
+            "reference": 0.8290796752640276
+          },
+          {
+            "slo_id": "SLO5_latencia",
+            "sli": "batch_latency_ms",
+            "observed": 718.0,
+            "threshold": 60000.0,
+            "op": "<=",
+            "consumption": 0.011966666666666667,
+            "status": "OK",
+            "reference": null
+          }
+        ],
+        "alerts": [
+          {
+            "severity": "P3",
+            "slo_id": "SLO3_consistencia_ks",
+            "window": "mes_2",
+            "message": "SLO3_consistencia_ks: observado 0.8 (objetivo <= 0.34), 235% do error budget",
+            "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+            "runbook_anchor": "p3-atencao"
+          }
+        ],
+        "remaining_budget": 0.40492145209896324,
+        "decision": "SUCCESS",
+        "blocked_reason": null
+      },
+      "stage_latencies_ms": {
+        "ingestion": 3,
+        "contract_validation": 12,
+        "inference": 22,
+        "drift_detection": 681,
+        "slo_evaluation": 0,
+        "tracking": 19
+      },
+      "stage_status": {
+        "ingestion": "SUCCESS",
+        "contract_validation": "SUCCESS",
+        "inference": "SUCCESS",
+        "drift_detection": "SUCCESS",
+        "slo_evaluation": "SUCCESS",
+        "tracking": "SUCCESS"
+      },
+      "model_version": "baseline-1.0.0"
+    },
+    {
+      "window": "mes_3_crise",
+      "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+      "decision": "SUCCESS",
+      "validation": {
+        "batch_name": "mes_3_crise",
+        "run_id": "val-6e4d013f-mes_3_crise",
+        "validated_at": "2026-10-30T22:50:00Z",
+        "schema_name": "credit_scoring_inference",
+        "total_records": 5000,
+        "valid_records": 5000,
+        "rejected_records": 0,
+        "rejected_ratio": 0.0,
+        "decision": "SUCCESS",
+        "blocked_reason": null,
+        "violations": [],
+        "sample_failures": []
+      },
+      "drift_ref": "reports/evidently/mes_3_crise_drift_report.html",
+      "share_drifted_evidently": 0.42857142857142855,
+      "drift": {
+        "window": "mes_3_crise",
+        "reference_rows": 12000,
+        "current_rows": 5000,
+        "alpha": 0.05,
+        "alpha_bonferroni": 0.004166666666666667,
+        "numeric": [
+          {
+            "feature": "idade",
+            "ks_statistic": 0.006633333333333269,
+            "ks_p_value": 0.9975006880180483,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0019304526668483875,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.013120593444371585,
+            "mean_ref": 43.06575,
+            "mean_cur": 43.0122
+          },
+          {
+            "feature": "renda_mensal",
+            "ks_statistic": 0.16026666666666678,
+            "ks_p_value": 1.1787577890638014e-79,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.161172129915422,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.32814057174308053,
+            "mean_ref": 4152.251239166667,
+            "mean_cur": 3251.7697659999994
+          },
+          {
+            "feature": "score_bureau",
+            "ks_statistic": 0.009566666666666668,
+            "ks_p_value": 0.9001010747133584,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0012686944840773129,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.013538041623617322,
+            "mean_ref": 650.2524166666667,
+            "mean_cur": 650.0154
+          },
+          {
+            "feature": "taxa_endividamento",
+            "ks_statistic": 0.3200666666666666,
+            "ks_p_value": 3.75e-322,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.632148320372331,
+            "psi_level": "critico",
+            "wasserstein_norm": 0.8456788785526975,
+            "mean_ref": 0.3718911166666667,
+            "mean_cur": 0.5216531
+          },
+          {
+            "feature": "utilizacao_credito",
+            "ks_statistic": 0.3076666666666666,
+            "ks_p_value": 4.385610099039491e-297,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.6601694457990286,
+            "psi_level": "critico",
+            "wasserstein_norm": 0.809274087339542,
+            "mean_ref": 0.39950783333333334,
+            "mean_cur": 0.59498804
+          },
+          {
+            "feature": "tempo_emprego_meses",
+            "ks_statistic": 0.0485,
+            "ks_p_value": 1.1841950937860769e-07,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.023665134721550254,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.06945711950444627,
+            "mean_ref": 64.94183333333334,
+            "mean_cur": 61.4662
+          },
+          {
+            "feature": "qtd_parcelas_atraso_12m",
+            "ks_statistic": 0.004466666666666508,
+            "ks_p_value": 0.9999996723405492,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.003079314214159505,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.015916939275729458,
+            "mean_ref": 0.30933333333333335,
+            "mean_cur": 0.3184
+          },
+          {
+            "feature": "valor_emprestimo",
+            "ks_statistic": 0.057616666666666705,
+            "ks_p_value": 1.2641587207036506e-10,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.027305470595478536,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.13940203891358974,
+            "mean_ref": 13467.245928333332,
+            "mean_cur": 12172.832892000002
+          },
+          {
+            "feature": "prazo_meses",
+            "ks_statistic": 0.0037833333333333052,
+            "ks_p_value": 0.9999999995131176,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.0005041765394971766,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.008366297909716741,
+            "mean_ref": 27.687,
+            "mean_cur": 27.768
+          },
+          {
+            "feature": "valor_parcela",
+            "ks_statistic": 0.0688333333333333,
+            "ks_p_value": 5.5388059325747305e-15,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.03290792851088353,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.07849836097743737,
+            "mean_ref": 856.0102183333332,
+            "mean_cur": 866.5334640000001
+          },
+          {
+            "feature": "possui_imovel",
+            "ks_statistic": 0.00539999999999996,
+            "ks_p_value": 0.9999410364424489,
+            "ks_drift": false,
+            "ks_drift_bonferroni": false,
+            "psi": 0.00011830529308139631,
+            "psi_level": "estavel",
+            "wasserstein_norm": 0.01088400034280585,
+            "mean_ref": 0.438,
+            "mean_cur": 0.4434
+          },
+          {
+            "feature": "comprometimento_renda",
+            "ks_statistic": 0.15789999999999993,
+            "ks_p_value": 2.5503168887786768e-77,
+            "ks_drift": true,
+            "ks_drift_bonferroni": true,
+            "psi": 0.1445663712201579,
+            "psi_level": "atencao",
+            "wasserstein_norm": 0.3796008703703141,
+            "mean_ref": 0.2674177008662371,
+            "mean_cur": 0.3416464173455308
+          }
+        ],
+        "categorical": [
+          {
+            "feature": "situacao_emprego",
+            "chi2_statistic": 105.31227189256381,
+            "chi2_p_value": 7.266915560936921e-22,
+            "chi2_drift": true,
+            "jensen_shannon": 0.0704284081964114,
+            "shares_ref": {
+              "CLT": 0.518,
+              "aposentado": 0.09,
+              "autonomo": 0.22016666666666668,
+              "desempregado": 0.07141666666666667,
+              "servidor_publico": 0.10041666666666667
+            },
+            "shares_cur": {
+              "CLT": 0.4766,
+              "aposentado": 0.093,
+              "autonomo": 0.2104,
+              "desempregado": 0.1184,
+              "servidor_publico": 0.1016
+            }
+          },
+          {
+            "feature": "finalidade_credito",
+            "chi2_statistic": 420.7125879268569,
+            "chi2_p_value": 1.0169802434706701e-88,
+            "chi2_drift": true,
+            "jensen_shannon": 0.14175136723081275,
+            "shares_ref": {
+              "consolidacao_dividas": 0.19816666666666666,
+              "educacao": 0.09625,
+              "outros": 0.22041666666666668,
+              "reforma": 0.18016666666666667,
+              "saude": 0.08816666666666667,
+              "veiculo": 0.21683333333333332
+            },
+            "shares_cur": {
+              "consolidacao_dividas": 0.3458,
+              "educacao": 0.0808,
+              "outros": 0.1804,
+              "reforma": 0.1464,
+              "saude": 0.0684,
+              "veiculo": 0.1782
+            }
+          }
+        ],
+        "n_drifted_features": 9,
+        "drifted_features": [
+          "renda_mensal",
+          "taxa_endividamento",
+          "utilizacao_credito",
+          "tempo_emprego_meses",
+          "valor_emprestimo",
+          "valor_parcela",
+          "comprometimento_renda",
+          "situacao_emprego",
+          "finalidade_credito"
+        ],
+        "psi_critical_features": [
+          "taxa_endividamento",
+          "utilizacao_credito"
+        ]
+      },
+      "predictions": {
+        "window": "mes_3_crise",
+        "n": 5000,
+        "p50": 0.04665163868416397,
+        "p90": 0.28222121306068854,
+        "p99": 0.5896264805729632,
+        "mean_score": 0.10340347606392293,
+        "approval_rate": 0.7474,
+        "psi_score_vs_reference": 0.2549288216914578
+      },
+      "performance": {
+        "window": "mes_3_crise",
+        "roc_auc": 0.7640296642383805,
+        "f1": 0.3683935112506541,
+        "precision": 0.278701504354711,
+        "recall": 0.5432098765432098,
+        "brier": 0.10250773104955208,
+        "base_rate": 0.1296,
+        "auc_delta_vs_reference": -0.06505001102564711,
+        "auc_delta_vs_control": -0.04152208531596602
+      },
+      "slo": {
+        "window": "mes_3_crise",
+        "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348",
+        "results": [
+          {
+            "slo_id": "SLO1_integridade",
+            "sli": "rejected_ratio",
+            "observed": 0.0,
+            "threshold": 0.01,
+            "op": "<=",
+            "consumption": 0.0,
+            "status": "OK",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO2_estabilidade_psi",
+            "sli": "psi_top_features",
+            "observed": 0.6601694457990286,
+            "threshold": 0.25,
+            "op": "<=",
+            "consumption": 2.6406777831961143,
+            "status": "BREACHED",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO3_consistencia_ks",
+            "sli": "ks_failing_share",
+            "observed": 0.8,
+            "threshold": 0.34,
+            "op": "<=",
+            "consumption": 2.3529411764705883,
+            "status": "BREACHED",
+            "reference": null
+          },
+          {
+            "slo_id": "SLO4_performance",
+            "sli": "roc_auc",
+            "observed": 0.7640296642383805,
+            "threshold": 0.75,
+            "op": ">=",
+            "consumption": 0.8225882416494645,
+            "status": "WARN",
+            "reference": 0.8290796752640276
+          },
+          {
+            "slo_id": "SLO5_latencia",
+            "sli": "batch_latency_ms",
+            "observed": 806.0,
+            "threshold": 60000.0,
+            "op": "<=",
+            "consumption": 0.013433333333333334,
+            "status": "OK",
+            "reference": null
+          }
+        ],
+        "alerts": [
+          {
+            "severity": "P2",
+            "slo_id": "SLO2_estabilidade_psi",
+            "window": "mes_3_crise",
+            "message": "SLO2_estabilidade_psi: observado 0.6602 (objetivo <= 0.25), 264% do error budget",
+            "recommended_action": "Drift crítico: disparar o retreino do challenger e revisar os guardrails de promoção.",
+            "runbook_anchor": "p2-drift-critico"
+          },
+          {
+            "severity": "P3",
+            "slo_id": "SLO3_consistencia_ks",
+            "window": "mes_3_crise",
+            "message": "SLO3_consistencia_ks: observado 0.8 (objetivo <= 0.34), 235% do error budget",
+            "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+            "runbook_anchor": "p3-atencao"
+          },
+          {
+            "severity": "P3",
+            "slo_id": "SLO4_performance",
+            "window": "mes_3_crise",
+            "message": "SLO4_performance: observado 0.764 (objetivo >= 0.75), 82% do error budget",
+            "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+            "runbook_anchor": "p3-atencao"
+          }
+        ],
+        "remaining_budget": -0.16592810692990012,
+        "decision": "SUCCESS",
+        "blocked_reason": null
+      },
+      "stage_latencies_ms": {
+        "ingestion": 3,
+        "contract_validation": 13,
+        "inference": 21,
+        "drift_detection": 769,
+        "slo_evaluation": 0,
+        "tracking": 21
+      },
+      "stage_status": {
+        "ingestion": "SUCCESS",
+        "contract_validation": "SUCCESS",
+        "inference": "SUCCESS",
+        "drift_detection": "SUCCESS",
+        "slo_evaluation": "SUCCESS",
+        "tracking": "SUCCESS"
+      },
+      "model_version": "baseline-1.0.0"
+    }
+  ],
+  "totals": {
+    "windows": 4,
+    "success": 3,
+    "blocked": 1,
+    "alerts_by_severity": {
+      "P1": 1,
+      "P2": 1,
+      "P3": 3,
+      "P4": 1
+    },
+    "windows_over_budget": [
+      "bad_batch",
+      "mes_3_crise"
+    ]
+  },
+  "alerts": [
+    {
+      "severity": "P1",
+      "slo_id": null,
+      "window": "bad_batch",
+      "message": "Lote bad_batch bloqueado pelo contrato: violação estrutural (R01, R02): lote bloqueado",
+      "recommended_action": "Circuit breaker aberto: acionar o runbook P1, isolar o lote e acionar o produtor dos dados.",
+      "runbook_anchor": "p1-circuit-breaker"
+    },
+    {
+      "severity": "P2",
+      "slo_id": "SLO2_estabilidade_psi",
+      "window": "mes_3_crise",
+      "message": "SLO2_estabilidade_psi: observado 0.6602 (objetivo <= 0.25), 264% do error budget",
+      "recommended_action": "Drift crítico: disparar o retreino do challenger e revisar os guardrails de promoção.",
+      "runbook_anchor": "p2-drift-critico"
+    },
+    {
+      "severity": "P3",
+      "slo_id": "SLO3_consistencia_ks",
+      "window": "mes_2",
+      "message": "SLO3_consistencia_ks: observado 0.8 (objetivo <= 0.34), 235% do error budget",
+      "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+      "runbook_anchor": "p3-atencao"
+    },
+    {
+      "severity": "P3",
+      "slo_id": "SLO3_consistencia_ks",
+      "window": "mes_3_crise",
+      "message": "SLO3_consistencia_ks: observado 0.8 (objetivo <= 0.34), 235% do error budget",
+      "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+      "runbook_anchor": "p3-atencao"
+    },
+    {
+      "severity": "P3",
+      "slo_id": "SLO4_performance",
+      "window": "mes_3_crise",
+      "message": "SLO4_performance: observado 0.764 (objetivo >= 0.75), 82% do error budget",
+      "recommended_action": "Atenção: error budget alto ou SLO estourado; monitorar a próxima janela.",
+      "runbook_anchor": "p3-atencao"
+    },
+    {
+      "severity": "P4",
+      "slo_id": null,
+      "window": "mes_1",
+      "message": "Lote mes_1 dentro dos objetivos (93% de saldo no error budget)",
+      "recommended_action": "Informativo: lote dentro dos objetivos; nenhuma ação necessária.",
+      "runbook_anchor": "p4-informativo"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+/* Painel de saúde do pipeline: gauges em CSS, mapa de PSI e feed de alertas. */
+.dash-hero { padding: 28px 0 8px; }
+.overall { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.overall .badge { font-size: 1.15rem; padding: 6px 16px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 999px; padding: 2px 10px; font-size: 0.85rem; }
+.badge::before { font-weight: 700; }
+.badge.estavel { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.badge.estavel::before { content: "✓"; }
+.badge.atencao { color: var(--ink); background: color-mix(in srgb, var(--warning) 28%, transparent); }
+.badge.atencao::before { content: "!"; }
+.badge.critico { color: var(--critical-text); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+.badge.critico::before { content: "✕"; }
+.badge.bloqueado { color: var(--critical-text); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+.badge.bloqueado::before { content: "⛔"; }
+
+.win-card { display: grid; gap: 6px; }
+.win-card h3 { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin: 0; font-family: var(--mono); font-size: 1rem; }
+.win-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 0.875rem; }
+.win-card dt { color: var(--ink-2); }
+.win-card dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.gauge { position: relative; height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; min-width: 110px; }
+.gauge .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--good); }
+.gauge.warn .fill { background: var(--warning); }
+.gauge.breached .fill { background: var(--critical); }
+.gauge .limit { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--ink); opacity: 0.55; }
+.gauge-cell { min-width: 150px; }
+.gauge-text { font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.slo-name { font-weight: 600; }
+.slo-limit { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); }
+th.is-selected, td.is-selected { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--ink-2); margin: 8px 0 0; }
+
+.psi { text-align: right; font-variant-numeric: tabular-nums; border-radius: 4px; }
+.psi.estavel { background: color-mix(in srgb, var(--good) 12%, transparent); }
+.psi.atencao { background: color-mix(in srgb, var(--warning) 28%, transparent); }
+.psi.critico { background: color-mix(in srgb, var(--critical) 22%, transparent); font-weight: 700; }
+.psi.nd { color: var(--muted); text-align: center; }
+.psi .tag-level { display: block; font-size: 0.7rem; font-weight: 600; color: var(--ink-2); }
+
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.feed li { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; background: var(--surface); }
+.feed li[data-severity="P1"], .feed li[data-severity="P2"] { border-left-color: var(--critical); }
+.feed li[data-severity="P3"] { border-left-color: var(--warning); }
+.feed li[data-severity="P4"] { border-left-color: var(--good); }
+.feed .head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.feed .where { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-2); }
+.feed .action { font-size: 0.9rem; color: var(--ink-2); }
+
+.stage-bars { display: grid; gap: 4px; }
+.stage-row { display: grid; grid-template-columns: 96px 1fr 84px; gap: 8px; align-items: center; font-size: 0.85rem; }
+.stage-row .bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.stage-row .bar > span { display: block; height: 100%; background: var(--series-1); border-radius: 999px; }
+.stage-row.skipped { color: var(--muted); }
+.stage-row.blocked .bar > span { background: var(--critical); }
+.stage-row .ms { text-align: right; font-variant-numeric: tabular-nums; }
+.window-title { font-family: var(--mono); font-weight: 700; margin: 12px 0 4px; }
+.link-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.link-list li { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-family: var(--mono); font-size: 0.85rem; }
+.quick-note { padding: 10px 14px; border-radius: 8px; background: color-mix(in srgb, var(--warning) 22%, transparent); margin: 12px 0; }
+
+/* `hidden` precisa vencer os `display` dos componentes (filtro de alertas). */
+[hidden] { display: none !important; }
+.win-card dd { white-space: nowrap; }

@@ -61,6 +61,7 @@ class SloSpec(BaseModel):
         objective: Meta do SLO.
         features: Features que alimentam o SLI (quando aplicável).
         budget_note: Leitura do orçamento em linguagem de negócio.
+        title: Nome curto para painéis e páginas.
     """
 
     id: str
@@ -68,6 +69,7 @@ class SloSpec(BaseModel):
     objective: Objective
     features: list[str] = Field(default_factory=list)
     budget_note: str | None = None
+    title: str | None = None
 
     @model_validator(mode="after")
     def _check_limit_and_features(self) -> Self:
