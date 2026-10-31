@@ -7,6 +7,40 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.3.0-rc] - 2026-10-31
+
+Etapa 3 — observabilidade, Data SLOs e MLflow.
+
+### Adicionado
+
+- Logger JSON Lines (`credit_sentinel.observability.logger`) com oito campos
+  obrigatórios, `StageTimer` e filtro que mascara `CLI-…`, CPF e e-mail antes de
+  qualquer saída.
+- Cinco Data SLOs com *error budget* normalizado em `config/slo_config.yaml`, monitor
+  (`slo_monitor`) e alertas P1 a P4 com âncora no `docs/runbook_incidentes.md` (ADR 005).
+- Orquestrador e subcomando `run-pipeline` (`--window`, `--quick`, `--strict`,
+  `--no-mlflow`): seis estágios instrumentados por janela; o lote corrompido termina
+  `BLOCKED` e inferência e drift viram `SKIPPED`.
+- `reports/slo_audit_report.json` e painel de saúde autocontido
+  `reports/health_dashboard.html`; amostra de 40 eventos de log em
+  `docs/evidencias/etapa3/`.
+- Hook do MLflow (run pai e um run aninhado por janela, com métricas de drift, saldo de
+  orçamento e relatórios como artefatos); uma falha no MLflow não derruba o pipeline.
+- Retreino do challenger com janela deslizante (`retrain-challenger`), cinco guardrails
+  de promoção (`reports/gates_report.json`) e auditoria mínima de fairness.
+- Model Registry com os aliases `champion` e `challenger`; `promote-challenger` e
+  `retrain-challenger --promote` exigem os guardrails aprovados e marcam a versão
+  aposentada com `retired_reason`.
+- Job `smoke` na CI: pipeline em modo rápido, lote corrompido com `--strict` (exit 2) e
+  varredura de PII em `reports`, `docs` e `logs`.
+- Runbook de incidentes (P1, P2 e P3) e prints do MLflow UI como evidência.
+
+### Alterado
+
+- `validate_batch` e o treino carimbam o tempo pelo relógio do projeto, que respeita
+  `SOURCE_DATE_EPOCH`.
+- `train` agora coloca o baseline no registry com o alias `champion`.
+
 ## [0.2.0-beta] - 2026-10-21
 
 Etapa 2 — simulação temporal e detecção de drift.

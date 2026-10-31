@@ -11,6 +11,7 @@ from credit_sentinel.contracts.commands import (
 )
 from credit_sentinel.data.commands import reference_path
 from credit_sentinel.drift.detection import MissingInputError
+from credit_sentinel.ml.evaluate_gates import GatesReport
 from credit_sentinel.ml.features import build_features
 from credit_sentinel.ml.mlflow_baseline import log_baseline_run, resolve_tracking_uri
 from credit_sentinel.ml.model_card import render_metrics_section, update_model_card
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-    from credit_sentinel.ml.evaluate_gates import GatesReport
 
 BASELINE_DIR = "baseline"
 MODEL_CARD = "model_card.md"
@@ -99,7 +99,16 @@ def _promote(registry: ModelRegistry, report: GatesReport) -> int:
         print(f"promoção recusada: {exc}")
         return EXIT_GATES_FAILED
     print(f"promoção concluída: credit-scoring-model v{version} agora é @champion")
+    _print_registry(registry)
     return 0
+
+
+def _print_registry(registry: ModelRegistry) -> None:
+    for info in registry.describe():
+        aliases = ", ".join(f"@{a}" for a in info.aliases) or "sem alias"
+        retired = info.tags.get("retired_reason")
+        note = f" · retired_reason={retired}" if retired else ""
+        print(f"  credit-scoring-model v{info.version}: {aliases}{note}")
 
 
 def _register_and_promote(
@@ -111,8 +120,27 @@ def _register_and_promote(
     final, registry = register_challenger(challenger, report, settings, example, path)
     champion, new = final.champion_version, final.challenger_version
     print(f"registry: v{new} @challenger (champion atual: v{champion})")
+    _print_registry(registry)
     code = _promote(registry, final) if args.promote else 0
     return final, code
+
+
+def _run_promote(_args: argparse.Namespace) -> int:
+    settings = get_settings()
+    path = settings.reports_dir / GATES_REPORT
+    if not path.exists():
+        print("erro: relatório ausente; rode `credit-sentinel retrain-challenger`")
+        return 1
+    report = GatesReport.model_validate_json(path.read_text(encoding="utf-8"))
+    registry = ModelRegistry(resolve_tracking_uri(settings))
+    current = registry.version_of("challenger")
+    if report.challenger_version is None or report.challenger_version != current:
+        print(
+            f"erro: o relatório de guardrails (v{report.challenger_version}) não é do"
+            f" challenger atual (v{current}); rode `credit-sentinel retrain-challenger`"
+        )
+        return 1
+    return _promote(registry, report)
 
 
 def _run_retrain(args: argparse.Namespace) -> int:
@@ -139,7 +167,7 @@ def _run_retrain(args: argparse.Namespace) -> int:
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra os subcomandos ``train`` e ``retrain-challenger``.
+    """Registra ``train``, ``retrain-challenger`` e ``promote-challenger``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -164,3 +192,8 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         "--no-mlflow", action="store_true", help="não usa o MLflow nem o registry"
     )
     retrain.set_defaults(handler=_run_retrain)
+    promote = subparsers.add_parser(
+        "promote-challenger",
+        help="promove o challenger registrado a champion (exige gates aprovados)",
+    )
+    promote.set_defaults(handler=_run_promote)

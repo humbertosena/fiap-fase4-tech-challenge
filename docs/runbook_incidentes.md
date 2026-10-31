@@ -70,9 +70,11 @@ features que mais pesam, ou ROC-AUC abaixo de 0,75.
    produção, reforce a revisão manual na faixa de score mais afetada e acompanhe a
    inadimplência observada.
 4. **Resolução.** Se os cinco guardrails aprovarem o challenger (AUC, Brier, contrato,
-   fairness e latência), promova com `--promote`, conferindo no MLflow Model Registry
-   que o alias `champion` foi para a nova versão e que a anterior recebeu a tag
-   `retired_reason`. Reprocese a janela e confirme SLO2 em `OK` na janela seguinte.
+   fairness e latência), promova com `uv run credit-sentinel promote-challenger` (ou
+   `retrain-challenger --promote`, que retreina e promove numa única chamada). Confira no
+   MLflow Model Registry que o alias `champion` foi para a nova versão e que a anterior
+   recebeu a tag `retired_reason`. Se algum gate reprovar, o comando termina com exit 3 e
+   **nenhum alias muda**. Reprocese a janela e confirme SLO2 em `OK` na janela seguinte.
 5. **Pós-mortem.** Registre a causa econômica (veja o ADR 004 como exemplo), o tempo
    entre a detecção e a promoção, o que o challenger mudou e se algum limite do
    `slo_config.yaml` precisa de revisão. Alterar limites exige decisão registrada em ADR.
@@ -102,3 +104,18 @@ principais divergem estatisticamente da referência.
 
 O lote cumpriu todos os objetivos, com saldo positivo de error budget. Não há ação;
 o alerta existe para provar que o lote foi avaliado e quanto sobrou de orçamento.
+
+## Onde ver o que aconteceu no MLflow
+
+`make mlflow` abre a UI em <http://localhost:5001>. Os prints da Etapa 3 mostram o
+caminho percorrido num incidente P2, em `docs/evidencias/etapa3/`:
+
+1. **Runs do pipeline** (`mlflow_runs_monitoring.jpg`): o run pai e um run por janela,
+   com PSI, saldo do orçamento e AUC lado a lado.
+2. **Métricas de uma janela** (`mlflow_metricas_mes3_crise.jpg`): `psi_*`, `ks_p_*`,
+   `budget_*`, latências e as tags `decision`, `git_sha` e `release`.
+3. **Relatório do Evidently como artefato** (`mlflow_evidently_artefato.jpg`): o mesmo
+   HTML de `reports/evidently/`, anexado ao run da janela.
+4. **Registry antes e depois** (`mlflow_registry_antes.jpg` e `mlflow_registry_depois.jpg`):
+   v1 `@champion` e v2 `@challenger`; depois da promoção, v2 `@champion` e a v1 com a
+   tag `retired_reason=drift_mes_3_crise` (`mlflow_registry_v1_aposentada.jpg`).

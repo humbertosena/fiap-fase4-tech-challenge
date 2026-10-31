@@ -273,3 +273,67 @@ def test_real_retraining_registers_a_challenger_with_real_gates(
     finally:
         monkeypatch.undo()
         get_settings.cache_clear()
+
+
+def _train_and_retrain(
+    monkeypatch: pytest.MonkeyPatch, *, passed: bool
+) -> ModelRegistry:
+    assert main(["train"]) == 0
+    _force_gates(monkeypatch, passed=passed)
+    assert main(["retrain-challenger"]) == (0 if passed else 3)
+    return ModelRegistry(get_settings().mlflow_tracking_uri)
+
+
+@pytest.mark.usefixtures("project_clean")
+def test_promote_challenger_promotes_the_registered_version_without_retraining(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CS_MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path}/m.db")
+    get_settings.cache_clear()
+    try:
+        registry = _train_and_retrain(monkeypatch, passed=True)
+        assert main(["promote-challenger"]) == 0
+        assert registry.version_of("champion") == 2
+        assert registry.version_of("challenger") is None
+        listing = {v.version: v for v in registry.describe()}
+        assert listing[1].tags["retired_reason"] == "drift_mes_3_crise"
+        assert len(listing) == 2
+    finally:
+        monkeypatch.undo()
+        get_settings.cache_clear()
+
+
+@pytest.mark.usefixtures("project_clean")
+def test_promote_challenger_is_refused_when_the_gates_failed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CS_MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path}/m.db")
+    get_settings.cache_clear()
+    try:
+        registry = _train_and_retrain(monkeypatch, passed=False)
+        assert main(["promote-challenger"]) == 3
+        assert registry.version_of("champion") == 1
+        assert registry.version_of("challenger") == 2
+    finally:
+        monkeypatch.undo()
+        get_settings.cache_clear()
+
+
+@pytest.mark.usefixtures("project_clean")
+def test_promote_challenger_needs_a_report_of_the_current_challenger(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("CS_MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path}/m.db")
+    get_settings.cache_clear()
+    try:
+        assert main(["promote-challenger"]) == 1
+        assert "retrain-challenger" in capsys.readouterr().out
+        registry = _train_and_retrain(monkeypatch, passed=True)
+        registry.set_alias("challenger", 1)
+        capsys.readouterr()
+        assert main(["promote-challenger"]) == 1
+        assert "não é do challenger atual" in capsys.readouterr().out
+        assert registry.version_of("champion") == 1
+    finally:
+        monkeypatch.undo()
+        get_settings.cache_clear()

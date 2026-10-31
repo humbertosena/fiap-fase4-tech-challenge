@@ -36,16 +36,16 @@
     {
       "gate_id": "G5_latencia",
       "passed": true,
-      "observed": 0.009018792072311044,
+      "observed": 0.01113479200284928,
       "threshold": 5.0,
       "threshold_upper": null,
-      "detail": "5000 linhas em 0.009 s (limite 5 s)"
+      "detail": "5000 linhas em 0.011 s (limite 5 s)"
     }
   ],
   "champion_model": "baseline-1.0.0",
   "challenger_model": "challenger-1.0.0",
-  "champion_version": null,
-  "challenger_version": null,
+  "champion_version": 1,
+  "challenger_version": 2,
   "holdout_window": "mes_3_crise",
   "holdout_rows": 2539,
   "champion": {
