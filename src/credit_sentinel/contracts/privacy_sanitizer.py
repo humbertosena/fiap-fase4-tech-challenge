@@ -103,6 +103,17 @@ def drop_direct_identifiers(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     return df.drop(columns=dropped), dropped
 
 
+def pii_patterns() -> list[tuple[PiiKind, str]]:
+    """Código-fonte das expressões regulares usadas na varredura e no mascaramento.
+
+    Permite que a página didática espelhe, em JavaScript, a mesma regra do logger.
+
+    Returns:
+        Pares ``(tipo, expressão)``.
+    """
+    return [(kind, pattern.pattern) for kind, pattern in _PATTERNS]
+
+
 def redact_text(text: str) -> str:
     """Troca por ``***`` todo trecho que pareça dado pessoal.
 

@@ -1,0 +1,81 @@
+{
+  "metric": "roc_auc",
+  "n_repeats": 10,
+  "top3": [
+    "score_bureau",
+    "taxa_endividamento",
+    "utilizacao_credito"
+  ],
+  "features": [
+    {
+      "feature": "score_bureau",
+      "importance_mean": 0.07507112934374921,
+      "importance_std": 0.009509985376904633
+    },
+    {
+      "feature": "taxa_endividamento",
+      "importance_mean": 0.05638706355737707,
+      "importance_std": 0.00875165305308944
+    },
+    {
+      "feature": "utilizacao_credito",
+      "importance_mean": 0.020866020437280197,
+      "importance_std": 0.005385064403581091
+    },
+    {
+      "feature": "comprometimento_renda",
+      "importance_mean": 0.007416578099605997,
+      "importance_std": 0.002695099150004938
+    },
+    {
+      "feature": "situacao_emprego",
+      "importance_mean": 0.007236066712707867,
+      "importance_std": 0.0016088005122392708
+    },
+    {
+      "feature": "possui_imovel",
+      "importance_mean": 0.006376208061601418,
+      "importance_std": 0.002576379966903502
+    },
+    {
+      "feature": "qtd_parcelas_atraso_12m",
+      "importance_mean": 0.005206502545355418,
+      "importance_std": 0.0014340804945152637
+    },
+    {
+      "feature": "renda_mensal",
+      "importance_mean": 0.004795130948294868,
+      "importance_std": 0.0033025572684509097
+    },
+    {
+      "feature": "tempo_emprego_meses",
+      "importance_mean": 0.0006601175288343475,
+      "importance_std": 0.0022458663105175375
+    },
+    {
+      "feature": "idade",
+      "importance_mean": 0.0004004127156109649,
+      "importance_std": 0.000757435235089256
+    },
+    {
+      "feature": "valor_emprestimo",
+      "importance_mean": 8.002051171785984e-05,
+      "importance_std": 0.0006029019948935234
+    },
+    {
+      "feature": "finalidade_credito",
+      "importance_mean": -0.00014422301530515603,
+      "importance_std": 0.0007432485557592993
+    },
+    {
+      "feature": "prazo_meses",
+      "importance_mean": -0.0004187119799182404,
+      "importance_std": 0.0005596869189280809
+    },
+    {
+      "feature": "valor_parcela",
+      "importance_mean": -0.0009762709200910491,
+      "importance_std": 0.0012205370492473216
+    }
+  ]
+}

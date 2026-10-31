@@ -45,16 +45,22 @@ jobs:
           uv run pytest -m "not performance"
           --cov=credit_sentinel --cov-report=term-missing --cov-fail-under=85
 
-  # O job de smoke do pipeline é habilitado quando o pipeline_runner existir (Etapa 3).
-  # smoke:
-  #   name: smoke do pipeline e varredura de PII
-  #   runs-on: ubuntu-latest
-  #   needs: tests
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: astral-sh/setup-uv@v6
-  #       with:
-  #         enable-cache: true
-  #     - run: uv sync --locked
-  #     - run: uv run credit-sentinel run-pipeline --window mes_1 --quick --no-mlflow
-  #     - run: uv run credit-sentinel scan-pii reports docs logs
+  smoke:
+    name: smoke do pipeline e varredura de PII
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Instalar dependências
+        run: uv sync --locked
+      - name: Pipeline em janela estável (modo rápido)
+        run: uv run credit-sentinel run-pipeline --window mes_1 --quick --no-mlflow
+      - name: Lote corrompido deve ser bloqueado (exit 2 com --strict)
+        run: >-
+          uv run credit-sentinel run-pipeline --window bad_batch --quick
+          --no-mlflow --strict && exit 1 || test $? -eq 2
+      - name: Varredura de PII em relatórios, documentação e logs
+        run: uv run credit-sentinel scan-pii reports docs logs

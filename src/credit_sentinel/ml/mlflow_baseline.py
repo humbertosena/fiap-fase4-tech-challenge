@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import mlflow
 import mlflow.sklearn
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 EXPERIMENT_NAME = "credit-sentinel/baseline"
 REGISTERED_MODEL = "credit-scoring-model"
+BUNDLE_FOLDER = "bundle"
+BASELINE_DIR = "baseline"
 _SQLITE_PREFIX = "sqlite:///"
 _LOGGED_PARAMS = ("max_iter", "learning_rate", "max_leaf_nodes", "l2_regularization")
 # Tipos revisados do pipeline HGB próprio, liberados para a serialização skops do
@@ -69,13 +71,61 @@ def ensure_experiment(name: str, tracking_uri: str) -> str:
     return mlflow.create_experiment(name, artifact_location=location)
 
 
-def _metrics(bundle: ModelBundle) -> dict[str, float]:
+def bundle_metrics(bundle: ModelBundle) -> dict[str, float]:
+    """Métricas numéricas de validação do bundle, prontas para o MLflow.
+
+    Args:
+        bundle: Modelo treinado e analisado.
+
+    Returns:
+        Nome da métrica → valor (inclui o limiar de custo, se houver).
+    """
     data = bundle.metrics.model_dump(
         exclude={"confusion_matrix", "trained_at", "model_version"}
     )
     if bundle.threshold is not None:
         data["cost_threshold"] = bundle.threshold.cost_threshold
     return {key: float(value) for key, value in data.items()}
+
+
+def bundle_params(bundle: ModelBundle, settings: Settings) -> dict[str, Any]:
+    """Hiperparâmetros do classificador e a semente, prontos para o MLflow.
+
+    Args:
+        bundle: Modelo treinado.
+        settings: Configuração (semente).
+
+    Returns:
+        Nome do parâmetro → valor.
+    """
+    params = bundle.pipeline.named_steps["clf"].get_params()
+    return {key: params[key] for key in _LOGGED_PARAMS} | {"seed": settings.seed}
+
+
+def log_registered_model(bundle: ModelBundle, example: pd.DataFrame) -> None:
+    """Registra o pipeline como nova versão de ``credit-scoring-model``.
+
+    Deve ser chamada dentro de um run ativo.
+
+    Args:
+        bundle: Modelo treinado e analisado.
+        example: Algumas linhas de features (``input_example``).
+    """
+    mlflow.sklearn.log_model(
+        bundle.pipeline,
+        name="model",
+        signature=model_signature(),
+        input_example=example,
+        registered_model_name=REGISTERED_MODEL,
+        skops_trusted_types=SKOPS_TRUSTED_TYPES,
+    )
+
+
+def _log_bundle_dir(settings: Settings) -> None:
+    """Anexa ao run a pasta do bundle, para recarregar o modelo pelo registry."""
+    bundle_dir = settings.models_dir / BASELINE_DIR
+    if bundle_dir.exists():
+        mlflow.log_artifacts(str(bundle_dir), BUNDLE_FOLDER)
 
 
 def log_baseline_run(
@@ -96,22 +146,13 @@ def log_baseline_run(
     uri = resolve_tracking_uri(settings)
     mlflow.set_tracking_uri(uri)
     experiment_id = ensure_experiment(EXPERIMENT_NAME, uri)
-    params = bundle.pipeline.named_steps["clf"].get_params()
     with mlflow.start_run(experiment_id=experiment_id, run_name=bundle.version) as run:
         mlflow.set_tags({"model_version": bundle.version, "stage": "baseline"})
-        mlflow.log_params(
-            {key: params[key] for key in _LOGGED_PARAMS} | {"seed": settings.seed}
-        )
-        mlflow.log_metrics(_metrics(bundle))
+        mlflow.log_params(bundle_params(bundle, settings))
+        mlflow.log_metrics(bundle_metrics(bundle))
         mlflow.log_dict(
             [i.model_dump() for i in bundle.importance], "feature_importance.json"
         )
-        mlflow.sklearn.log_model(
-            bundle.pipeline,
-            name="model",
-            signature=model_signature(),
-            input_example=example,
-            registered_model_name=REGISTERED_MODEL,
-            skops_trusted_types=SKOPS_TRUSTED_TYPES,
-        )
+        _log_bundle_dir(settings)
+        log_registered_model(bundle, example)
     return run.info.run_id

@@ -44,8 +44,13 @@
         {% if 2 in published %}
         <li><a href="reports/evidently_drift_report.html">Relatório do Evidently AI</a> (HTML, Mês 3 · crise) e o <a href="reports/evidently_drift_summary.json">sumário de drift</a> (JSON)</li>
         {% endif %}
+        {% if 3 in published %}
+        <li><a href="reports/health_dashboard.html">Painel de saúde do pipeline</a> (HTML), a <a href="reports/slo_audit_report.json">auditoria de SLOs</a> e os <a href="reports/gates_report.json">guardrails do challenger</a> (JSON)</li>
+        {% endif %}
       </ul>
+      {% if 3 not in published %}
       <p class="small muted">{% if 2 in published %}O painel de saúde (Etapa 3) aparece{% else %}Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem{% endif %} aqui quando as releases forem publicadas.</p>
+      {% endif %}
     </div>
   </section>
 </div>

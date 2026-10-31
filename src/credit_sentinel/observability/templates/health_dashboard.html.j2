@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de saúde do pipeline · Credit Sentinel</title>
+<meta name="description" content="Estado dos Data SLOs, error budget, alertas e drift por janela do pipeline de monitoramento.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+{{ css|safe }}
+</style>
+</head>
+<body>
+{% set sev_class = {"P1": "critico", "P2": "critico", "P3": "atencao", "P4": "estavel"} %}
+<header class="site-header">
+  <div class="wrap">
+    <span class="brand">Credit <span>Sentinel</span> · Painel de saúde</span>
+    <nav class="nav" aria-label="Seções">
+      <a href="#janelas">Janelas</a>
+      <a href="#slos">SLOs</a>
+      <a href="#alertas">Alertas</a>
+      <a href="#latencia">Latência</a>
+      <a href="#mapa-psi">Mapa de PSI</a>
+      <a href="#evidently">Evidently</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Alternar tema claro e escuro">☾ Tema escuro</button>
+  </div>
+</header>
+<main class="wrap">
+<section id="status-geral" class="dash-hero" aria-labelledby="titulo-geral">
+  <p class="eyebrow">Pipeline de monitoramento <span class="tag">{{ audit.model_version }}</span></p>
+  <h1 id="titulo-geral">Estado geral do pipeline</h1>
+  <div class="overall">
+    <span class="badge {{ overall.level }}">{{ overall.label }}</span>
+    <span class="muted">Execução <code>{{ audit.run_id }}</code> · gerada em {{ audit.generated_at.strftime("%d/%m/%Y %H:%M") }} UTC</span>
+  </div>
+  {% if audit.quick %}
+  <p class="quick-note small">Execução rápida: amostra de até 1.000 linhas por janela e sem relatório do Evidently.</p>
+  {% endif %}
+  <div class="grid grid-4" style="margin-top:16px">
+    <div class="panel kpi"><div class="label">Janelas processadas</div><div class="value num">{{ audit.totals.windows }}</div><div class="note">{{ audit.totals.success }} com sucesso · {{ audit.totals.blocked }} bloqueada(s)</div></div>
+    <div class="panel kpi"><div class="label">Alertas P1 + P2</div><div class="value num">{{ audit.totals.alerts_by_severity.P1 + audit.totals.alerts_by_severity.P2 }}</div><div class="note">{{ audit.totals.alerts_by_severity.P1 }} P1 · {{ audit.totals.alerts_by_severity.P2 }} P2</div></div>
+    <div class="panel kpi"><div class="label">Alertas P3 + P4</div><div class="value num">{{ audit.totals.alerts_by_severity.P3 + audit.totals.alerts_by_severity.P4 }}</div><div class="note">{{ audit.totals.alerts_by_severity.P3 }} P3 · {{ audit.totals.alerts_by_severity.P4 }} P4</div></div>
+    <div class="panel kpi"><div class="label">Orçamento estourado</div><div class="value num">{{ audit.totals.windows_over_budget|length }}</div><div class="note">{{ audit.totals.windows_over_budget|join(", ") or "nenhuma janela" }}</div></div>
+  </div>
+</section>
+
+<section id="janelas" aria-labelledby="titulo-janelas">
+  <h2 id="titulo-janelas">Janelas</h2>
+  <div class="grid grid-4">
+    {% for item in windows %}
+    {% set w = item.run %}
+    <article class="panel win-card" data-window="{{ w.window }}">
+      <h3>{{ w.window }}
+        {% if w.decision == "BLOCKED" %}<span class="badge bloqueado">Bloqueado</span>
+        {% else %}<span class="badge {{ sev_class[item.worst] }}">{{ item.worst }}</span>{% endif %}
+      </h3>
+      <p class="small muted" style="margin:0">{{ item.severity_label }}</p>
+      <dl>
+        <dt>Linhas</dt><dd>{{ w.validation.total_records|thousands }}</dd>
+        <dt>Rejeitadas</dt><dd>{{ w.validation.rejected_records|thousands }} ({{ w.validation.rejected_ratio|pct(1) }})</dd>
+        <dt>Saldo do orçamento</dt><dd>{{ (100 * w.slo.remaining_budget)|round|int|thousands }} %</dd>
+        {% if w.performance %}<dt>ROC-AUC</dt><dd>{{ w.performance.roc_auc|br(3) }}</dd>{% endif %}
+        {% if w.predictions %}<dt>PSI do score</dt><dd>{{ w.predictions.psi_score_vs_reference|br(3) }}</dd>{% endif %}
+      </dl>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="slos" aria-labelledby="titulo-slos">
+  <h2 id="titulo-slos">Data SLOs e error budget</h2>
+  <p class="muted">Cada barra mostra o consumo do orçamento; a linha vertical marca o limite do SLO (100 %). Acima da linha, o SLO estourou.</p>
+  <div class="controls">
+    <label class="field" for="window-picker">Destacar janela
+      <select id="window-picker" class="select">
+        <option value="">Nenhuma</option>
+        {% for item in windows %}<option value="{{ item.run.window }}">{{ item.run.window }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="panel table-wrap">
+    <table>
+      <thead>
+        <tr><th scope="col">SLO</th><th scope="col">Limite</th>
+        {% for item in windows %}<th scope="col" data-window="{{ item.run.window }}">{{ item.run.window }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in slo_rows %}
+        <tr>
+          <th scope="row"><span class="slo-name">{{ row.title }}</span><br><span class="slo-limit">{{ row.id }}</span></th>
+          <td class="slo-limit">{{ row.limit or "—" }}</td>
+          {% for cell in row.cells %}
+          {% set r = cell.result %}
+          <td class="gauge-cell" data-window="{{ cell.window }}">
+            {% if r %}
+            <div class="gauge {{ r.status|lower }}" role="img" aria-label="{{ row.title }} em {{ cell.window }}: {{ (100 * r.consumption)|round|int }} % do orçamento, {{ status_label[r.status] }}">
+              <span class="fill" style="width: {{ ([r.consumption / gauge_scale, 1]|min * 100)|round(1) }}%"></span><span class="limit"></span>
+            </div>
+            <span class="gauge-text">{{ (100 * r.consumption)|round|int|thousands }} % · {{ status_label[r.status] }}</span>
+            {% else %}
+            <span class="muted small">não avaliado</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="legend"><span>Escala da barra: 0 a {{ (100 * gauge_scale)|round|int }} % do orçamento</span><span>OK abaixo de 70 %</span><span>Atenção de 70 % a 100 %</span><span>Estourado a partir de 100 %</span></p>
+</section>
+
+<section id="alertas" aria-labelledby="titulo-alertas">
+  <h2 id="titulo-alertas">Feed de alertas <span class="muted small" id="alert-count"></span></h2>
+  <div class="controls" role="group" aria-label="Filtrar por severidade">
+    <button class="btn" type="button" data-filter-severity="todos" aria-pressed="true">Todos</button>
+    {% for severity in ["P1", "P2", "P3", "P4"] %}
+    <button class="btn" type="button" data-filter-severity="{{ severity }}" aria-pressed="false">{{ severity_label[severity] }}</button>
+    {% endfor %}
+  </div>
+  <ul class="feed">
+    {% for alert in alerts %}
+    <li data-severity="{{ alert.severity }}" data-window="{{ alert.window }}">
+      <div class="head">
+        <span class="badge {{ sev_class[alert.severity] }}">{{ alert.label }}</span>
+        <span class="where">{{ alert.window }}{% if alert.slo_id %} · {{ alert.slo_id }}{% endif %}</span>
+      </div>
+      <div>{{ alert.message }}</div>
+      <div class="action">{{ alert.recommended_action }} <a href="{{ runbook_url }}#{{ alert.runbook_anchor }}">Runbook</a></div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section id="latencia" aria-labelledby="titulo-latencia">
+  <h2 id="titulo-latencia">Latência por estágio</h2>
+  <p class="muted">Duração de cada estágio do pipeline; estágios pulados (lote bloqueado) ficam sem barra.</p>
+  <div class="grid grid-2">
+    {% for row in latency_rows %}
+    <div class="panel" data-window="{{ row.window }}">
+      <div class="window-title">{{ row.window }}</div>
+      <div class="stage-bars">
+        {% for stage in row.stages %}
+        <div class="stage-row{% if stage.status == "SKIPPED" %} skipped{% elif stage.status == "BLOCKED" %} blocked{% endif %}">
+          <span>{{ stage.label }}</span>
+          <span class="bar"><span style="width: {{ stage.width }}%"></span></span>
+          <span class="ms">{% if stage.status == "SKIPPED" %}pulado{% else %}{{ stage.ms|thousands }} ms{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="mapa-psi" aria-labelledby="titulo-psi">
+  <h2 id="titulo-psi">Mapa de PSI: feature × janela</h2>
+  <p class="muted">PSI contra a referência. Estável abaixo de 0,10, atenção de 0,10 a 0,25 e crítico a partir de 0,25. Lotes bloqueados não chegam ao cálculo.</p>
+  <div class="panel table-wrap">
+    <table>
+      <thead>
+        <tr><th scope="col">Feature</th>{% for item in windows %}<th scope="col" class="num" data-window="{{ item.run.window }}">{{ item.run.window }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in psi_rows %}
+        <tr>
+          <th scope="row">{{ row.feature }}</th>
+          {% for cell in row.cells %}
+          {% if cell.value is none %}
+          <td class="psi nd" data-window="{{ cell.window }}" title="sem cálculo nesta janela">—</td>
+          {% else %}
+          <td class="psi {{ cell.level }}" data-window="{{ cell.window }}">{{ cell.value|br(3) }}<span class="tag-level">{{ {"estavel": "estável", "atencao": "atenção", "critico": "crítico"}[cell.level] }}</span></td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="evidently" aria-labelledby="titulo-evidently">
+  <h2 id="titulo-evidently">Relatórios do Evidently</h2>
+  <ul class="link-list">
+    {% for link in evidently %}
+    <li data-window="{{ link.window }}">{% if link.href %}<a href="{{ link.href }}">{{ link.window }}</a>{% else %}{{ link.window }} · sem relatório (lote bloqueado ou modo rápido){% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p><strong>Credit Sentinel</strong> · Tech Challenge Fase 4 · AUC de referência {{ audit.reference_auc|br(3) }}. Dados 100 % sintéticos; nenhum dado pessoal real.</p>
+    <p>Gerado por <code>credit-sentinel run-pipeline</code> · <a href="{{ repo_url }}">repositório</a> · <a href="{{ runbook_url }}">runbook de incidentes</a>.</p>
+  </div>
+</footer>
+<script>
+{{ js|safe }}
+</script>
+</body>
+</html>

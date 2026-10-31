@@ -31,7 +31,7 @@ from credit_sentinel.ml.train_baseline import TrainingMetrics
 from credit_sentinel.utils.io import file_sha256, read_json, read_parquet
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
     from pathlib import Path
 
     from credit_sentinel.settings import Settings
@@ -922,7 +922,13 @@ ETAPA1_COMMANDS = [
     "uv run credit-sentinel scan-pii reports docs",
     "uv run credit-sentinel build-explainers --etapa 1",
 ]
-_BUILDERS = {1: build_etapa1, 2: build_etapa2}
+
+
+def _builders() -> dict[int, Callable[[Settings, ReleaseInfo], BaseModel]]:
+    """Construtores por etapa (a Etapa 3 fica em módulo próprio, sem ciclo)."""
+    from credit_sentinel.explainers.payloads_etapa3 import build_etapa3  # noqa: PLC0415
+
+    return {1: build_etapa1, 2: build_etapa2, 3: build_etapa3}
 
 
 def build_payload(
@@ -941,10 +947,11 @@ def build_payload(
     Raises:
         ValueError: Se a etapa ainda não tiver página.
     """
-    if etapa not in _BUILDERS:
+    builders = _builders()
+    if etapa not in builders:
         msg = f"a etapa {etapa} ainda não possui página didática"
         raise ValueError(msg)
-    return _BUILDERS[etapa](settings, release or release_info(etapa))
+    return builders[etapa](settings, release or release_info(etapa))
 
 
 class IndexPayload(BaseModel):

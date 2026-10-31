@@ -1,0 +1,57 @@
+/* Etapa 3 — replay do pipeline, gauges de error budget, feed de alertas e galeria. */
+.stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.stage { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface); font-size: 0.85rem; transition: background 0.2s ease; }
+.stage .name { display: block; font-weight: 600; }
+.stage .state { display: block; color: var(--ink-2); font-size: 0.78rem; }
+.stage .ms { display: block; font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--ink-2); }
+.stage.st-running { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border-color: var(--accent); }
+.stage.st-success { background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+.stage.st-blocked, .stage.st-failed { background: color-mix(in srgb, var(--critical) 18%, var(--surface)); border-color: var(--critical); }
+.stage.st-skipped { background: var(--surface-2); color: var(--muted); }
+.console { max-height: 260px; overflow: auto; }
+.console li { border-left-color: var(--axis); word-break: break-word; }
+.console li.st-success { border-left-color: var(--good); }
+.console li.st-blocked, .console li.st-failed { border-left-color: var(--critical); }
+.console li.st-started { border-left-color: var(--accent); }
+.console li.st-skipped { border-left-color: var(--muted); color: var(--ink-2); }
+.verdict.blocked { background: color-mix(in srgb, var(--critical) 16%, var(--surface-2)); }
+.verdict.ok { background: color-mix(in srgb, var(--good) 14%, var(--surface-2)); }
+
+.gauge-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); margin-top: 12px; }
+.gauge-card h4 { margin: 0 0 2px; font-size: 0.95rem; }
+.gauge-card .limit-text { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); }
+.gauge { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 8px 0 4px; }
+.gauge .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--good); transition: width 0.35s ease; }
+.gauge.warn .fill { background: var(--warning); }
+.gauge.breached .fill { background: var(--critical); }
+.gauge .mark { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--ink); opacity: 0.55; }
+.gauge-text { font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.feed li { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; background: var(--surface); }
+.feed li[data-severity="P1"], .feed li[data-severity="P2"] { border-left-color: var(--critical); }
+.feed li[data-severity="P3"] { border-left-color: var(--warning); }
+.feed li[data-severity="P4"] { border-left-color: var(--good); }
+.feed .head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.feed .where { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-2); }
+.feed .action { font-size: 0.9rem; color: var(--ink-2); }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); font-family: var(--mono); font-size: 0.8rem; margin-right: 4px; }
+.chip.champion { background: color-mix(in srgb, var(--good) 20%, var(--surface-2)); }
+.chip.challenger { background: color-mix(in srgb, var(--accent) 22%, var(--surface-2)); }
+
+.gallery { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin-top: 16px; }
+.shot { margin: 0; }
+.shot-btn { display: block; width: 100%; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: zoom-in; overflow: hidden; }
+.shot img { display: block; width: 100%; height: auto; }
+.shot.zoomed { grid-column: 1 / -1; }
+.shot.zoomed .shot-btn { cursor: zoom-out; }
+.shot figcaption { font-size: 0.85rem; color: var(--ink-2); margin-top: 6px; }
+pre.json { margin: 0; padding: 10px 12px; background: var(--code-bg); border-radius: 8px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; }
+textarea.pii { font: inherit; font-family: var(--mono); font-size: 0.85rem; color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; width: 100%; resize: vertical; }
+.status.warn { color: var(--ink); background: color-mix(in srgb, var(--warning) 30%, transparent); }
+.status.warn::before { content: "!"; }
+.sev { display: inline-flex; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; }
+.sev.P1, .sev.P2 { color: var(--critical-text); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+.sev.P3 { color: var(--ink); background: color-mix(in srgb, var(--warning) 30%, transparent); }
+.sev.P4 { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+[hidden] { display: none !important; }

@@ -7,7 +7,7 @@ com ``OrdinalEncoder``) seguido de ``HistGradientBoostingClassifier``.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import joblib
@@ -35,6 +35,7 @@ from credit_sentinel.ml.features import (
     NUMERIC_FEATURES,
     build_features,
 )
+from credit_sentinel.utils.clock import utc_now
 from credit_sentinel.utils.io import read_json, write_json
 
 if TYPE_CHECKING:
@@ -167,13 +168,14 @@ def _validation_scores(
 
 
 def train_baseline(
-    df_reference: pd.DataFrame, *, settings: Settings
+    df_reference: pd.DataFrame, *, settings: Settings, version: str = MODEL_VERSION
 ) -> tuple[Pipeline, TrainingMetrics]:
     """Treina o baseline e mede o desempenho no split de validação.
 
     Args:
         df_reference: Dataset de referência já validado pelo contrato.
         settings: Configuração (semente).
+        version: Versão registrada nas métricas (``challenger-*`` no retreino).
 
     Returns:
         Pipeline ajustado e métricas de validação no limiar de F1.
@@ -188,23 +190,26 @@ def train_baseline(
         n_train=len(train),
         n_valid=len(valid),
         base_rate=float(df_reference[dd.TARGET].mean()),
-        trained_at=datetime.now(UTC),
-        model_version=MODEL_VERSION,
+        trained_at=utc_now(),
+        model_version=version,
     )
     return pipeline, metrics
 
 
-def train_and_analyze(df_reference: pd.DataFrame, *, settings: Settings) -> ModelBundle:
+def train_and_analyze(
+    df_reference: pd.DataFrame, *, settings: Settings, version: str = MODEL_VERSION
+) -> ModelBundle:
     """Treina o baseline e calcula limiares e importância de features.
 
     Args:
         df_reference: Dataset de referência já validado pelo contrato.
         settings: Configuração (semente).
+        version: Versão do modelo (``challenger-*`` no retreino).
 
     Returns:
         Bundle completo, pronto para ``save_model_bundle``.
     """
-    pipeline, metrics = train_baseline(df_reference, settings=settings)
+    pipeline, metrics = train_baseline(df_reference, settings=settings, version=version)
     _, valid = split_reference(df_reference, seed=settings.seed)
     features, y, scores = _validation_scores(pipeline, valid)
     return ModelBundle(
@@ -213,6 +218,7 @@ def train_and_analyze(df_reference: pd.DataFrame, *, settings: Settings) -> Mode
         threshold=threshold_report(y, scores),
         importance=feature_importance(pipeline, features, y, seed=settings.seed),
         signature=signature_json(),
+        version=version,
     )
 
 

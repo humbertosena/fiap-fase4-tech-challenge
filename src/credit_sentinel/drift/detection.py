@@ -204,12 +204,23 @@ def control_auc(settings: Settings, baseline: Baseline) -> float | None:
     return evaluate_performance(frame, scores, baseline.bundle, CONTROL_WINDOW).roc_auc
 
 
-def _evidently(
+def evidently_window(
     settings: Settings,
     baseline: Baseline,
     name: str,
     current: pd.DataFrame,
 ) -> EvidentlyWindow:
+    """Gera o relatório do Evidently de uma janela e extrai o veredito.
+
+    Args:
+        settings: Configuração do projeto.
+        baseline: Modelo e referências.
+        name: Nome da janela.
+        current: Features, alvo e score da janela (``model_frame``).
+
+    Returns:
+        Veredito por coluna e caminhos dos relatórios gravados.
+    """
     now = utc_now()
     snapshot = build_report(
         baseline.holdout_frame,
@@ -273,7 +284,9 @@ def analyze_window(
             name,
             None if name == CONTROL_WINDOW else control,
         ),
-        evidently=_evidently(settings, baseline, name, model_frame(frame, scores)),
+        evidently=evidently_window(
+            settings, baseline, name, model_frame(frame, scores)
+        ),
     )
 
 

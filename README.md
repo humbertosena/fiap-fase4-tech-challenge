@@ -8,7 +8,8 @@
 > **Vídeo STAR (5 min):** *link publicado na release `v1.0.0-ga`.*
 > **Páginas didáticas:** [índice das releases](docs/index.html) ·
 > [Etapa 1 — contratos de dados](docs/releases/etapa-1-contratos.html) ·
-> [Etapa 2 — drift](docs/releases/etapa-2-drift.html)
+> [Etapa 2 — drift](docs/releases/etapa-2-drift.html) ·
+> [Etapa 3 — observabilidade](docs/releases/etapa-3-observabilidade.html)
 > (também no GitHub Pages: <https://humbertosena.github.io/fiap-fase4-tech-challenge/>).
 
 ## 1. Resumo executivo
@@ -34,7 +35,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
-| 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ⏳ planejada | — |
+| 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
 | 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | ⏳ planejada | — |
 
 ## 2. Arquitetura
@@ -58,6 +59,13 @@ flowchart LR
     M --> D
     D --> E[Relatórios de drift<br/>reports/]
     E --> H
+    W --> O[run-pipeline<br/>6 estágios instrumentados]
+    O --> L[(Logs JSONL<br/>PII mascarada)]
+    O --> S{Data SLOs + error budget<br/>alertas P1 a P4}
+    S --> V[Painel de saúde<br/>reports/health_dashboard.html]
+    O --> F
+    D --> Z[Challenger + guardrails<br/>champion x challenger]
+    Z --> F
 ```
 
 O pacote `credit_sentinel` (em `src/`) é organizado por capacidade, e cada subpacote
@@ -67,10 +75,12 @@ expõe seus subcomandos na CLI `credit-sentinel`:
 | :--- | :--- | :--- |
 | `data` | Gerador sintético, lote corrompido, dicionário de dados | v0.1.0-alpha |
 | `contracts` | Schema Pandera, circuit breaker, sanitizador de PII, export YAML | v0.1.0-alpha |
-| `ml` | Features, treino, métricas, limiares, model card, MLflow | v0.1.0-alpha |
+| `ml` | Features, treino, métricas, limiares, model card, MLflow, retreino do challenger e guardrails | v0.1.0-alpha e v0.3.0-rc |
 | `drift` | Simulação das janelas, testes de drift, predições por janela, Evidently | v0.2.0-beta |
 | `explainers` | Páginas HTML didáticas autocontidas | uma por release |
-| `observability`, `tracking`, `governance` | Etapas 3 e 4 | próximas releases |
+| `observability` | Logger JSON com PII mascarada, Data SLOs, alertas, pipeline e painel de saúde | v0.3.0-rc |
+| `tracking` | Hook do MLflow por janela, Model Registry com aliases `champion` e `challenger` | v0.3.0-rc |
+| `governance` | Auditoria de fairness (versão mínima na Etapa 3; completa na Etapa 4) | v0.3.0-rc e v1.0.0-ga |
 
 ## 3. Guia de reprodução
 
@@ -88,12 +98,13 @@ make validate                        # referência aprovada; lote corrompido BLO
 make train                           # valida, treina e registra o baseline no MLflow
 make simulate                        # três janelas de produção (5.000 linhas cada)
 make drift                           # testes de drift, scores e relatórios do Evidently
+make pipeline                        # logs, Data SLOs, alertas, painel de saúde e runs no MLflow
 make explainers                      # gera docs/index.html e docs/releases/*.html
 make mlflow                          # MLflow UI em http://localhost:5001
 ```
 
 Tempos aproximados em um MacBook (Apple Silicon): `make setup` ≈ 1 min na primeira vez,
-`make data` ≈ 2 s, `make train` ≈ 10 s, `make simulate` ≈ 3 s, `make drift` ≈ 6 s, suíte de testes ≈ 35 s.
+`make data` ≈ 2 s, `make train` ≈ 10 s, `make simulate` ≈ 3 s, `make drift` ≈ 6 s, `make pipeline` ≈ 7 s, suíte de testes ≈ 2 min.
 
 Alternativa ao `make mlflow`: `docker compose up -d mlflow` sobe o mesmo servidor na
 porta 5001 (a 5000 é usada pelo AirPlay no macOS), lendo o mesmo `mlruns/`.
@@ -105,6 +116,9 @@ porta 5001 (a 5000 é usada pelo AirPlay no macOS), lendo o mesmo `mlruns/`.
 | `credit-sentinel train [--no-mlflow]` | treina o baseline e atualiza o model card | 0, ou 2 se a referência violar o contrato |
 | `credit-sentinel simulate [--windows a,b] [--force]` | gera `data/production/<janela>.parquet` e imprime os deslocamentos | 0, ou 1 se a janela já existir sem `--force` |
 | `credit-sentinel detect-drift [--window all\|<janela>]` | valida a janela, roda os testes de drift e o Evidently, grava `reports/` | 0 · 2 se o contrato bloquear a janela |
+| `credit-sentinel run-pipeline [--window all\|<janela>] [--quick] [--strict] [--no-mlflow]` | executa os 6 estágios por janela, avalia os SLOs e grava `reports/slo_audit_report.json`, `reports/health_dashboard.html` e `logs/` | 0 · 2 com `--strict` se alguma janela for bloqueada |
+| `credit-sentinel retrain-challenger [--promote] [--no-mlflow]` | retreina o challenger, avalia os 5 guardrails, registra a versão `@challenger` | 0 aprovado · 3 reprovado |
+| `credit-sentinel promote-challenger` | promove o challenger registrado a `@champion` (exige guardrails aprovados) | 0 · 3 recusado · 1 sem relatório do challenger atual |
 | `credit-sentinel scan-pii <caminhos…>` | procura CPF, e-mail, telefone e ids em claro | 0 limpo · 1 achados |
 | `credit-sentinel export-contract` | exporta `config/data_contract.yaml` | 0 |
 | `credit-sentinel build-explainers [--etapa 1,2]` | gera as páginas didáticas | 0 |
@@ -325,11 +339,142 @@ PSI: menor que 0,10 estável; de 0,10 a 0,25 atenção; 0,25 ou mais crítico.
 
 ![Relatório do Evidently AI em mes_3_crise: 6 de 14 colunas com drift](docs/evidencias/etapa2/evidently_mes3_crise.jpg)
 
+## 6. Etapa 3 — Observabilidade, Data SLOs e MLflow
+
+A Etapa 2 prova que o modelo degrada; esta etapa dá à operação o que ela precisa para
+**agir**: logs que dizem o que aconteceu, SLOs que dizem se está bom ou ruim, alertas
+que dizem o que fazer e um registro que diz qual modelo está em produção. As decisões
+estão no [ADR 005](docs/adr/005-observabilidade-slos-mlflow.md).
+
+### 6.1 Logs estruturados
+
+`credit-sentinel run-pipeline` grava um evento JSON por linha em
+`logs/pipeline_events.jsonl` (fora do git) e o espelha no stderr. Um filtro mascara
+`CLI-xxxxxxxxxx`, CPF e e-mail **antes** de qualquer saída. Cada evento tem oito campos
+obrigatórios, validados por `PipelineEvent`:
+
+| Campo | Conteúdo |
+| :--- | :--- |
+| `timestamp` | instante UTC (respeita `SOURCE_DATE_EPOCH`) |
+| `run_id` | uuid4 da execução do pipeline |
+| `stage` | `ingestion`, `contract_validation`, `inference`, `drift_detection`, `slo_evaluation` ou `tracking` |
+| `status` | `STARTED`, `SUCCESS`, `FAILED`, `BLOCKED` ou `SKIPPED` |
+| `records_processed`, `rejected_records` | registros tratados e rejeitados pelo contrato |
+| `latency_ms` | duração do estágio |
+| `model_version` | versão do modelo avaliado |
+
+Opcionais: `window`, `message` e `details`. O lote corrompido termina `BLOCKED` no estágio
+`contract_validation`, e `inference` e `drift_detection` viram `SKIPPED`:
+
+```json
+{"timestamp": "2026-10-30T22:50:00.066509Z", "run_id": "6e4d013f-2bee-4b6b-bc62-3203a949a348", "stage": "contract_validation", "status": "BLOCKED", "records_processed": 600, "rejected_records": 162, "latency_ms": 39, "model_version": "baseline-1.0.0", "window": "bad_batch", "message": "violação estrutural (R01, R02): lote bloqueado", "details": {"regras": ["R01", "R02", "R03", "R04", "R07", "R08", "R10", "R11"], "rejected_ratio": 0.27}}
+```
+
+Uma amostra de 40 eventos já mascarados está em
+[`pipeline_events_sample.jsonl`](docs/evidencias/etapa3/pipeline_events_sample.jsonl).
+
+### 6.2 Data SLOs e error budget
+
+Cinco SLIs por lote, declarados em [`config/slo_config.yaml`](config/slo_config.yaml):
+
+| SLO | SLI | Meta |
+| :--- | :--- | :--- |
+| SLO1 · integridade | fração de linhas rejeitadas | ≤ 1 % |
+| SLO2 · estabilidade | maior PSI nas 3 features mais importantes (`score_bureau`, `qtd_parcelas_atraso_12m`, `utilizacao_credito`) | ≤ 0,25 |
+| SLO3 · consistência | fração das 5 numéricas principais com KS significativo (Bonferroni) | ≤ 0,34 |
+| SLO4 · performance | ROC-AUC do lote (usa a verdade de campo) | ≥ 0,75 |
+| SLO5 · latência | duração do lote | ≤ 60 s |
+
+O SLO4 usa ROC-AUC em vez da acurácia do plano original: com 6 % de inadimplência, um
+modelo que aprova todo mundo acerta 94 %. O **consumo do orçamento** é normalizado: `observado / limite`
+nos objetivos `<=` e `(AUC de validação − observado) / (AUC de validação − limite)` no `>=`.
+Abaixo de 70 % o SLO está `OK`, até 100 % em `WARN` e a partir de 100 % `BREACHED`. O
+**saldo do lote** é `1 − média dos consumos`; negativo significa orçamento estourado.
+
+### 6.3 Alertas e runbook
+
+| Severidade | Gatilho | Ação |
+| :--- | :--- | :--- |
+| **P1** | o contrato bloqueou o lote | isolar o lote e acionar o produtor dos dados |
+| **P2** | SLO2 ou SLO4 estourado | drift crítico: disparar o retreino do challenger |
+| **P3** | algum SLO com 70 % ou mais do orçamento | monitorar a próxima janela |
+| **P4** | nenhuma regra anterior | informativo |
+
+Cada alerta aponta para uma seção do [runbook de incidentes](docs/runbook_incidentes.md),
+com as fases Detecção, Triagem, Mitigação, Resolução e Pós-mortem para P1, P2 e P3.
+
+### 6.4 Resultado nas quatro janelas
+
+`credit-sentinel run-pipeline --window all` (7 s, com o Evidently) produz
+[`slo_audit_report.json`](reports/slo_audit_report.json) e o
+[painel de saúde](reports/health_dashboard.html), uma página autocontida com o estado
+geral, os gauges de consumo por janela, o feed de alertas, a latência por estágio, o
+mapa de PSI e os links do Evidently.
+
+| Janela | Decisão | Alertas | Saldo do orçamento | O que aconteceu |
+| :--- | :--- | :--- | ---: | :--- |
+| `bad_batch` | `BLOCKED` | P1 | − 1.250 % | 27 % de linhas rejeitadas e violação estrutural (R01, R02): nada chega ao modelo |
+| `mes_1` | `SUCCESS` | P4 | + 93 % | tudo dentro dos limites |
+| `mes_2` | `SUCCESS` | P3 | + 40 % | SLO3 estourado (4 de 5 features com KS significativo), mas o PSI máximo é 0,065 |
+| `mes_3_crise` | `SUCCESS` | P2 e 2 × P3 | − 17 % | SLO2 em 264 % (PSI 0,660), SLO3 em 235 % e SLO4 em 82 % (AUC 0,764) |
+
+O contraste entre `mes_2` e `mes_3_crise` é o ponto didático: o KS acusa as duas janelas,
+mas só o PSI das features que mais pesam no modelo separa o incômodo da crise.
+
+### 6.5 MLflow: tracking e Model Registry
+
+Cada execução vira um run pai (`pipeline-<run_id>`) no experimento
+`credit-sentinel/monitoring`, com um run aninhado por janela: métricas de qualidade, de
+drift (`psi_*`, `ks_p_*`), de performance, latência por estágio, consumo por SLO e saldo,
+mais os relatórios (contrato, SLO, log e Evidently) como artefatos. Se o MLflow falhar, o
+estágio `tracking` registra `FAILED` e o pipeline segue. O Model Registry guarda o
+`credit-scoring-model`, com os aliases `champion` e `challenger`.
+
+### 6.6 Champion × challenger
+
+O challenger é treinado depois da detecção, com janela deslizante: últimos 6 meses da
+referência, `mes_1`, `mes_2` e a **primeira quinzena** da crise (18.339 linhas). A segunda
+quinzena de `mes_3_crise` (2.539 linhas) é o holdout temporal em que os dois modelos são
+comparados. O motivo da quinzena de crise no treino está no ADR 005, seção 5: sem ela o
+ganho medido ficou em +0,015 de AUC, abaixo dos +0,02 exigidos.
+
+| Métrica no holdout | Champion (`baseline-1.0.0`) | Challenger (`challenger-1.0.0`) |
+| :--- | ---: | ---: |
+| ROC-AUC | 0,7605 | **0,7883** (+ 0,0279) |
+| Brier | 0,0995 | **0,0957** |
+| F1 | 0,3468 | **0,3973** |
+| Taxa de aprovação | 74,5 % | 76,9 % |
+
+Cinco guardrails decidem a promoção (`reports/gates_report.json`); todos aprovaram:
+
+| Gate | Regra | Medido |
+| :--- | :--- | :--- |
+| G1 | AUC ≥ champion + 0,02 | 0,7883 contra 0,7805 exigido |
+| G2 | Brier ≤ champion | 0,0957 contra 0,0995 |
+| G3 | assinatura de entrada idêntica | 0 colunas divergentes |
+| G4 | razão de impacto na aprovação em [0,80, 1,25] por gênero, região e faixa etária | pior: `regiao=Nordeste` com 0,934 |
+| G5 | 5.000 linhas em até 5 s | 0,011 s |
+
+`promote-challenger` moveu o alias `champion` para a versão 2 e marcou a versão 1 com
+`retired_reason=drift_mes_3_crise`. `genero` e `regiao` seguem fora do modelo: só entram
+na auditoria.
+
+### 6.7 Evidências
+
+- [Registro de verificação](docs/evidencias/etapa3/registro.md): comandos, saídas e critérios.
+- [Página didática da Etapa 3](docs/releases/etapa-3-observabilidade.html): replay do pipeline, gauges de
+  error budget, feed de alertas, champion × challenger e o mascaramento de PII ao vivo.
+- Prints do MLflow UI em [`docs/evidencias/etapa3/`](docs/evidencias/etapa3/): lista de runs,
+  métricas de drift de `mes_3_crise`, relatório do Evidently como artefato e o registry
+  antes e depois da promoção.
+
+![MLflow: run pai e runs aninhados por janela](docs/evidencias/etapa3/mlflow_runs_monitoring.jpg)
+![MLflow Model Registry depois da promoção](docs/evidencias/etapa3/mlflow_registry_depois.jpg)
+
 ## Próximas seções (releases seguintes)
 
-6. Etapa 3 — observabilidade · 7. Governança e LGPD · 8. Análise causal da degradação ·
-9. Runbook · 10. Roteiro STAR · 11. Decisões, estrutura e rastreabilidade ·
-12. Agradecimentos e transparência.
+7. Governança e LGPD · 8. Análise causal da degradação · 9. Roteiro STAR ·
+10. Decisões, estrutura e rastreabilidade · 11. Agradecimentos e transparência.
 
 ## Decisões de arquitetura
 
@@ -337,6 +482,7 @@ PSI: menor que 0,10 estável; de 0,10 a 0,25 atenção; 0,25 ou mais crítico.
 - [ADR 002 — Contrato Pandera com circuit breaker em dois níveis](docs/adr/002-pandera-circuit-breaker.md)
 - [ADR 003 — Modelo baseline com HistGradientBoosting](docs/adr/003-modelo-baseline-hgb.md)
 - [ADR 004 — Cenários de drift: crise de juros em três janelas](docs/adr/004-cenarios-de-drift.md)
+- [ADR 005 — Observabilidade: Data SLOs, error budget e MLflow](docs/adr/005-observabilidade-slos-mlflow.md)
 
 ## Licença
 

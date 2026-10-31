@@ -46,8 +46,8 @@ simulate: ## materializa as janelas de produção (Etapa 2; bit a bit idênticas
 drift: ## testes de drift, scores e relatórios Evidently (Etapa 2)
 	$(RUN) credit-sentinel detect-drift --window all
 
-pipeline: ## pipeline instrumentado com SLOs (Etapa 3)
-	@echo "disponível na Etapa 3"
+pipeline: ## pipeline instrumentado com SLOs e alertas (Etapa 3)
+	$(RUN) credit-sentinel run-pipeline --window all
 
 audit: ## auditoria de fairness (Etapa 4)
 	@echo "disponível na Etapa 4"
