@@ -1,0 +1,216 @@
+{% extends "base.html.j2" %}
+{% set audit = payload.audit %}
+{% set gates = payload.gates %}
+{% set by = {} %}
+{% for w in audit.windows %}{% set _ = by.update({w.window: w}) %}{% endfor %}
+{% set crisis = by["mes_3_crise"] %}
+{% set sev = audit.totals.alerts_by_severity %}
+{% set sev_class = {"P1": "fail", "P2": "fail", "P3": "warn", "P4": "ok"} %}
+{% block title %}Etapa 3 · Observabilidade{% endblock %}
+{% block description %}Como o pipeline registra o que faz, mede a saúde dos dados com Data SLOs e error budget, alerta a operação e governa a troca entre champion e challenger no MLflow.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span>Etapa 3 · Observabilidade, Data SLOs e MLflow</span><span class="tag">{{ release.tag }}</span><span>{{ release.date }}</span></div>
+    <h1>Saber o que o pipeline fez, e o que fazer quando ele avisa</h1>
+    <p class="lead">Detectar o drift não basta: a operação precisa de logs que contem a história, de metas objetivas para dizer
+    se está bom ou ruim, de um aviso com ação recomendada e de um registro claro de qual modelo está em produção. Esta etapa
+    instrumenta o pipeline de ponta a ponta e deixa o resultado consultável no MLflow.</p>
+  </section>
+
+  <section aria-labelledby="resumo">
+    <h2 id="resumo">Resumo em 60 segundos</h2>
+    <div class="grid grid-4">
+      <div class="panel kpi"><div class="label">Alertas em {{ audit.totals.windows }} janelas</div><div class="value num">{{ sev.P1 + sev.P2 + sev.P3 + sev.P4 }}</div><div class="note">{{ sev.P1 }} P1 · {{ sev.P2 }} P2 · {{ sev.P3 }} P3 · {{ sev.P4 }} P4</div></div>
+      <div class="panel kpi"><div class="label">Saldo do orçamento na crise</div><div class="value num">{{ (100 * crisis.slo.remaining_budget)|round|int }} %</div><div class="note">{% if crisis.slo.remaining_budget < 0 %}orçamento estourado em mes_3_crise{% else %}dentro do orçamento{% endif %} (mes_1: {{ (100 * by["mes_1"].slo.remaining_budget)|round|int }} %)</div></div>
+      <div class="panel kpi"><div class="label">AUC no holdout da crise</div><div class="value num">{{ gates.champion.roc_auc|br(3) }} → {{ gates.challenger.roc_auc|br(3) }}</div><div class="note">champion → challenger ({{ (gates.challenger.roc_auc - gates.champion.roc_auc)|br(3) }})</div></div>
+      <div class="panel kpi"><div class="label">Guardrails de promoção</div><div class="value num">{{ gates.results|selectattr("passed")|list|length }} de {{ gates.results|length }}</div><div class="note">{% if gates.passed %}challenger promovido a champion{% else %}promoção recusada{% endif %}</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="implementado">
+    <h2 id="implementado">O que foi implementado</h2>
+    <div class="grid grid-3">
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Logs JSON estruturados</h3>
+        <p class="small">Um evento por linha, com oito campos obrigatórios e um filtro que mascara identificadores antes de qualquer saída.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Cinco Data SLOs</h3>
+        <p class="small">Integridade, estabilidade (PSI), consistência (KS), performance (ROC-AUC) e latência, com <em>error budget</em> normalizado (ADR 005).</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Alertas P1 a P4 e runbook</h3>
+        <p class="small">Cada alerta traz a ação recomendada e aponta para a seção do runbook de incidentes.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Pipeline instrumentado</h3>
+        <p class="small">Seis estágios por janela. O lote corrompido termina <code>BLOCKED</code> e o que vem depois vira <code>SKIPPED</code>.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>MLflow e Model Registry</h3>
+        <p class="small">Um run pai por execução e um run por janela, com métricas de drift e relatórios como artefatos; aliases <code>champion</code> e <code>challenger</code>.</p></article>
+      <article class="panel card"><p class="rubric">Governança (apoio)</p><h3>Retreino com guardrails</h3>
+        <p class="small">O challenger só é promovido se passar nos cinco guardrails, inclusive o de fairness na taxa de aprovação.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="replay">
+    <h2 id="replay">1 · Replay do pipeline</h2>
+    <p class="muted">Escolha uma janela e execute. Os estágios acendem com as latências reais da execução e o console imprime os
+    eventos JSON da amostra versionada (já mascarados). O lote corrompido para em <code>BLOCKED</code>.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="replay-window">Janela
+          <select id="replay-window" class="select">
+            {% for w in audit.windows %}<option value="{{ w.window }}">{{ w.window }}</option>{% endfor %}
+          </select>
+        </label>
+        <button class="btn primary" type="button" id="replay-run">Executar</button>
+        <button class="btn" type="button" id="replay-all">Executar as quatro</button>
+        <button class="btn" type="button" id="replay-skip">Mostrar tudo de uma vez</button>
+      </div>
+      <div class="stages" id="replay-stages" aria-live="polite"></div>
+      <ul class="log console" id="replay-console" aria-label="Eventos do pipeline"></ul>
+      <div class="verdict" id="replay-verdict" aria-live="polite">Clique em Executar.</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="gauges-titulo">
+    <h2 id="gauges-titulo">2 · Gauges de error budget</h2>
+    <p class="muted">Cada barra é o quanto da tolerância de um SLO foi consumido: a linha vertical marca o limite (100 %).
+    Abaixo de 70 % está tudo certo, de 70 % a 100 % é atenção e acima disso o SLO estourou.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="gauge-window">Janela
+          <select id="gauge-window" class="select">
+            {% for w in audit.windows %}<option value="{{ w.window }}"{% if w.window == "mes_3_crise" %} selected{% endif %}>{{ w.window }}</option>{% endfor %}
+          </select>
+        </label>
+        <div class="badge" aria-live="polite">Saldo do orçamento <strong id="gauge-balance" class="num"></strong></div>
+      </div>
+      <div class="gauge-grid" id="gauges"></div>
+      <p class="small muted">O saldo é <code>1 − média dos consumos</code> dos SLOs avaliados; negativo significa orçamento estourado.
+      Num lote bloqueado só o SLO1 e o SLO5 existem, porque o resto depende de dados que não chegaram ao modelo.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="alertas-titulo">
+    <h2 id="alertas-titulo">3 · Feed de alertas</h2>
+    <p class="muted">Filtre por severidade. Cada alerta traz a ação recomendada e o link da seção do runbook que a explica.</p>
+    <div class="panel">
+      <div class="controls" id="alert-filters" role="group" aria-label="Filtrar por severidade"></div>
+      <ul class="feed" id="alert-feed" data-runbook="{{ repo_url }}/blob/main/docs/runbook_incidentes.md"></ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="modelo-titulo">
+    <h2 id="modelo-titulo">4 · Champion × challenger</h2>
+    <p class="muted">Depois da detecção, o challenger é treinado com os últimos 6 meses da referência, <code>mes_1</code>, <code>mes_2</code>
+    e a primeira quinzena da crise ({{ gates.protocol.training_rows|thousands }} linhas). Os dois modelos são comparados na segunda
+    quinzena de <code>mes_3_crise</code> ({{ gates.protocol.holdout_rows|thousands }} linhas, de {{ gates.protocol.holdout_start }} a {{ gates.protocol.holdout_end }}), que o challenger nunca viu.</p>
+    <div class="grid grid-2">
+      <div class="panel">
+        <h3>Métricas no holdout</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Métrica</th><th class="num">Champion</th><th class="num">Challenger</th></tr></thead>
+          <tbody>
+            <tr><td>ROC-AUC</td><td class="num">{{ gates.champion.roc_auc|br(4) }}</td><td class="num">{{ gates.challenger.roc_auc|br(4) }}</td></tr>
+            <tr><td>Brier</td><td class="num">{{ gates.champion.brier|br(4) }}</td><td class="num">{{ gates.challenger.brier|br(4) }}</td></tr>
+            <tr><td>F1</td><td class="num">{{ gates.champion.f1|br(4) }}</td><td class="num">{{ gates.challenger.f1|br(4) }}</td></tr>
+            <tr><td>Taxa de aprovação</td><td class="num">{{ gates.champion.approval_rate|pct(1) }}</td><td class="num">{{ gates.challenger.approval_rate|pct(1) }}</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">Modelos: <code>{{ gates.champion_model }}</code> e <code>{{ gates.challenger_model }}</code>.
+        As features são as mesmas; <code>genero</code> e <code>regiao</code> ficam fora do modelo.</p>
+      </div>
+      <div class="panel">
+        <h3>Os cinco guardrails</h3>
+        <ul class="checklist">
+          {% for gate in gates.results %}
+          <li><span class="status {{ 'ok' if gate.passed else 'fail' }}">{{ 'OK' if gate.passed else 'Falhou' }}</span>
+            <div><strong>{{ gate.gate_id }}</strong><div class="evidence">{{ gate.detail }}</div></div></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>Model Registry</h3>
+      <div class="controls" id="alias-toggle" role="group" aria-label="Estado do registry"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Versão</th><th>Modelo</th><th>Aliases</th><th>Tag</th></tr></thead>
+        <tbody id="alias-table"></tbody>
+      </table></div>
+      <p class="small muted" id="alias-note" aria-live="polite"></p>
+    </div>
+    <div class="gallery" id="gallery">
+      {% for shot in payload.screenshots %}
+      <figure class="shot"><button type="button" class="shot-btn" aria-expanded="false" aria-label="Ampliar: {{ shot.title }}"><img src="{{ shot.data_uri }}" alt="{{ shot.title }}: {{ shot.caption }}" loading="lazy"></button>
+        <figcaption><strong>{{ shot.title }}</strong><br>{{ shot.caption }}</figcaption></figure>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="log-titulo">
+    <h2 id="log-titulo">5 · Como é um evento de log</h2>
+    <div class="grid grid-2">
+      <div class="panel">
+        <h3>Os campos</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th><th>O que é</th></tr></thead>
+          <tbody>
+            {% for field in payload.log_fields %}
+            <tr><td><code>{{ field.name }}</code></td><td>{{ field.kind }}</td><td>{{ "sim" if field.required else "não" }}</td><td class="small">{{ field.description }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Um evento real</h3>
+        <p class="small muted">O lote corrompido bloqueado pelo contrato, tirado da amostra versionada.</p>
+        <pre class="json" id="example-event">{{ payload.example_event.model_dump_json(exclude_none=True, indent=2) }}</pre>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>Mascaramento de dados pessoais</h3>
+      <p class="muted">Antes de gravar o evento, um filtro troca por <code>***</code> o identificador do cliente, o CPF, o e-mail e o telefone.
+      Edite o texto e veja o resultado; as regras são as mesmas expressões regulares do <code>privacy_sanitizer</code>.</p>
+      <div class="grid grid-2">
+        <label class="field" for="pii-input">Mensagem de log (exemplo montado no navegador)
+          <textarea id="pii-input" class="pii" rows="5" spellcheck="false"></textarea>
+        </label>
+        <div class="field">Como é gravada
+          <pre class="json" id="pii-output" aria-live="polite"></pre>
+          <span class="small muted" id="pii-count"></span>
+        </div>
+      </div>
+      <div class="controls"><button class="btn" type="button" id="pii-reset">Restaurar o exemplo</button></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="relatorios">
+    <h2 id="relatorios">Relatórios e documentos</h2>
+    <div class="panel">
+      <ul>
+        <li><a href="{{ depth }}reports/health_dashboard.html"><code>reports/health_dashboard.html</code></a> · painel de saúde autocontido (SLOs, alertas, latência e mapa de PSI)</li>
+        <li><a href="{{ depth }}reports/slo_audit_report.json"><code>reports/slo_audit_report.json</code></a> · auditoria das quatro janelas que alimenta esta página</li>
+        <li><a href="{{ depth }}reports/gates_report.json"><code>reports/gates_report.json</code></a> · os cinco guardrails do challenger</li>
+        <li><a href="{{ repo_url }}/blob/main/docs/runbook_incidentes.md">Runbook de incidentes</a> · P1, P2 e P3, da detecção ao pós-mortem</li>
+        <li><a href="{{ repo_url }}/blob/main/docs/adr/005-observabilidade-slos-mlflow.md">ADR 005</a> · decisões de SLO, error budget e retreino</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="reproduzir">
+    <h2 id="reproduzir">Como reproduzir</h2>
+    <div class="panel">
+      {% for command in payload.commands %}
+      <div class="cmd"><pre id="cmd-{{ loop.index }}">{{ command }}</pre><button class="btn" type="button" data-copy="cmd-{{ loop.index }}" aria-label="Copiar comando">Copiar</button></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="aceitacao">
+    <h2 id="aceitacao">Critérios de aceitação</h2>
+    <div class="panel">
+      <ul class="checklist">
+        {% for item in payload.acceptance %}
+        <li><span class="status {{ 'ok' if item.ok else 'fail' }}">{{ 'OK' if item.ok else 'Falhou' }}</span>
+          <div><strong>{{ item.criterion }}</strong><div class="evidence">{{ item.evidence }}</div></div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

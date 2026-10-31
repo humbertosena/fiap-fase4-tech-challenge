@@ -8,7 +8,8 @@
 > **Vídeo STAR (5 min):** *link publicado na release `v1.0.0-ga`.*
 > **Páginas didáticas:** [índice das releases](docs/index.html) ·
 > [Etapa 1 — contratos de dados](docs/releases/etapa-1-contratos.html) ·
-> [Etapa 2 — drift](docs/releases/etapa-2-drift.html)
+> [Etapa 2 — drift](docs/releases/etapa-2-drift.html) ·
+> [Etapa 3 — observabilidade](docs/releases/etapa-3-observabilidade.html)
 > (também no GitHub Pages: <https://humbertosena.github.io/fiap-fase4-tech-challenge/>).
 
 ## 1. Resumo executivo
@@ -34,7 +35,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
-| 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ⏳ planejada | — |
+| 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
 | 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | ⏳ planejada | — |
 
 ## 2. Arquitetura
@@ -461,6 +462,8 @@ na auditoria.
 ### 6.7 Evidências
 
 - [Registro de verificação](docs/evidencias/etapa3/registro.md): comandos, saídas e critérios.
+- [Página didática da Etapa 3](docs/releases/etapa-3-observabilidade.html): replay do pipeline, gauges de
+  error budget, feed de alertas, champion × challenger e o mascaramento de PII ao vivo.
 - Prints do MLflow UI em [`docs/evidencias/etapa3/`](docs/evidencias/etapa3/): lista de runs,
   métricas de drift de `mes_3_crise`, relatório do Evidently como artefato e o registry
   antes e depois da promoção.

@@ -112,16 +112,33 @@ promoção concluída: credit-scoring-model v2 agora é @champion
 A promoção foi executada por decisão registrada no §12 do spec (2026-11-08); com gates
 reprovados o comando termina com exit 3 sem mudar nenhum alias (teste de integração).
 
-## 7. Verificação da suíte
+## 7. Página didática da Etapa 3 (T42)
+
+`docs/releases/etapa-3-observabilidade.html` é gerada por `credit-sentinel build-explainers`
+a partir de `reports/slo_audit_report.json`, `reports/gates_report.json`,
+`config/slo_config.yaml` e da amostra de log; nenhum número é digitado no template.
+
+| Critério do `SPEC-release-explainers` | Resultado | Atende |
+| :--- | :--- | :---: |
+| Até 2,5 MB | 387 KB (inclui três prints em base64) | sim |
+| Pelo menos três componentes interativos | replay do pipeline, gauges por janela, feed de alertas filtrável, registry antes e depois, mascaramento de PII ao vivo | sim |
+| Números iguais aos relatórios | `test_etapa3_audit_and_gates_are_the_versioned_reports` e `test_etapa3_numbers_come_from_the_audit` | sim |
+| No máximo três prints, até 1.200 px, JPEG q80 | `mlflow_runs_monitoring`, `mlflow_evidently_artefato` e `mlflow_registry_depois` | sim |
+| Sem dados pessoais no HTML | `scan-pii docs` limpo; o texto do mascaramento é montado no navegador a partir de fragmentos | sim |
+| Conferida no navegador | Chrome via HTTP local: sem erros de console, tema claro e escuro, replay de `bad_batch` até `BLOCKED`, filtro de alertas, alternância do registry, 360 px sem rolagem horizontal | sim |
+
+Capturas: `pagina_etapa3_desktop.jpg`, `pagina_etapa3_mobile.jpg` e `pagina_indice.jpg`.
+
+## 8. Verificação da suíte
 
 | Comando | Resultado |
 | :--- | :--- |
 | `uv run ruff check .` | All checks passed! |
-| `uv run ruff format --check .` | 112 arquivos já formatados |
-| `uv run pytest --cov=credit_sentinel` | 437 testes aprovados, cobertura de 98 % |
+| `uv run ruff format --check .` | 115 arquivos já formatados |
+| `uv run pytest --cov=credit_sentinel` | 461 testes aprovados, cobertura de 98 % |
 | `uv run credit-sentinel scan-pii logs reports docs README.md` | nenhum dado pessoal encontrado |
 
-## 8. Desvios do spec
+## 9. Desvios do spec
 
 1. **Protocolo do retreino.** O spec treinava o challenger sem dados da crise; medido, o
    ganho ficou em +0,015 de AUC (gate G1 exige +0,02). Por decisão do responsável

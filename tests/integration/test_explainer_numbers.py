@@ -9,6 +9,7 @@ from credit_sentinel.explainers.payloads import (
     Etapa2Payload,
     build_payload,
 )
+from credit_sentinel.explainers.payloads_etapa3 import Etapa3Payload
 from credit_sentinel.settings import Settings
 from credit_sentinel.utils.io import read_json
 
@@ -95,3 +96,63 @@ def test_etapa2_acceptance_is_derived_from_the_report(etapa2: Etapa2Payload) -> 
     failing = next(item for item in items.values() if not item.ok)
     assert "renda_mensal" in failing.criterion
     assert "0,029" in failing.evidence
+
+
+@pytest.fixture(scope="module")
+def etapa3() -> Etapa3Payload:
+    built = build_payload(3, settings=SETTINGS)
+    assert isinstance(built, Etapa3Payload)
+    return built
+
+
+def test_etapa3_audit_and_gates_are_the_versioned_reports(
+    etapa3: Etapa3Payload,
+) -> None:
+    audit = read_json(SETTINGS.reports_dir / "slo_audit_report.json")
+    gates = read_json(SETTINGS.reports_dir / "gates_report.json")
+    assert etapa3.audit.run_id == audit["run_id"]
+    assert [w.window for w in etapa3.audit.windows] == [
+        w["window"] for w in audit["windows"]
+    ]
+    for mine, theirs in zip(etapa3.audit.windows, audit["windows"], strict=True):
+        assert mine.slo.remaining_budget == theirs["slo"]["remaining_budget"]
+        assert [a.severity for a in mine.slo.alerts] == [
+            a["severity"] for a in theirs["slo"]["alerts"]
+        ]
+    assert etapa3.gates.challenger.roc_auc == gates["challenger"]["roc_auc"]
+    assert [g.passed for g in etapa3.gates.results] == [
+        g["passed"] for g in gates["results"]
+    ]
+
+
+def test_etapa3_events_are_the_redacted_sample(etapa3: Etapa3Payload) -> None:
+    lines = (
+        (SETTINGS.docs_dir / "evidencias" / "etapa3" / "pipeline_events_sample.jsonl")
+        .read_text("utf-8")
+        .splitlines()
+    )
+    assert len(etapa3.events) == len(lines) == 40
+    assert {e.run_id for e in etapa3.events} == {etapa3.audit.run_id}
+
+
+def test_etapa3_slo_config_is_the_versioned_one(etapa3: Etapa3Payload) -> None:
+    assert [s.id for s in etapa3.slo.slos] == [
+        "SLO1_integridade",
+        "SLO2_estabilidade_psi",
+        "SLO3_consistencia_ks",
+        "SLO4_performance",
+        "SLO5_latencia",
+    ]
+
+
+def test_etapa3_acceptance_items_all_pass(etapa3: Etapa3Payload) -> None:
+    failed = [i.criterion for i in etapa3.acceptance if not i.ok]
+    assert failed == []
+    assert len(etapa3.acceptance) >= 8
+
+
+def test_etapa3_page_has_at_most_three_screenshots_under_the_limit(
+    etapa3: Etapa3Payload,
+) -> None:
+    assert 1 <= len(etapa3.screenshots) <= 3
+    assert all(s.size_bytes <= 400_000 for s in etapa3.screenshots)

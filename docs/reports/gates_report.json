@@ -1,0 +1,169 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "gate_id": "G1_auc_vs_champion",
+      "passed": true,
+      "observed": 0.7883293365307753,
+      "threshold": 0.7804552072627613,
+      "threshold_upper": null,
+      "detail": "challenger 0.7883 contra champion 0.7605 (+0.0279; exigido +0.02)"
+    },
+    {
+      "gate_id": "G2_brier",
+      "passed": true,
+      "observed": 0.09570721987657138,
+      "threshold": 0.09951866212956297,
+      "threshold_upper": null,
+      "detail": "challenger 0.0957 contra champion 0.0995"
+    },
+    {
+      "gate_id": "G3_contrato_de_entrada",
+      "passed": true,
+      "observed": 0.0,
+      "threshold": 0.0,
+      "threshold_upper": null,
+      "detail": "assinatura idêntica"
+    },
+    {
+      "gate_id": "G4_fairness_aprovacao",
+      "passed": true,
+      "observed": 0.9335313703494644,
+      "threshold": 0.8,
+      "threshold_upper": 1.25,
+      "detail": "pior razão: regiao=Nordeste com 0.934 (faixa 0.80 a 1.25)"
+    },
+    {
+      "gate_id": "G5_latencia",
+      "passed": true,
+      "observed": 0.01113479200284928,
+      "threshold": 5.0,
+      "threshold_upper": null,
+      "detail": "5000 linhas em 0.011 s (limite 5 s)"
+    }
+  ],
+  "champion_model": "baseline-1.0.0",
+  "challenger_model": "challenger-1.0.0",
+  "champion_version": 1,
+  "challenger_version": 2,
+  "holdout_window": "mes_3_crise",
+  "holdout_rows": 2539,
+  "champion": {
+    "roc_auc": 0.7604552072627613,
+    "brier": 0.09951866212956297,
+    "f1": 0.34683281412253375,
+    "approval_rate": 0.7447814100039386
+  },
+  "challenger": {
+    "roc_auc": 0.7883293365307753,
+    "brier": 0.09570721987657138,
+    "f1": 0.3973362930077691,
+    "approval_rate": 0.7692004726270185
+  },
+  "fairness": [
+    {
+      "attribute": "genero",
+      "group": "F",
+      "n": 1276,
+      "approval_rate": 0.7633228840125392,
+      "reference_group": "F",
+      "ratio": 1.0
+    },
+    {
+      "attribute": "genero",
+      "group": "M",
+      "n": 1263,
+      "approval_rate": 0.7751385589865399,
+      "reference_group": "F",
+      "ratio": 1.015479262080929
+    },
+    {
+      "attribute": "regiao",
+      "group": "Centro-Oeste",
+      "n": 220,
+      "approval_rate": 0.7636363636363637,
+      "reference_group": "Sudeste",
+      "ratio": 0.9807394089223508
+    },
+    {
+      "attribute": "regiao",
+      "group": "Nordeste",
+      "n": 692,
+      "approval_rate": 0.726878612716763,
+      "reference_group": "Sudeste",
+      "ratio": 0.9335313703494644
+    },
+    {
+      "attribute": "regiao",
+      "group": "Norte",
+      "n": 223,
+      "approval_rate": 0.7802690582959642,
+      "reference_group": "Sudeste",
+      "ratio": 1.002100805401121
+    },
+    {
+      "attribute": "regiao",
+      "group": "Sudeste",
+      "n": 1039,
+      "approval_rate": 0.7786333012512031,
+      "reference_group": "Sudeste",
+      "ratio": 1.0
+    },
+    {
+      "attribute": "regiao",
+      "group": "Sul",
+      "n": 365,
+      "approval_rate": 0.8191780821917808,
+      "reference_group": "Sudeste",
+      "ratio": 1.0520717273142894
+    },
+    {
+      "attribute": "faixa_etaria",
+      "group": "18-29",
+      "n": 348,
+      "approval_rate": 0.7413793103448276,
+      "reference_group": "30-44",
+      "ratio": 0.9529345175896899
+    },
+    {
+      "attribute": "faixa_etaria",
+      "group": "30-44",
+      "n": 1018,
+      "approval_rate": 0.7779960707269156,
+      "reference_group": "30-44",
+      "ratio": 1.0
+    },
+    {
+      "attribute": "faixa_etaria",
+      "group": "45-59",
+      "n": 930,
+      "approval_rate": 0.7731182795698924,
+      "reference_group": "30-44",
+      "ratio": 0.993730313891604
+    },
+    {
+      "attribute": "faixa_etaria",
+      "group": "60+",
+      "n": 243,
+      "approval_rate": 0.757201646090535,
+      "reference_group": "30-44",
+      "ratio": 0.9732718127779856
+    }
+  ],
+  "protocol": {
+    "sliding_months": 6,
+    "reference_start": "2026-01-01",
+    "reference_rows": 5878,
+    "windows": {
+      "mes_1": 5000,
+      "mes_2": 5000,
+      "mes_3_crise_ate_dia_15": 2461
+    },
+    "training_rows": 18339,
+    "crisis_train_until": "15 do mês da crise",
+    "holdout_window": "mes_3_crise",
+    "holdout_rows": 2539,
+    "holdout_start": "2026-09-16",
+    "holdout_end": "2026-09-30"
+  }
+}

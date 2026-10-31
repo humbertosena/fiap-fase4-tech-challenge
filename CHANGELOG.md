@@ -34,6 +34,8 @@ Etapa 3 — observabilidade, Data SLOs e MLflow.
 - Job `smoke` na CI: pipeline em modo rápido, lote corrompido com `--strict` (exit 2) e
   varredura de PII em `reports`, `docs` e `logs`.
 - Runbook de incidentes (P1, P2 e P3) e prints do MLflow UI como evidência.
+- Página didática da Etapa 3 (replay do pipeline, gauges de error budget, feed de alertas,
+  champion × challenger e mascaramento de PII ao vivo) e atualização do índice.
 
 ### Alterado
 
