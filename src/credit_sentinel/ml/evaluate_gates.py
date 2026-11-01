@@ -5,7 +5,8 @@ O challenger só vira champion se passar nos cinco gates, medidos no holdout tem
 1. G1: ROC-AUC pelo menos 0,02 acima do champion;
 2. G2: Brier não pior que o do champion;
 3. G3: contrato de entrada (assinatura) idêntico;
-4. G4: razão de impacto na taxa de aprovação de cada grupo em [0,80, 1,25];
+4. G4: razão de impacto na taxa de aprovação de cada grupo em [0,80, 1,25], medida
+   pela auditoria de ``governance/fairness_audit.py``;
 5. G5: inferência de 5.000 linhas em até 5 s.
 """
 
@@ -21,8 +22,10 @@ from credit_sentinel.drift.predictions import decision_threshold
 from credit_sentinel.governance.fairness_audit import (
     IMPACT_LOWER,
     IMPACT_UPPER,
+    AuditSubject,
     GroupImpact,
-    approval_impact_ratios,
+    audit_subject,
+    to_group_impacts,
 )
 from credit_sentinel.ml.evaluation import classification_metrics
 from credit_sentinel.ml.train_baseline import ModelBundle, predict_proba
@@ -274,7 +277,7 @@ def _metrics(bundle: ModelBundle, holdout: pd.DataFrame) -> tuple[ModelMetrics, 
         f1=stats["f1"],
         approval_rate=float((scores < threshold).mean()),
     )
-    return metrics, scores < threshold
+    return metrics, scores
 
 
 def _latency(bundle: ModelBundle, holdout: pd.DataFrame, seed: int) -> float:
@@ -303,8 +306,14 @@ def evaluate_promotion_gates(
         Relatório com um resultado por gate e as métricas dos dois modelos.
     """
     champ_metrics, _ = _metrics(champion, holdout)
-    chall_metrics, approved = _metrics(challenger, holdout)
-    impacts = approval_impact_ratios(holdout, approved)
+    chall_metrics, scores = _metrics(challenger, holdout)
+    subject = AuditSubject(
+        model_version=challenger.version,
+        role="challenger",
+        dataset="holdout",
+        threshold=decision_threshold(challenger),
+    )
+    impacts = to_group_impacts(audit_subject(holdout, scores, subject))
     results = [
         gate_auc(champ_metrics.roc_auc, chall_metrics.roc_auc),
         gate_brier(champ_metrics.brier, chall_metrics.brier),

@@ -1,0 +1,640 @@
+{
+  "generated_at": "2026-11-01T14:00:00Z",
+  "lower": 0.8,
+  "upper": 1.25,
+  "datasets": {
+    "referencia_validacao": "validação do baseline (20 % da referência); o challenger treinou com os últimos seis meses da referência e viu parte destes clientes",
+    "mes_3_crise_holdout": "dias 16 a 30 de `mes_3_crise` (holdout temporal do retreino); nenhum dos modelos treinou com estes clientes"
+  },
+  "passed": true,
+  "reports": [
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "referencia_validacao",
+      "attribute": "genero",
+      "threshold": 0.1248178374746731,
+      "n": 2400,
+      "reference_group": "F",
+      "groups": [
+        {
+          "group": "F",
+          "n": 1220,
+          "approval_rate": 0.8819672131147541,
+          "tpr": 0.5555555555555556,
+          "fpr": 0.08691834942932397,
+          "observed_default_rate": 0.06639344262295081,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "M",
+          "n": 1180,
+          "approval_rate": 0.8906779661016949,
+          "tpr": 0.5,
+          "fpr": 0.08318264014466546,
+          "observed_default_rate": 0.06271186440677966,
+          "disparate_impact": 1.009876504316048,
+          "equal_opportunity_diff": -0.05555555555555558,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "referencia_validacao",
+      "attribute": "regiao",
+      "threshold": 0.1248178374746731,
+      "n": 2400,
+      "reference_group": "Sudeste",
+      "groups": [
+        {
+          "group": "Centro-Oeste",
+          "n": 194,
+          "approval_rate": 0.8608247422680413,
+          "tpr": 0.4666666666666667,
+          "fpr": 0.11173184357541899,
+          "observed_default_rate": 0.07731958762886598,
+          "disparate_impact": 0.9592320102520683,
+          "equal_opportunity_diff": -0.01609195402298852,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Nordeste",
+          "n": 631,
+          "approval_rate": 0.8652931854199684,
+          "tpr": 0.5897435897435898,
+          "fpr": 0.10472972972972973,
+          "observed_default_rate": 0.061806656101426306,
+          "disparate_impact": 0.9642112743192545,
+          "equal_opportunity_diff": 0.10698496905393456,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Norte",
+          "n": 210,
+          "approval_rate": 0.8952380952380953,
+          "tpr": 0.5263157894736842,
+          "fpr": 0.06282722513089005,
+          "observed_default_rate": 0.09047619047619047,
+          "disparate_impact": 0.9975794091221395,
+          "equal_opportunity_diff": 0.04355716878402899,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sudeste",
+          "n": 1004,
+          "approval_rate": 0.897410358565737,
+          "tpr": 0.4827586206896552,
+          "fpr": 0.07928118393234672,
+          "observed_default_rate": 0.05776892430278884,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sul",
+          "n": 361,
+          "approval_rate": 0.9002770083102493,
+          "tpr": 0.5833333333333334,
+          "fpr": 0.06528189910979229,
+          "observed_default_rate": 0.0664819944598338,
+          "disparate_impact": 1.0031943577619205,
+          "equal_opportunity_diff": 0.10057471264367818,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "referencia_validacao",
+      "attribute": "faixa_etaria",
+      "threshold": 0.1248178374746731,
+      "n": 2400,
+      "reference_group": "30-44",
+      "groups": [
+        {
+          "group": "18-29",
+          "n": 347,
+          "approval_rate": 0.8818443804034583,
+          "tpr": 0.39285714285714285,
+          "fpr": 0.09404388714733543,
+          "observed_default_rate": 0.08069164265129683,
+          "disparate_impact": 0.9759738367386588,
+          "equal_opportunity_diff": -0.11533957845433257,
+          "within_four_fifths": true
+        },
+        {
+          "group": "30-44",
+          "n": 985,
+          "approval_rate": 0.9035532994923858,
+          "tpr": 0.5081967213114754,
+          "fpr": 0.06926406926406926,
+          "observed_default_rate": 0.06192893401015229,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "45-59",
+          "n": 850,
+          "approval_rate": 0.8752941176470588,
+          "tpr": 0.58,
+          "fpr": 0.09625,
+          "observed_default_rate": 0.058823529411764705,
+          "disparate_impact": 0.9687243886318572,
+          "equal_opportunity_diff": 0.07180327868852454,
+          "within_four_fifths": true
+        },
+        {
+          "group": "60+",
+          "n": 218,
+          "approval_rate": 0.8577981651376146,
+          "tpr": 0.6875,
+          "fpr": 0.09900990099009901,
+          "observed_default_rate": 0.07339449541284404,
+          "disparate_impact": 0.9493608906298319,
+          "equal_opportunity_diff": 0.17930327868852458,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "referencia_validacao",
+      "attribute": "genero",
+      "threshold": 0.17313802329963693,
+      "n": 2400,
+      "reference_group": "F",
+      "groups": [
+        {
+          "group": "F",
+          "n": 1220,
+          "approval_rate": 0.919672131147541,
+          "tpr": 0.5061728395061729,
+          "fpr": 0.05004389815627744,
+          "observed_default_rate": 0.06639344262295081,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "M",
+          "n": 1180,
+          "approval_rate": 0.9135593220338983,
+          "tpr": 0.43243243243243246,
+          "fpr": 0.06329113924050633,
+          "observed_default_rate": 0.06271186440677966,
+          "disparate_impact": 0.993353273512795,
+          "equal_opportunity_diff": -0.07374040707374041,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "referencia_validacao",
+      "attribute": "regiao",
+      "threshold": 0.17313802329963693,
+      "n": 2400,
+      "reference_group": "Sudeste",
+      "groups": [
+        {
+          "group": "Centro-Oeste",
+          "n": 194,
+          "approval_rate": 0.8969072164948454,
+          "tpr": 0.6,
+          "fpr": 0.061452513966480445,
+          "observed_default_rate": 0.07731958762886598,
+          "disparate_impact": 0.9777359884482354,
+          "equal_opportunity_diff": 0.09999999999999998,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Nordeste",
+          "n": 631,
+          "approval_rate": 0.9049128367670365,
+          "tpr": 0.46153846153846156,
+          "fpr": 0.07094594594594594,
+          "observed_default_rate": 0.061806656101426306,
+          "disparate_impact": 0.9864630706993536,
+          "equal_opportunity_diff": -0.038461538461538436,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Norte",
+          "n": 210,
+          "approval_rate": 0.9238095238095239,
+          "tpr": 0.42105263157894735,
+          "fpr": 0.041884816753926704,
+          "observed_default_rate": 0.09047619047619047,
+          "disparate_impact": 1.0070627165089707,
+          "equal_opportunity_diff": -0.07894736842105265,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sudeste",
+          "n": 1004,
+          "approval_rate": 0.9173306772908366,
+          "tpr": 0.5,
+          "fpr": 0.05708245243128964,
+          "observed_default_rate": 0.05776892430278884,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sul",
+          "n": 361,
+          "approval_rate": 0.9418282548476454,
+          "tpr": 0.375,
+          "fpr": 0.03560830860534125,
+          "observed_default_rate": 0.0664819944598338,
+          "disparate_impact": 1.0267052854148058,
+          "equal_opportunity_diff": -0.125,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "referencia_validacao",
+      "attribute": "faixa_etaria",
+      "threshold": 0.17313802329963693,
+      "n": 2400,
+      "reference_group": "30-44",
+      "groups": [
+        {
+          "group": "18-29",
+          "n": 347,
+          "approval_rate": 0.9048991354466859,
+          "tpr": 0.39285714285714285,
+          "fpr": 0.06896551724137931,
+          "observed_default_rate": 0.08069164265129683,
+          "disparate_impact": 0.9805562688833724,
+          "equal_opportunity_diff": -0.0825526932084309,
+          "within_four_fifths": true
+        },
+        {
+          "group": "30-44",
+          "n": 985,
+          "approval_rate": 0.9228426395939087,
+          "tpr": 0.47540983606557374,
+          "fpr": 0.050865800865800864,
+          "observed_default_rate": 0.06192893401015229,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "45-59",
+          "n": 850,
+          "approval_rate": 0.9176470588235294,
+          "tpr": 0.52,
+          "fpr": 0.055,
+          "observed_default_rate": 0.058823529411764705,
+          "disparate_impact": 0.9943700252378178,
+          "equal_opportunity_diff": 0.044590163934426275,
+          "within_four_fifths": true
+        },
+        {
+          "group": "60+",
+          "n": 218,
+          "approval_rate": 0.9036697247706422,
+          "tpr": 0.4375,
+          "fpr": 0.06930693069306931,
+          "observed_default_rate": 0.07339449541284404,
+          "disparate_impact": 0.9792240691959104,
+          "equal_opportunity_diff": -0.03790983606557374,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "genero",
+      "threshold": 0.1248178374746731,
+      "n": 2539,
+      "reference_group": "F",
+      "groups": [
+        {
+          "group": "F",
+          "n": 1276,
+          "approval_rate": 0.744514106583072,
+          "tpr": 0.5352941176470588,
+          "fpr": 0.21247739602169982,
+          "observed_default_rate": 0.13322884012539185,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "M",
+          "n": 1263,
+          "approval_rate": 0.7450514647664291,
+          "tpr": 0.5241379310344828,
+          "fpr": 0.22003577817531306,
+          "observed_default_rate": 0.11480601741884403,
+          "disparate_impact": 1.0007217568862776,
+          "equal_opportunity_diff": -0.011156186612576002,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "regiao",
+      "threshold": 0.1248178374746731,
+      "n": 2539,
+      "reference_group": "Sudeste",
+      "groups": [
+        {
+          "group": "Centro-Oeste",
+          "n": 220,
+          "approval_rate": 0.7272727272727273,
+          "tpr": 0.52,
+          "fpr": 0.24102564102564103,
+          "observed_default_rate": 0.11363636363636363,
+          "disparate_impact": 0.9410166421374393,
+          "equal_opportunity_diff": 0.020000000000000018,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Nordeste",
+          "n": 692,
+          "approval_rate": 0.6907514450867052,
+          "tpr": 0.6179775280898876,
+          "fpr": 0.263681592039801,
+          "observed_default_rate": 0.12861271676300579,
+          "disparate_impact": 0.8937618324347282,
+          "equal_opportunity_diff": 0.1179775280898876,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Norte",
+          "n": 223,
+          "approval_rate": 0.7085201793721974,
+          "tpr": 0.6538461538461539,
+          "fpr": 0.2436548223350254,
+          "observed_default_rate": 0.11659192825112108,
+          "disparate_impact": 0.9167527601092318,
+          "equal_opportunity_diff": 0.15384615384615385,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sudeste",
+          "n": 1039,
+          "approval_rate": 0.7728585178055822,
+          "tpr": 0.5,
+          "fpr": 0.1846496106785317,
+          "observed_default_rate": 0.1347449470644851,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sul",
+          "n": 365,
+          "approval_rate": 0.8,
+          "tpr": 0.34285714285714286,
+          "fpr": 0.18484848484848485,
+          "observed_default_rate": 0.0958904109589041,
+          "disparate_impact": 1.0351183063511833,
+          "equal_opportunity_diff": -0.15714285714285714,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "baseline-1.0.0",
+      "role": "champion",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "faixa_etaria",
+      "threshold": 0.1248178374746731,
+      "n": 2539,
+      "reference_group": "30-44",
+      "groups": [
+        {
+          "group": "18-29",
+          "n": 348,
+          "approval_rate": 0.7442528735632183,
+          "tpr": 0.575,
+          "fpr": 0.21428571428571427,
+          "observed_default_rate": 0.11494252873563218,
+          "disparate_impact": 0.9955971422961318,
+          "equal_opportunity_diff": 0.020312499999999956,
+          "within_four_fifths": true
+        },
+        {
+          "group": "30-44",
+          "n": 1018,
+          "approval_rate": 0.7475442043222004,
+          "tpr": 0.5546875,
+          "fpr": 0.20898876404494382,
+          "observed_default_rate": 0.12573673870333987,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "45-59",
+          "n": 930,
+          "approval_rate": 0.7451612903225806,
+          "tpr": 0.48717948717948717,
+          "fpr": 0.22140221402214022,
+          "observed_default_rate": 0.12580645161290321,
+          "disparate_impact": 0.9968123436903904,
+          "equal_opportunity_diff": -0.06750801282051283,
+          "within_four_fifths": true
+        },
+        {
+          "group": "60+",
+          "n": 243,
+          "approval_rate": 0.7325102880658436,
+          "tpr": 0.5333333333333333,
+          "fpr": 0.2300469483568075,
+          "observed_default_rate": 0.12345679012345678,
+          "disparate_impact": 0.9798889267424821,
+          "equal_opportunity_diff": -0.021354166666666674,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "genero",
+      "threshold": 0.17313802329963693,
+      "n": 2539,
+      "reference_group": "F",
+      "groups": [
+        {
+          "group": "F",
+          "n": 1276,
+          "approval_rate": 0.7633228840125392,
+          "tpr": 0.6058823529411764,
+          "fpr": 0.17992766726943943,
+          "observed_default_rate": 0.13322884012539185,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "M",
+          "n": 1263,
+          "approval_rate": 0.77513855898654,
+          "tpr": 0.5241379310344828,
+          "fpr": 0.18604651162790697,
+          "observed_default_rate": 0.11480601741884403,
+          "disparate_impact": 1.0154792620809292,
+          "equal_opportunity_diff": -0.08174442190669362,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "regiao",
+      "threshold": 0.17313802329963693,
+      "n": 2539,
+      "reference_group": "Sudeste",
+      "groups": [
+        {
+          "group": "Centro-Oeste",
+          "n": 220,
+          "approval_rate": 0.7636363636363637,
+          "tpr": 0.56,
+          "fpr": 0.19487179487179487,
+          "observed_default_rate": 0.11363636363636363,
+          "disparate_impact": 0.9807394089223508,
+          "equal_opportunity_diff": 0.010000000000000009,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Nordeste",
+          "n": 692,
+          "approval_rate": 0.726878612716763,
+          "tpr": 0.6292134831460674,
+          "fpr": 0.22056384742951907,
+          "observed_default_rate": 0.12861271676300579,
+          "disparate_impact": 0.9335313703494644,
+          "equal_opportunity_diff": 0.07921348314606735,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Norte",
+          "n": 223,
+          "approval_rate": 0.7802690582959642,
+          "tpr": 0.5769230769230769,
+          "fpr": 0.17258883248730963,
+          "observed_default_rate": 0.11659192825112108,
+          "disparate_impact": 1.002100805401121,
+          "equal_opportunity_diff": 0.026923076923076827,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sudeste",
+          "n": 1039,
+          "approval_rate": 0.7786333012512031,
+          "tpr": 0.55,
+          "fpr": 0.17018909899888765,
+          "observed_default_rate": 0.1347449470644851,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "Sul",
+          "n": 365,
+          "approval_rate": 0.8191780821917808,
+          "tpr": 0.4857142857142857,
+          "fpr": 0.1484848484848485,
+          "observed_default_rate": 0.0958904109589041,
+          "disparate_impact": 1.0520717273142894,
+          "equal_opportunity_diff": -0.06428571428571433,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "model_version": "challenger-1.0.0",
+      "role": "challenger",
+      "dataset": "mes_3_crise_holdout",
+      "attribute": "faixa_etaria",
+      "threshold": 0.17313802329963693,
+      "n": 2539,
+      "reference_group": "30-44",
+      "groups": [
+        {
+          "group": "18-29",
+          "n": 348,
+          "approval_rate": 0.7413793103448276,
+          "tpr": 0.675,
+          "fpr": 0.20454545454545456,
+          "observed_default_rate": 0.11494252873563218,
+          "disparate_impact": 0.9529345175896899,
+          "equal_opportunity_diff": 0.08906250000000004,
+          "within_four_fifths": true
+        },
+        {
+          "group": "30-44",
+          "n": 1018,
+          "approval_rate": 0.7779960707269156,
+          "tpr": 0.5859375,
+          "fpr": 0.1696629213483146,
+          "observed_default_rate": 0.12573673870333987,
+          "disparate_impact": 1.0,
+          "equal_opportunity_diff": 0.0,
+          "within_four_fifths": true
+        },
+        {
+          "group": "45-59",
+          "n": 930,
+          "approval_rate": 0.7731182795698925,
+          "tpr": 0.5128205128205128,
+          "fpr": 0.1857318573185732,
+          "observed_default_rate": 0.12580645161290321,
+          "disparate_impact": 0.9937303138916043,
+          "equal_opportunity_diff": -0.07311698717948723,
+          "within_four_fifths": true
+        },
+        {
+          "group": "60+",
+          "n": 243,
+          "approval_rate": 0.757201646090535,
+          "tpr": 0.5666666666666667,
+          "fpr": 0.19718309859154928,
+          "observed_default_rate": 0.12345679012345678,
+          "disparate_impact": 0.9732718127779856,
+          "equal_opportunity_diff": -0.019270833333333348,
+          "within_four_fifths": true
+        }
+      ],
+      "passed": true
+    }
+  ]
+}

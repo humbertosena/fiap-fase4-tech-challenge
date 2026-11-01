@@ -80,7 +80,7 @@ expõe seus subcomandos na CLI `credit-sentinel`:
 | `explainers` | Páginas HTML didáticas autocontidas | uma por release |
 | `observability` | Logger JSON com PII mascarada, Data SLOs, alertas, pipeline e painel de saúde | v0.3.0-rc |
 | `tracking` | Hook do MLflow por janela, Model Registry com aliases `champion` e `challenger` | v0.3.0-rc |
-| `governance` | Auditoria de fairness (versão mínima na Etapa 3; completa na Etapa 4) | v0.3.0-rc e v1.0.0-ga |
+| `governance` | Auditoria de fairness por subgrupos (`fairness-audit`), também usada no G4 do retreino | v0.3.0-rc e v1.0.0-ga |
 
 ## 3. Guia de reprodução
 

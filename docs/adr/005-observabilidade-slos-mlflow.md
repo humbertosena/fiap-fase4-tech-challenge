@@ -175,8 +175,9 @@ A decisão foi tomada pelo responsável do projeto em 2026-10-28, entre quatro o
 | G5 | inferência de 5.000 linhas em até 5 s | amostra do holdout com reposição |
 
 `genero` e `regiao` continuam **fora** das features: só aparecem aqui, para medir o
-resultado da decisão. A auditoria completa (taxas de erro por grupo, causas) é da
-Etapa 4; o G4 usa a versão mínima de `governance/fairness_audit.py`.
+resultado da decisão. O G4 usa a mesma implementação da auditoria completa da Etapa 4
+(`governance/fairness_audit.py`, comando `credit-sentinel fairness-audit`), que também
+mede TPR, FPR e a diferença de oportunidade por grupo.
 
 ### 5.4 Consequências
 

@@ -49,8 +49,8 @@ drift: ## testes de drift, scores e relatórios Evidently (Etapa 2)
 pipeline: ## pipeline instrumentado com SLOs e alertas (Etapa 3)
 	$(RUN) credit-sentinel run-pipeline --window all
 
-audit: ## auditoria de fairness (Etapa 4)
-	@echo "disponível na Etapa 4"
+audit: ## auditoria de fairness de champion e challenger (Etapa 4)
+	$(RUN) credit-sentinel fairness-audit
 
 explainers: ## páginas HTML didáticas das releases (docs/)
 	$(RUN) credit-sentinel build-explainers
