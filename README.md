@@ -36,7 +36,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
 | 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
-| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | ⏳ planejada | — |
+| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🚧 em andamento | — |
 
 ## 2. Arquitetura
 
@@ -471,10 +471,168 @@ na auditoria.
 ![MLflow: run pai e runs aninhados por janela](docs/evidencias/etapa3/mlflow_runs_monitoring.jpg)
 ![MLflow Model Registry depois da promoção](docs/evidencias/etapa3/mlflow_registry_depois.jpg)
 
+## 7. Governança e LGPD (Privacy by Design & by Default)
+
+A Etapa 4 responde às perguntas que a diretoria e o regulador fazem a um modelo de
+crédito: que dados pessoais ele toca, com que base legal, por quanto tempo os guarda e se
+trata grupos de forma desigual. As decisões estão no
+[ADR 006](docs/adr/006-privacidade-e-governanca.md).
+
+> **Sobre o escopo.** Os dados são sintéticos e não há titulares reais. As seções 7.3 e
+> 7.4 descrevem a política que valeria em **produção**, e cada tabela diz o que o
+> repositório já implementa e testa. As citações legais são da Lei 13.709/2018 (LGPD).
+> As exigências do Banco Central entram só de forma genérica, sem número de resolução.
+
+### 7.1 Inventário de dados e minimização
+
+O tratamento segue o princípio da necessidade (art. 6º, III): cada coluna precisa de uma
+finalidade, e o que não tem finalidade não entra. O contrato aceita 18 colunas
+([dicionário de dados](docs/data_dictionary.md)); o modelo usa 13 delas mais a derivada
+`comprometimento_renda`.
+
+| Coluna | Finalidade | Categoria | Uso no modelo |
+| :--- | :--- | :--- | :--- |
+| `id_cliente` | unicidade (R02), junção com a verdade de campo e rastreabilidade | identificador (sintético, pseudonimizado na saída) | **não é feature**; vira `id_cliente_hash` |
+| `data_referencia` | janela temporal de treino, validação e produção; contagem da retenção | temporal | não é feature |
+| `idade` | capacidade de pagamento ao longo da vida | cadastral | feature; também auditada em faixas etárias |
+| `renda_mensal` | capacidade de pagamento | financeiro | feature |
+| `score_bureau` | histórico de crédito no mercado | financeiro | feature (a de maior importância) |
+| `taxa_endividamento`, `utilizacao_credito` | endividamento existente e uso do rotativo | financeiro | features |
+| `qtd_parcelas_atraso_12m` | comportamento de pagamento recente | financeiro | feature |
+| `tempo_emprego_meses`, `situacao_emprego` | estabilidade da renda | cadastral e profissional | features |
+| `valor_emprestimo`, `prazo_meses`, `valor_parcela` | características da operação pedida | operação | features |
+| `finalidade_credito`, `possui_imovel` | finalidade declarada e garantia potencial | cadastral | features |
+| `genero`, `regiao` | **exclusivamente** a auditoria de fairness | atributo protegido para auditoria | **fora do modelo** |
+| `inadimplente` | alvo: atraso acima de 90 dias | resultado observado | rótulo de treino e de avaliação |
+
+Duas observações sobre as categorias:
+
+- "Atributo protegido para auditoria" é uma categoria **do projeto**. Gênero e região não
+  estão na lista de dado pessoal sensível do art. 5º, II, da LGPD (origem racial ou étnica,
+  saúde, biometria e afins), mas são os eixos em que uma decisão de crédito não pode
+  discriminar. Tratá-los à parte, fora do modelo, é uma escolha de cautela.
+- `idade` é feature legítima de risco e também é auditada, em quatro faixas (18–29, 30–44,
+  45–59 e 60+).
+
+**O que fica de fora de propósito:** CPF, nome, endereço, telefone e e-mail. Nenhum deles
+melhora o score, e cada um aumenta o dano de um vazamento. A prova é técnica: a regra R01
+(schema estrito) rejeita qualquer coluna fora do contrato como violação **estrutural**, e
+o lote corrompido do projeto, que traz uma coluna `cpf`, termina bloqueado. Trecho de
+[`bad_batch_report.json`](reports/validation/bad_batch_report.json):
+
+```json
+{"rule_id": "R01", "column": "cpf", "check": "column_in_schema", "n_failures": 1}
+```
+
+O relatório inteiro registra `"decision": "BLOCKED"` (`blocked_reason`: "violação
+estrutural (R01, R02): lote bloqueado"), e o `credit-sentinel validate` sai com código 2.
+A deny-list do sanitizador (`cpf`, `nome`, `email`, `telefone`, `endereco`, `rg`) é a
+segunda barreira para dados que cheguem por outro caminho.
+
+### 7.3 Base legal e decisões automatizadas
+
+| Tratamento | Hipótese | Dispositivo |
+| :--- | :--- | :--- |
+| Análise de risco e decisão de crédito, monitoramento de drift e auditoria | **proteção ao crédito** (base principal) | art. 7º, X |
+| Coleta dos dados da proposta, a pedido do titular | execução de contrato ou procedimentos preliminares | art. 7º, V |
+| Prevenção à fraude | legítimo interesse, com teste de balanceamento | art. 7º, IX e art. 10 |
+
+A proteção ao crédito é a base principal porque o tratamento existe para avaliar e
+proteger o crédito concedido. A execução de contrato cobre a coleta feita para analisar o
+pedido que o próprio titular fez. O legítimo interesse fica restrito à prevenção à fraude,
+em que o balanceamento é defensável; como base geral do scoring ele deixaria cada decisão
+exposta a contestação.
+
+**Teste de balanceamento (prevenção à fraude), resumido:**
+
+| Passo | Resposta |
+| :--- | :--- |
+| Finalidade legítima, em situação concreta | evitar fraude na concessão, que protege a instituição e os clientes honestos |
+| Necessidade | só os atributos da proposta e o `id_cliente_hash`, já tratados; nenhum dado novo é coletado para essa finalidade (art. 10, § 1º) |
+| Expectativa do titular e impacto | quem pede crédito espera verificações antifraude; o impacto é uma análise adicional, sem negativa automática |
+| Salvaguardas | pseudonimização, mascaramento em logs, transparência sobre o tratamento (art. 10, § 2º) e direito de oposição (art. 18, § 2º) |
+
+#### Direitos do titular (art. 18) e como o pipeline os atende
+
+| Direito | Como o pipeline atende | Situação |
+| :--- | :--- | :--- |
+| Confirmação e acesso (I e II) | localizar o titular por `id_cliente_hash` nas predições e nos relatórios e devolver score, decisão e critérios gerais | hash implementado; fluxo de atendimento é política |
+| Correção (III) | novo lote corrigido na origem, revalidado pelo contrato (12 regras); a nova predição passa a valer | contrato implementado; reprocessamento é política |
+| Anonimização, bloqueio ou eliminação do que é desnecessário (IV) | a R01 impede a entrada de colunas excedentes; a eliminação por hash segue o plano da seção 7.4 | R01 implementada; eliminação é política |
+| Portabilidade (V) | exportar o registro do titular em formato estruturado (parquet, CSV ou JSON) | política |
+| Oposição ao tratamento por legítimo interesse (§ 2º) | a prevenção à fraude é a única finalidade nessa base e pode ser suspensa para o titular | política |
+
+#### Revisão de decisão automatizada e explicabilidade (art. 20)
+
+O art. 20 dá ao titular o direito de **solicitar a revisão** de decisões tomadas
+unicamente por tratamento automatizado que afetem seus interesses, incluídas as que
+definem o seu perfil de crédito, e o de receber informações claras sobre os critérios e
+os procedimentos usados (respeitados os segredos comercial e industrial).
+
+- **Critérios.** A decisão é `score ≥ limiar → negar`. O limiar operacional do champion é
+  0,1248 (o do F1 na validação); o limiar de custo, em que aprovar um inadimplente custa 5
+  vezes mais do que negar um bom pagador, dá 0,124, praticamente o mesmo. A importância por permutação (queda de ROC-AUC ao embaralhar a
+  feature, em [`feature_importance.json`](models/baseline/feature_importance.json)) mostra
+  o que mais pesa:
+
+  | Feature | Importância (champion) |
+  | :--- | ---: |
+  | `score_bureau` | 0,161 |
+  | `qtd_parcelas_atraso_12m` | 0,012 |
+  | `utilizacao_credito` | 0,011 |
+  | `renda_mensal` | 0,010 |
+  | `taxa_endividamento` | 0,010 |
+
+- **Revisão.** O repositório não implementa o fluxo de revisão. A política proposta é
+  que todo pedido de revisão seja analisado por uma **pessoa**, com acesso ao score, à
+  decisão e aos critérios acima. O art. 20, na redação em vigor, não exige que o revisor
+  seja humano: essa é uma escolha de governança do projeto.
+- **Razões de recusa individuais** (os fatores que mais pesaram em cada negativa) ficam
+  como evolução: a importância por permutação é global e não explica uma decisão isolada.
+
+### 7.4 Ciclo de vida dos dados e retenção
+
+Prazos, acessos e descarte **de produção** (alvo). O prazo de 5 anos para registros de
+operações de crédito se apoia na guarda exigida pelo regulador do setor e no art. 16, I,
+da LGPD (conservação para cumprir obrigação legal ou regulatória); precisa ser
+confirmado com o jurídico antes de entrar em operação.
+
+| Tipo de dado | Onde está no repositório | Dado pessoal? | Prazo-alvo | Descarte |
+| :--- | :--- | :--- | :--- | :--- |
+| Propostas pseudonimizadas | `data/reference`, `data/production` | sim, pseudonimizado | 5 anos após o encerramento da operação | eliminação segura, ou anonimização irreversível se mantidas para estatística (art. 16, II e IV) |
+| Linhas em quarentena | `data/quarantine` (fora do git) | sim | 30 dias, o tempo de corrigir na origem | eliminação |
+| Features e conjuntos de treino | derivados dos anteriores | sim, pseudonimizado | enquanto o modelo estiver vigente, mais 5 anos | eliminação junto com o modelo |
+| Scores e decisões | `reports/predictions` | sim, só `id_cliente_hash` | 5 anos (rastreabilidade da decisão, art. 20) | eliminação |
+| Logs do pipeline | `logs/` (fora do git) | não, mascarados | 90 dias | rotação automática |
+| Relatórios de drift, SLO e fairness | `reports/` | não, agregados | vida do modelo, mais 5 anos | arquivamento |
+| Modelos e metadados | `models/`, `mlruns/` | não | vigência, mais 5 anos após a aposentadoria | arquivamento |
+| Salt do HMAC | `.env` (cofre em produção) | segredo | enquanto existir dado associado | destruição após o último descarte |
+
+**Controle de acesso (RBAC), em produção.** Papéis e o que cada um enxerga:
+
+| Papel | Propostas pseudonimizadas | Quarentena | Scores e decisões | Logs e relatórios | Salt |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Engenharia de dados | escreve | escreve | — | lê | — |
+| Ciência de dados | lê | — | lê | lê | — |
+| MLOps e SRE | — | — | — | lê e escreve | guarda no cofre |
+| Auditoria e compliance | — | — | lê | lê | — |
+| Encarregado (DPO) | lê, para atender titulares | lê | lê | lê | autoriza o uso |
+| Analista de revisão (art. 20) | só o caso revisado | — | só o caso revisado | — | — |
+
+**O que este repositório faz, e o que não faz:**
+
+- Faz: dados 100 % sintéticos; salt, logs, `mlruns/` e quarentena fora do git; pseudonimização
+  e mascaramento por código; `scan-pii` na CI (seção 7.2).
+- Não faz: expurgo automático por prazo, controle de acesso por papel e cofre de segredos.
+  Um repositório de arquivos não tem usuários nem titulares, então esses controles são
+  projeto de produção, descritos aqui e não executados.
+- O ADR 006 registra a mesma fronteira, para que ninguém leia a tabela acima como
+  funcionalidade pronta.
+
 ## Próximas seções (releases seguintes)
 
-7. Governança e LGPD · 8. Análise causal da degradação · 9. Roteiro STAR ·
-10. Decisões, estrutura e rastreabilidade · 11. Agradecimentos e transparência.
+7.2 PII e PETs · 7.5 Mitigação de viés · 8. Análise causal da degradação · 9. Runbook ·
+10. Roteiro STAR · 11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
 
 ## Decisões de arquitetura
 
@@ -483,6 +641,7 @@ na auditoria.
 - [ADR 003 — Modelo baseline com HistGradientBoosting](docs/adr/003-modelo-baseline-hgb.md)
 - [ADR 004 — Cenários de drift: crise de juros em três janelas](docs/adr/004-cenarios-de-drift.md)
 - [ADR 005 — Observabilidade: Data SLOs, error budget e MLflow](docs/adr/005-observabilidade-slos-mlflow.md)
+- [ADR 006 — Privacidade e governança: LGPD por desenho, fairness como controle contínuo](docs/adr/006-privacidade-e-governanca.md)
 
 ## Licença
 
