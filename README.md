@@ -833,10 +833,256 @@ usá-lo como trava na CI. A vigilância recomendada hoje é o **Nordeste** (raz�
 modelo em produção, o challenger promovido): repetir `make audit` a cada retreino e a cada
 janela nova.
 
+## 8. Análise de inferência causal da degradação
+
+O PSI e o KS dizem **o que** mudou; para decidir o que fazer é preciso saber **por que o
+modelo piorou** e **qual alavanca o conserta**. Como o projeto é dono do gerador de dados
+(ADR 001 e ADR 004), dá para ir além da correlação: além do grafo causal e das evidências
+por janela, a seção 8.3 faz **intervenções**, revertendo um choque por vez na janela de
+crise e medindo o efeito no modelo.
+
+### 8.1 O grafo causal
+
+```mermaid
+flowchart TD
+    subgraph N["Narrativa econômica (hipóteses que calibram o simulador, ADR 004)"]
+        INF["Inflação ↑"]
+        SEL["Selic ↑"]
+        DES["Desemprego ↑"]
+        EST["Estresse financeiro das famílias"]
+        APE["Aperto da concessão pela própria fintech"]
+    end
+    subgraph G["Mecanismos do gerador (computados, testáveis por intervenção)"]
+        REN["renda real × 0,80"]
+        JUR["juros 2,5 % → 3,8 % ao mês"]
+        EMP["desempregados 7 % → 12 %"]
+        DIV["endividamento + 0,70<br/>utilização + 0,20"]
+        PAR["valor_parcela ↑"]
+        COM["comprometimento_renda ↑"]
+        PES["peso da parcela no risco 0,8 → 1,6"]
+        FAI["risco extra na faixa de score 550–700"]
+        INT["intercepto − 0,64"]
+        RIS["logit de inadimplência"]
+    end
+    INF -.-> REN
+    SEL -.-> JUR
+    DES -.-> EMP
+    EST -.-> DIV
+    EST -.-> PES
+    EST -.-> FAI
+    APE -.-> INT
+    JUR --> PAR --> COM
+    REN --> COM
+    REN --> RIS
+    EMP --> RIS
+    DIV --> RIS
+    COM --> RIS
+    PES --> RIS
+    FAI --> RIS
+    INT --> RIS
+    REN --> COV
+    EMP --> COV
+    DIV --> COV
+    COM --> COV
+    COV["Covariate shift: P(X) muda"] --> SLO2["PSI das features e do score 0,255<br/>SLO2 estourado → alerta P2"]
+    PES --> CON
+    FAI --> CON
+    CON["Concept drift: P(y | X) muda"] --> AUC["AUC 0,829 → 0,764<br/>aprovações falsas na faixa 550–700"]
+    RIS --> PRI["Taxa base 6,45 % → 12,96 %<br/>(prior shift)"]
+    PRI --> BRI["Brier 0,050 → 0,103"]
+```
+
+Linhas tracejadas são a **narrativa** (hipóteses de calibração: ninguém mede a inflação
+dentro do simulador). Linhas contínuas são **mecanismos do gerador**: valores de entrada
+que o código transforma em colunas e em risco, e que por isso podem ser revertidos um a
+um. Os três tipos de drift aparecem em nós distintos porque têm efeitos distintos no
+modelo, como a seção 8.3 mostra.
+
+### 8.2 Evidência por janela
+
+Choques de entrada e efeitos observados (números das seções 5.3 e 5.4):
+
+| Janela | Renda real · juros · desemprego | PSI renda | PSI endivid. | PSI utiliz. | PSI comprom. | **PSI `score_bureau`** | Taxa base | Aprovação | AUC |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `mes_1` (controle) | 1,00 · 2,5 % · 7 % | 0,002 | 0,004 | 0,002 | 0,003 | 0,002 | 6,1 % | 87,6 % | 0,806 |
+| `mes_2` | 0,90 · 3,0 % · 9 % | 0,029 | 0,171 | 0,065 | 0,031 | 0,002 | 8,6 % | 82,4 % | 0,801 |
+| `mes_3_crise` | 0,80 · 3,8 % · 12 % | 0,161 | 0,632 | 0,660 | 0,145 | **0,001** | 13,0 % | 74,7 % | 0,764 |
+
+A coluna em destaque é a mais importante da tabela: a feature que mais pesa no modelo,
+`score_bureau`, **não se move** (PSI 0,001), e é justamente na faixa de 550 a 700 dela
+que a inadimplência passa de 5,0 % para 18,9 % (seção 5.4). O detector de drift por
+feature não enxerga esse problema.
+
+Evidência por aresta:
+
+| Aresta | Evidência | Leitura |
+| :--- | :--- | :--- |
+| inflação → renda real ↓ | `renda_mensal`: KS p = 1,2e-79 e PSI 0,161 em `mes_3_crise` | confirmada; o PSI é só "atenção" |
+| estresse das famílias → endividamento e utilização ↑ | PSI de 0,632 e 0,660 em `mes_3_crise` (0,171 e 0,065 em `mes_2`) | as duas features críticas; sobem de forma gradual |
+| Selic → parcela → comprometimento ↑ | `comprometimento_renda`: PSI 0,031 → 0,145 | confirmada nas features; o efeito sobre o AUC é pequeno (8.3) |
+| estresse → risco extra na faixa 550–700 | inadimplência da faixa: 5,0 % → 18,9 % | confirmada; é o que derruba o AUC (8.3) |
+| desemprego → taxa base ↑ | na amostra da janela, só o desemprego adiciona cerca de 0,6 ponto percentual à taxa base | existe, mas é pequeno |
+| aperto da concessão → taxa base ↓ | sem o ajuste de − 0,64 a taxa da janela seria 19,2 %, não 12,96 % | mitigador forte, ver 8.5 |
+
+### 8.3 Intervenções: o que derruba o AUC?
+
+Cada linha gera a janela de crise com a **mesma semente** da janela do repositório, mas só
+com os choques indicados; o restante fica nos valores da referência. Mantendo a semente,
+os sorteios aleatórios são os mesmos entre cenários, e a comparação isola o efeito do
+choque. O baseline é o mesmo modelo de produção (`baseline-1.0.0`), sem retreino. Foram
+usadas 10 sementes (45 a 54; a 45 é a da janela `mes_3_crise` versionada) e a tabela traz a média e o desvio-padrão da queda de AUC em
+relação ao controle da mesma semente.
+
+| Cenário | Taxa base | AUC do baseline | Δ AUC vs. controle |
+| :--- | ---: | ---: | :--- |
+| **Controle** (sem nenhum choque) | 5,99 % | 0,795 | — |
+| **Crise completa** | 12,22 % | 0,757 | − 0,038 ± 0,012 |
+| Só **covariate shift** (6 choques) | 10,69 % | 0,785 | − 0,010 ± 0,012 |
+|  · só renda + endividamento + utilização | 9,80 % | 0,781 | − 0,014 ± 0,012 |
+| Só **concept drift** (peso da parcela + faixa 550–700) | 10,75 % | 0,759 | **− 0,036 ± 0,011** |
+|  · só a faixa 550–700 | 10,32 % | 0,752 | **− 0,043 ± 0,011** |
+|  · só juros + peso da parcela | 6,49 % | 0,800 | + 0,005 ± 0,005 |
+| Crise **sem** concept drift | 6,49 % | 0,793 | − 0,002 ± 0,007 |
+| Crise **sem** o risco extra da faixa 550–700 | 7,21 % | 0,797 | + 0,002 ± 0,005 |
+
+**O que isso diz**
+
+1. **O concept drift explica quase toda a queda de AUC.** Sozinho, ele reproduz a perda da
+   crise (− 0,036 contra − 0,038), e retirá-lo da crise devolve o AUC ao nível do controle.
+2. **O covariate shift mexe nas taxas, não no ranking.** Eleva a taxa base de 6 % para
+   10,7 % e derruba a aprovação, mas a queda de AUC (− 0,010 ± 0,012) não se distingue de
+   zero. O modelo aprendeu a relação entre as features e o risco, e essa relação continua
+   valendo quando o cliente típico muda de lugar.
+3. **O encarecimento do crédito (juros e peso da parcela) quase não afeta o AUC**
+   (+ 0,005 ± 0,005), porque `comprometimento_renda` é feature do modelo. Ele desloca a
+   calibração, não a ordenação. A hipótese de que a Selic, sozinha, causa o concept drift
+   **não** se sustenta nestes dados: o que machuca é o risco extra da faixa intermediária.
+4. **A fonte do alerta não é a fonte do dano.** O P2 da crise veio do SLO2 (PSI de
+   `utilizacao_credito`, 0,660), um sintoma de covariate shift; o SLO4 (AUC) consumiu 82 %
+   do orçamento e não estourou (seção 6.4). O alerta chegou pelo covariate shift, e o dano
+   veio do concept drift. Em produção essa ordem é natural: o PSI sai na hora, e o AUC só
+   depois que os rótulos amadurecem (inadimplência é atraso acima de 90 dias).
+
+<details>
+<summary>Como reproduzir as intervenções</summary>
+
+```python
+import numpy as np
+from pathlib import Path
+from sklearn.metrics import roc_auc_score
+from credit_sentinel.data.generator import generate_portfolio, load_scenarios
+from credit_sentinel.drift.simulator import load_windows
+from credit_sentinel.ml.train_baseline import load_model_bundle, predict_proba
+from credit_sentinel.utils.seeds import make_rng
+
+cfg = Path("config/simulation_scenarios.yaml")
+ref = load_scenarios(cfg)["reference"]
+crise = next(w for w in load_windows(cfg) if w.name == "mes_3_crise")
+modelo = load_model_bundle(Path("models/baseline"))
+COVARIATE = ["income_real_factor", "debt_logit_shift", "utilization_shift",
+             "monthly_interest", "employment_shares", "purpose_shares"]
+CONCEPT = ["coef_commitment", "gamma_concept"]
+
+def so(campos):    # referência + só estes choques
+    return ref.model_copy(update={c: getattr(crise.params, c) for c in campos})
+
+def sem(campos):   # crise sem estes choques
+    return crise.params.model_copy(update={c: getattr(ref, c) for c in campos})
+
+cenarios = {"controle": ref, "crise": crise.params, "só covariate": so(COVARIATE),
+            "só concept": so(CONCEPT), "só faixa 550-700": so(["gamma_concept"]),
+            "crise sem concept": sem(CONCEPT)}
+auc = {nome: [] for nome in cenarios}
+for semente in range(45, 55):
+    for nome, params in cenarios.items():
+        df = generate_portfolio(5000, params, make_rng(semente), crise.period)
+        auc[nome].append(roc_auc_score(df.inadimplente, predict_proba(modelo, df)))
+controle = np.array(auc["controle"])
+for nome, valores in auc.items():
+    delta = np.array(valores) - controle
+    print(f"{nome:20s} AUC {np.mean(valores):.3f}  Δ {delta.mean():+.3f} ± {delta.std(ddof=1):.3f}")
+```
+
+</details>
+
+### 8.4 Por que o modelo estático erra: a faixa intermediária
+
+O baseline foi treinado quando a faixa de 550 a 700 de `score_bureau` tinha risco
+moderado. Na crise, esses clientes passam a inadimplir muito mais, sem que nenhuma feature
+se mova. O modelo continua dando a eles o score de antes e **aprova**. No holdout da crise
+(dias 16 a 30):
+
+| Faixa 550–700 de `score_bureau` | Champion (`baseline-1.0.0`) | Challenger (`challenger-1.0.0`) |
+| :--- | ---: | ---: |
+| Clientes na faixa | 1.062 (42 % do holdout) | 1.062 |
+| Inadimplência observada | 18,3 % (fora da faixa: 8,2 %) | 18,3 % |
+| Risco médio previsto pelo modelo | 8,7 % | 12,0 % |
+| Aprovados | 862 | 832 |
+| Inadimplentes entre os aprovados: observado × esperado pelo modelo | 120 × 44 | 104 × 62 |
+| Peso da faixa nas aprovações falsas | 120 de 148 (81 %) | 104 de 136 (76 %) |
+
+Essas **aprovações falsas** são o erro que importa para o negócio: o champion aprova 2,7
+vezes mais inadimplentes na faixa do que ele próprio espera, e a faixa concentra 81 % de
+todos os inadimplentes aprovados. O challenger, treinado com a primeira quinzena da crise,
+aprende parte do novo conceito (previsão média de 8,7 % para 12,0 %) e reduz o erro para
+1,7 vez, mas **não o elimina**: a inadimplência observada na faixa é 18,3 %. Isso justifica
+manter o monitoramento mesmo depois da promoção.
+
+### 8.5 Confundidores e limites da inferência
+
+- **Choques simultâneos.** Na vida real, inflação, juros e desemprego chegam juntos, e
+  dados observacionais não separam os efeitos. Aqui a separação só é possível porque o
+  gerador permite intervir. Em produção, o caminho seria comparar carteiras expostas e não
+  expostas ao mesmo choque (diferenças em diferenças) ou usar janelas pareadas.
+- **Política de concessão (viés de seleção).** O ajuste de intercepto de − 0,64 representa a
+  fintech apertando o crédito: sem ele a taxa base da janela de crise seria **19,2 %**, e não 12,96 %.
+  É um mitigador que esconde parte da deterioração. Em produção há um problema pior:
+  só se observa o desfecho de quem foi aprovado, o que distorce o treino (inferência de
+  rejeitados). No simulador todos os clientes têm rótulo.
+- **Atraso do rótulo.** A inadimplência exige mais de 90 dias; o AUC de um lote só amadurece
+  depois disso. É por isso que o SLO4 depende de verdade de campo, e que os alertas rápidos
+  vêm do PSI.
+- **Sazonalidade e composição.** Cada janela tem um mês e o simulador não modela sazonalidade.
+  A composição por região e renda também confunde a leitura de equidade (seção 7.5).
+- **Mundo sintético.** As arestas do DAG são as hipóteses que o gerador implementa. A
+  análise mostra o que o **modelo** faz diante delas, não que a economia real se comporte
+  assim. As diferenças de AUC abaixo de 0,01 devem ser lidas como ruído de amostragem.
+
+### 8.6 Prescrição: política de mitigação
+
+| Medida | Gatilho | Resultado medido | Situação |
+| :--- | :--- | :--- | :--- |
+| **1. Retreino com janela deslizante** (6 meses finais da referência + `mes_1` + `mes_2` + dias 1 a 15 da crise) | alerta P2 | AUC 0,7605 → 0,7883 no holdout (+ 0,0279); aprovações falsas na faixa 550–700: 120 → 104. Sem os dados da crise o ganho foi de só + 0,015 (ADR 005, seção 5), coerente com a seção 8.3: o conceito mudou, então o treino precisa ver rótulos novos | implementado (`retrain-challenger`, 5 guardrails) |
+| **2. *Shadow mode* antes de promover** | challenger aprovado nos 5 guardrails | pontuar o challenger em paralelo, sem decidir, por pelo menos duas semanas; promover se os guardrails e a razão de impacto se mantiverem e a previsão média na faixa 550–700 convergir para a inadimplência observada | política (hoje `promote-challenger` move o alias de uma vez) |
+| **3. Limiar sensível ao custo** (`threshold.json`, custo 5 : 1) | depois de retreino ou de prior shift | no holdout, o champion custa 1.221 no limiar atual (0,125); recalibrado com a 1ª quinzena da crise (0,119), 1.206 (− 1,2 %); com o limiar ótimo de oráculo (0,079), 1.166 (− 4,5 %), mas a aprovação cai para 62,7 %. O challenger no limiar atual custa 1.087 (− 11 %) | calculado, não aplicado |
+| **4. Gatilhos automáticos** | SLO2 ou SLO4 estourado (P2); a evoluir: previsão média × inadimplência observada por faixa de score | o P2 da crise foi disparado pelo SLO2. O alerta é automático; a execução do retreino segue a mão do operador | alerta implementado; orquestração e indicador por faixa são evolução |
+| **5. Revisão humana (art. 20)** | score entre 0,8 e 1,25 vez o limiar (0,100 a 0,156 no champion) | 11 % dos pedidos do holdout caem na faixa cinzenta, com inadimplência observada de 15,8 % (12,4 % no total); um analista revê antes da decisão final | política (seção 7.3) |
+
+Conclusão prática: **o limiar ajusta, o retreino corrige**. O custo cai 11 % com o
+challenger e no máximo 4,5 % com o melhor limiar possível para o modelo antigo, porque o
+limiar muda o ponto de operação e o retreino muda o que o modelo sabe.
+
+## 9. Runbook de incidentes (resumo)
+
+O [runbook completo](docs/runbook_incidentes.md) tem as cinco fases (Detecção, Triagem,
+Mitigação, Resolução e Pós-mortem) para P1, P2 e P3. Cada alerta do pipeline carrega o
+campo `runbook_anchor` com a seção certa.
+
+| Severidade | Quando dispara | Primeira ação | Prazo | Seção |
+| :--- | :--- | :--- | :--- | :--- |
+| **P1** | o contrato bloqueou o lote | isolar o lote, avisar o produtor dos dados e **nunca imputar** para fazer passar; se vier identificador direto, tratar como incidente de privacidade (seção 7) | imediato | [P1](docs/runbook_incidentes.md#p1-circuit-breaker) |
+| **P2** | SLO2 (PSI) ou SLO4 (AUC) estourado | separar covariate de concept drift (seção 8.3), disparar `retrain-challenger` e manter o champion com revisão reforçada na faixa 550–700 | mesmo dia | [P2](docs/runbook_incidentes.md#p2-drift-critico) |
+| **P3** | algum SLO com 70 % ou mais do orçamento, ou SLO3 estourado | monitorar a próxima janela e deixar o challenger preparado | até a próxima janela | [P3](docs/runbook_incidentes.md#p3-atencao) |
+| **P4** | tudo dentro dos objetivos | nenhuma; o alerta prova que o lote foi avaliado | — | [P4](docs/runbook_incidentes.md#p4-informativo) |
+
+Onde olhar primeiro: `logs/pipeline_events.jsonl` (filtrar por `run_id` e `status` diferente
+de `SUCCESS`), o [painel de saúde](reports/health_dashboard.html),
+[`slo_audit_report.json`](reports/slo_audit_report.json) e o experimento
+`credit-sentinel/monitoring` no MLflow.
+
 ## Próximas seções (releases seguintes)
 
-8. Análise causal da degradação · 9. Runbook · 10. Roteiro STAR ·
-11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
+10. Roteiro STAR · 11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
 
 ## Decisões de arquitetura
 

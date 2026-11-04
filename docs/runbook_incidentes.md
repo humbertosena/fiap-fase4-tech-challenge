@@ -39,7 +39,7 @@ comportamento correto: um lote inválido não pode chegar ao modelo.
 3. **Mitigação.** Não force o lote e **nunca imputar valores para "fazer passar"**.
    Mantenha o último lote válido como referência operacional, avise o produtor dos
    dados e, se houve coluna de identificador direto, trate como incidente de
-   privacidade (ver a política de privacidade do `README.md`).
+   privacidade (seção 7 do `README.md`).
 4. **Resolução.** O produtor corrige e reenvia. Rode
    `uv run credit-sentinel validate --input <lote.parquet>` até obter `SUCCESS` e então
    reprocesse com `uv run credit-sentinel run-pipeline --window <janela>`. Feche o
@@ -64,14 +64,16 @@ features que mais pesam, ou ROC-AUC abaixo de 0,75.
      e a janela de controle (`mes_1`) está estável?
    - Distinga o tipo: PSI alto com AUC estável é *covariate shift*; AUC em queda com
      taxa de inadimplência subindo aponta *prior* e *concept drift*. Compare a faixa de
-     score de 550 a 700 com a referência.
+     score de 550 a 700 com a referência. A seção 8.3 do `README.md` mostra como separar
+     os dois tipos por intervenção.
 3. **Mitigação.** Dispare o retreino com
    `uv run credit-sentinel retrain-challenger`. Enquanto isso, mantenha o champion em
    produção, reforce a revisão manual na faixa de score mais afetada e acompanhe a
    inadimplência observada.
 4. **Resolução.** Se os cinco guardrails aprovarem o challenger (AUC, Brier, contrato,
    fairness e latência), promova com `uv run credit-sentinel promote-challenger` (ou
-   `retrain-challenger --promote`, que retreina e promove numa única chamada). Confira no
+   `retrain-challenger --promote`, que retreina e promove numa única chamada). Antes de promover, rode o
+   challenger em *shadow mode* (seção 8.6 do `README.md`). Confira no
    MLflow Model Registry que o alias `champion` foi para a nova versão e que a anterior
    recebeu a tag `retired_reason`. Se algum gate reprovar, o comando termina com exit 3 e
    **nenhum alias muda**. Reprocese a janela e confirme SLO2 em `OK` na janela seguinte.
