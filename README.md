@@ -529,6 +529,96 @@ estrutural (R01, R02): lote bloqueado"), e o `credit-sentinel validate` sai com 
 A deny-list do sanitizador (`cpf`, `nome`, `email`, `telefone`, `endereco`, `rg`) é a
 segunda barreira para dados que cheguem por outro caminho.
 
+### 7.2 PII e tecnologias de proteção (PETs)
+
+A proteção não depende de um único mecanismo. São cinco camadas, da entrada à saída, e
+cada uma tem um teste ou um passo da CI que a verifica:
+
+| Camada | Técnica | Onde | Verificação |
+| :--- | :--- | :--- | :--- |
+| 1. Entrada | contrato estrito: coluna fora da lista (como `cpf`) bloqueia o lote | `contracts/schema.py`, regra R01 | lote `bad_batch` termina `BLOCKED` (seção 7.1) |
+| 2. Identificador | pseudonimização HMAC-SHA-256 com salt | `contracts/privacy_sanitizer.py`, `drift/predictions.py` | `tests/unit/test_privacy_sanitizer.py` |
+| 3. Colunas proibidas | deny-list de identificadores diretos | `drop_direct_identifiers` | `tests/unit/test_privacy_sanitizer.py` |
+| 4. Logs | mascaramento antes de qualquer saída | `observability/logger.py` | `tests/unit/test_logger.py` |
+| 5. Saídas | varredura `scan-pii` em relatórios, documentação e logs | CLI e CI (job `smoke`) | exit 1 se achar algo |
+
+#### Pseudonimização e o salt
+
+`id_cliente_hash = HMAC-SHA-256(salt, id_cliente)`. O resultado é determinístico: o mesmo
+cliente gera o mesmo hash em todos os lotes, o que permite juntar predições à verdade de
+campo e localizar um titular sem expor o id. Um hash simples, sem chave, não protegeria:
+os ids têm a forma `CLI-` mais 10 dígitos hexadecimais (cerca de 1,1 × 10¹² valores), e
+um atacante enumera esse espaço. Com o salt como **chave** do HMAC, quem tem só o hash
+não volta ao id.
+
+- **Onde o salt vive.** Na variável `CS_PII_SALT`, lida do arquivo `.env`, que não é
+  versionado. `.env.example` traz apenas um marcador. Em `Settings` o campo é um
+  `SecretStr`, então o valor não aparece quando o objeto é impresso (`repr`). Em produção
+  o valor vem de um cofre de segredos, com leitura restrita ao processo do pipeline.
+- **Rotação (política).** Anual, e imediata em caso de suspeita de vazamento. O novo salt
+  vale para os hashes novos; o anterior fica sob custódia do encarregado até o fim do
+  prazo de retenção dos dados que ele protege, para que uma busca por titular teste cada
+  versão do salt ainda vigente.
+- **Limitação conhecida.** Se `CS_PII_SALT` não estiver definida, o código usa um salt de
+  desenvolvimento (`dev-salt-nao-usar-em-producao`), e as predições versionadas neste
+  repositório foram geradas com ele. É aceitável porque os ids são sintéticos. Em
+  produção a ausência do salt deveria **abortar** a execução; isso não está implementado
+  e consta nos trabalhos futuros.
+
+#### Mascaramento em logs
+
+O logger passa cada evento por `mask_record` e `redact_text`, que trocam por `***` o id
+de cliente, o CPF (com ou sem pontuação), o e-mail e o telefone brasileiro. Um texto como
+"falha no cliente \<id\>, contato \<e-mail\>, CPF \<cpf\>" é gravado como
+`falha no cliente ***, contato ***, CPF ***`, e um registro com as chaves `id_cliente` e
+`cpf` tem os dois valores trocados por `***`, enquanto métricas como `latencia_ms` passam
+intactas. A mesma regra roda em JavaScript na
+[página da Etapa 3](docs/releases/etapa-3-observabilidade.html), onde dá para testar o
+mascaramento ao vivo.
+
+#### Deny-list e `scan-pii`
+
+A deny-list (`cpf`, `nome`, `email`, `telefone`, `endereco`, `rg`) remove essas colunas de
+qualquer tabela que chegue ao sanitizador. O `credit-sentinel scan-pii <caminhos>` varre
+arquivos `.json`, `.jsonl`, `.html`, `.md`, `.csv`, `.txt` e `.log` em busca de CPF,
+e-mail, telefone e `id_cliente` em claro. Ignora blobs `data:…;base64` e e-mails de
+domínios reservados a exemplos (`.exemplo`, `example.com`, `example.org`). A CI roda
+`scan-pii reports docs logs` no job `smoke`, e um achado derruba o pipeline:
+
+```bash
+$ uv run credit-sentinel scan-pii README.md docs reports logs
+nenhum dado pessoal encontrado em: README.md, docs, reports, logs
+```
+
+#### Segregação dos atributos protegidos
+
+`genero` e `regiao` são coletados para a auditoria de fairness e **nunca** viram feature:
+`dd.SENSITIVE_COLUMNS` fica fora de `FEATURE_COLUMNS`, e `tests/unit/test_features.py` e
+`tests/unit/test_dictionary.py` falham se uma dessas colunas entrar na lista de entradas
+do modelo. A assinatura de entrada do champion e a do challenger é a mesma (gate G3).
+A auditoria só publica **agregados** por grupo; o menor grupo auditado tem 194 clientes.
+
+#### Atendendo o pedido de um titular (art. 18, I e II)
+
+O pedido chega com o id; o pipeline calcula o hash e procura nas saídas. O exemplo usa um
+marcador no lugar do id real:
+
+```python
+import pandas as pd
+from credit_sentinel.contracts.privacy_sanitizer import hash_identifier
+from credit_sentinel.settings import get_settings
+
+salt = get_settings().pii_salt.get_secret_value()
+chave = hash_identifier("CLI-XXXXXXXXXX", salt)       # id informado pelo titular
+scores = pd.read_parquet("reports/predictions/mes_3_crise_scores.parquet")
+print(scores[scores.id_cliente_hash == chave])
+```
+
+Para o primeiro cliente de `mes_3_crise` a busca devolve uma linha: hash `77ca0ab3…`,
+score 0,0151 e `pred = 0` (aprovado, porque o score está abaixo do limiar de 0,1248).
+Nenhum id em claro é necessário para responder: o resultado traz a decisão e o score, e
+os critérios gerais saem da seção 7.3.
+
 ### 7.3 Base legal e decisões automatizadas
 
 | Tratamento | Hipótese | Dispositivo |
@@ -629,10 +719,124 @@ confirmado com o jurídico antes de entrar em operação.
 - O ADR 006 registra a mesma fronteira, para que ninguém leia a tabela acima como
   funcionalidade pronta.
 
+### 7.5 Mitigação de viés
+
+#### Metodologia
+
+`credit-sentinel fairness-audit` (ou `make audit`) mede **12 combinações**: 3 atributos
+(`genero`, `regiao` e `faixa_etaria`, derivada de `idade`) × 2 modelos (champion e
+challenger) × 2 conjuntos de dados. O resultado vai para
+[`fairness_audit.json`](reports/fairness_audit.json) e para
+[`fairness_audit.md`](reports/fairness_audit.md), com o detalhe por grupo.
+
+| Medida | Definição |
+| :--- | :--- |
+| Aprovação | fração com `score < limiar` (o modelo nega quando `score ≥ limiar`) |
+| Razão de impacto | aprovação do grupo ÷ aprovação do maior grupo do atributo; aceitável em [0,80, 1,25] (regra dos 4/5) |
+| TPR | fração dos inadimplentes que o modelo nega |
+| FPR | fração dos bons pagadores que o modelo nega |
+| Diferença de oportunidade | TPR do grupo − TPR do grupo de referência |
+
+| Conjunto de dados | n | O que é |
+| :--- | ---: | :--- |
+| `referencia_validacao` | 2.400 | os 20 % de validação do baseline; o challenger treinou com os últimos seis meses da referência e **viu parte** destes clientes |
+| `mes_3_crise_holdout` | 2.539 | dias 16 a 30 da crise; nenhum dos modelos treinou com eles |
+
+Por isso a leitura que decide é a da crise: é o único conjunto em que os dois modelos
+são comparados sem vantagem de treino. A regra dos 4/5 é uma heurística de triagem, de
+origem na seleção de pessoal nos Estados Unidos, e não um limite legal brasileiro; ela
+é lida junto com TPR, FPR e a taxa de inadimplência observada de cada grupo. O
+art. 6º, IX, da LGPD veda o tratamento para fins discriminatórios ilícitos ou abusivos, e
+o art. 20, § 2º, prevê que a autoridade nacional audite aspectos discriminatórios em
+decisões automatizadas. Daí o relatório ser versionado.
+
+#### Resultado: todos os grupos dentro de 4/5
+
+Pior razão de impacto por atributo (o grupo mais distante de 1,0):
+
+| Atributo | Validação · champion | Validação · challenger | Crise · champion | Crise · challenger |
+| :--- | :--- | :--- | :--- | :--- |
+| `genero` | `M` · 1,010 | `M` · 0,993 | `M` · 1,001 | `M` · 1,015 |
+| `regiao` | `Centro-Oeste` · 0,959 | `Sul` · 1,027 | **`Nordeste` · 0,894** | `Nordeste` · 0,934 |
+| `faixa_etaria` | `60+` · 0,949 | `60+` · 0,979 | `60+` · 0,980 | `18-29` · 0,953 |
+
+Gênero e faixa etária são praticamente neutros. O ponto de atenção é a **região na
+crise**, onde o champion chega a 0,894, perto do piso de 0,80. A tabela abaixo abre esse
+caso:
+
+| Região | n | Inadimpl. observada | Champion: aprovação · razão · FPR | Challenger: aprovação · razão · FPR |
+| :--- | ---: | ---: | :--- | :--- |
+| Sudeste (referência) | 1.039 | 13,5 % | 77,3 % · 1,000 · 18,5 % | 77,9 % · 1,000 · 17,0 % |
+| Sul | 365 | 9,6 % | 80,0 % · 1,035 · 18,5 % | 81,9 % · 1,052 · 14,8 % |
+| Centro-Oeste | 220 | 11,4 % | 72,7 % · 0,941 · 24,1 % | 76,4 % · 0,981 · 19,5 % |
+| Norte | 223 | 11,7 % | 70,9 % · 0,917 · 24,4 % | 78,0 % · 1,002 · 17,3 % |
+| Nordeste | 692 | 12,9 % | 69,1 % · 0,894 · 26,4 % | 72,7 % · 0,934 · 22,1 % |
+
+**O que a tabela mostra**
+
+1. **Aprovação menor sem risco maior.** O Nordeste tem inadimplência observada de 12,9 %,
+   abaixo da do Sudeste (13,5 %), e mesmo assim o champion aprova 69,1 % contra 77,3 % e
+   nega 26,4 % dos bons pagadores contra 18,5 %: 1,43 vez a taxa do Sudeste.
+2. **A renda é um intermediário, não a explicação inteira.** `regiao` está fora do modelo,
+   mas a renda varia com ela (o gerador aplica fatores de renda por região, ADR 001). Na
+   segunda quinzena da crise, a renda mediana é R$ 2.198 no Nordeste e R$ 3.196 no
+   Sudeste, e 46,8 % dos bons pagadores nordestinos estão no terço de menor renda, contra
+   25,4 % no Sudeste. Aplicando a taxa de negação de cada faixa de renda à composição de
+   cada região, o FPR esperado só pela renda é 24,1 % no Nordeste e 20,0 % no Sudeste:
+   explica cerca de **4,1 dos 7,9 pontos percentuais** da diferença observada. O restante
+   não é explicado por esta análise.
+3. **O challenger reduz a diferença.** A razão do Nordeste sobe de 0,894 para 0,934, a do
+   Norte de 0,917 para 1,002, e o FPR cai nos 11 grupos auditados (por exemplo, Norte de
+   24,4 % para 17,3 %). O Sul passa a 1,052, acima da referência, ainda dentro da faixa.
+4. **Cuidado com grupos pequenos.** A diferença de oportunidade do champion vai de +0,154
+   (Norte) a −0,157 (Sul), mas o Norte tem cerca de 26 inadimplentes: o intervalo de
+   confiança de 95 % do seu TPR é de aproximadamente ±18 pontos percentuais. Com tão poucos
+   casos, essas diferenças não são conclusivas sozinhas.
+
+<details>
+<summary>Como reproduzir a análise de renda do item 2</summary>
+
+```python
+import pandas as pd
+from pathlib import Path
+from credit_sentinel.drift.predictions import decision_threshold
+from credit_sentinel.ml.train_baseline import load_model_bundle, predict_proba
+
+modelo = load_model_bundle(Path("models/baseline"))
+d = pd.read_parquet("data/production/mes_3_crise.parquet")
+d = d[d.data_referencia >= "2026-09-16"].copy()          # holdout: dias 16 a 30
+d["negado"] = (predict_proba(modelo, d) >= decision_threshold(modelo)).astype(int)
+bons = d[d.inadimplente == 0].copy()
+bons["faixa_renda"] = pd.qcut(bons.renda_mensal, 3, labels=False)
+bons["fpr_esperado"] = bons.faixa_renda.map(bons.groupby("faixa_renda").negado.mean())
+print(bons.groupby("regiao")[["negado", "fpr_esperado"]].mean().round(3))
+```
+
+</details>
+
+#### Ações quando um grupo sai dos 4/5
+
+Nenhum grupo saiu da faixa, então nenhuma correção foi aplicada ao modelo. A política,
+caso ocorra, vai do menos ao mais invasivo:
+
+| Passo | Ação | Observação |
+| :--- | :--- | :--- |
+| 1 | confirmar o achado: tamanho do grupo, intervalo de confiança e repetição em outra janela | evita corrigir ruído |
+| 2 | procurar o intermediário (como a renda acima) e avaliar a feature | retirar ou transformar só se não for essencial ao risco |
+| 3 | reponderar as amostras do treino por grupo e rótulo | validar de novo nos gates G1 e G2 |
+| 4 | revisão humana da faixa de score próxima ao limiar | política de revisão do art. 20 (seção 7.3) |
+| 5 | limiar por grupo | último recurso: tratar de forma diferente por atributo protegido pode ser, em si, discriminatório; exige parecer jurídico e registro |
+
+O gate **G4** já impede promover um challenger fora dos 4/5, e
+`credit-sentinel fairness-audit --strict` sai com código 3 nesse caso, o que permite
+usá-lo como trava na CI. A vigilância recomendada hoje é o **Nordeste** (razão 0,934 no
+modelo em produção, o challenger promovido): repetir `make audit` a cada retreino e a cada
+janela nova.
+
 ## Próximas seções (releases seguintes)
 
-7.2 PII e PETs · 7.5 Mitigação de viés · 8. Análise causal da degradação · 9. Runbook ·
-10. Roteiro STAR · 11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
+8. Análise causal da degradação · 9. Runbook · 10. Roteiro STAR ·
+11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
 
 ## Decisões de arquitetura
 
