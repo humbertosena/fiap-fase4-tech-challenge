@@ -1080,9 +1080,27 @@ de `SUCCESS`), o [painel de saúde](reports/health_dashboard.html),
 [`slo_audit_report.json`](reports/slo_audit_report.json) e o experimento
 `credit-sentinel/monitoring` no MLflow.
 
+## 10. Roteiro do vídeo STAR (resumo)
+
+O vídeo tem 5 minutos e segue o método STAR. O roteiro completo, com a fala de cada bloco,
+as telas na ordem, os comandos pré-executados e o plano B, está em
+[`docs/video_star_roteiro.md`](docs/video_star_roteiro.md).
+
+| Bloco | Tempo | O que mostra | Artefato |
+| :--- | :---: | :--- | :--- |
+| **Situation** | 0:00 – 0:45 | fintech de crédito, degradação silenciosa, risco financeiro e regulatório; a inadimplência simulada dobra, de 6 % para 13 % | este README |
+| **Task** | 0:45 – 1:20 | quatro requisitos: barrar dado ruim, detectar drift, observar com SLOs, cumprir a governança | [índice das releases](docs/index.html) |
+| **Action** | 1:20 – 3:40 | `validate` bloqueando o lote com `cpf` (exit 2); PSI crítico na página da Etapa 2; painel de saúde, alertas e MLflow com os aliases; LGPD, fairness e análise causal | [`bad_batch_report.json`](reports/validation/bad_batch_report.json), [Etapa 2](docs/releases/etapa-2-drift.html), [painel](reports/health_dashboard.html) |
+| **Result** | 3:40 – 4:45 | AUC de 0,83 para 0,76 e orçamento de erro estourado; challenger aprovado nos 5 guardrails e promovido; três lições | [`slo_audit_report.json`](reports/slo_audit_report.json), [`gates_report.json`](reports/gates_report.json) |
+| Encerramento | 4:45 – 5:00 | repositório, páginas didáticas e a nota sobre o apoio do assistente de IA | este README |
+
+A soma dos blocos é de exatamente 5:00, e o teste `tests/smoke/test_video_roteiro.py` falha
+se o cronograma ficar descontínuo, passar de 5 minutos, citar um artefato que não existe ou
+mencionar um comando que não existe.
+
 ## Próximas seções (releases seguintes)
 
-10. Roteiro STAR · 11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
+11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
 
 ## Decisões de arquitetura
 
