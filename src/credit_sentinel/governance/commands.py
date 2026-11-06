@@ -10,6 +10,12 @@ from credit_sentinel.governance.audit_runner import (
     DATASET_DESCRIPTIONS,
     run_full_audit,
 )
+from credit_sentinel.governance.causal_ablation import (
+    DEFAULT_SEEDS,
+    CausalAblation,
+    render_ablation_markdown,
+    run_ablation,
+)
 from credit_sentinel.governance.fairness_audit import (
     build_audit,
     render_audit_markdown,
@@ -26,6 +32,8 @@ if TYPE_CHECKING:
 
 AUDIT_JSON = "fairness_audit.json"
 AUDIT_MARKDOWN = "fairness_audit.md"
+CAUSAL_JSON = "causal_ablation.json"
+CAUSAL_MARKDOWN = "causal_ablation.md"
 EXIT_FAIRNESS_FAILED = 3  # o mesmo código de guardrail reprovado do retreino
 
 
@@ -64,8 +72,43 @@ def _run_audit(args: argparse.Namespace) -> int:
     return EXIT_FAIRNESS_FAILED if args.strict and not audit.passed else 0
 
 
+def _print_ablation(ablation: CausalAblation, settings: Settings) -> None:
+    times = "\N{MULTIPLICATION SIGN}"
+    print(
+        f"causal-ablation: {len(ablation.scenarios)} cenários {times}"
+        f" {len(ablation.seeds)} sementes ({ablation.rows} clientes cada),"
+        f" modelo {ablation.model_version}"
+    )
+    for result in ablation.scenarios:
+        rate = f"{100 * result.base_rate:.2f}".replace(".", ",")
+        auc = f"{result.auc:.3f}".replace(".", ",")
+        delta = f"{result.delta_auc:+.3f}".replace(".", ",")
+        print(f"  {result.label}: taxa base {rate} %, AUC {auc} (Δ {delta})")
+    for name in (CAUSAL_JSON, CAUSAL_MARKDOWN):
+        shown = display_path(settings.reports_dir / name, settings.project_root)
+        print(f"relatório: {shown}")
+
+
+def _run_ablation(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if args.seeds < 1 or (args.rows is not None and args.rows < 1):
+        print("erro: --seeds e --rows precisam ser inteiros positivos")
+        return 1
+    try:
+        ablation = run_ablation(settings=settings, n_seeds=args.seeds, rows=args.rows)
+    except MissingInputError as exc:
+        print(f"erro: {exc}")
+        return 1
+    write_json(ablation, settings.reports_dir / CAUSAL_JSON)
+    write_text(
+        render_ablation_markdown(ablation), settings.reports_dir / CAUSAL_MARKDOWN
+    )
+    _print_ablation(ablation, settings)
+    return 0
+
+
 def register(subparsers: argparse._SubParsersAction) -> None:
-    """Registra o subcomando ``fairness-audit``.
+    """Registra os subcomandos ``fairness-audit`` e ``causal-ablation``.
 
     Args:
         subparsers: Grupo de subcomandos da CLI principal.
@@ -80,3 +123,17 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         help="exit 3 se algum grupo ficar fora de 4/5 (padrão: exit 0)",
     )
     parser.set_defaults(handler=_run_audit)
+    ablation = subparsers.add_parser(
+        "causal-ablation",
+        help="mede o efeito de cada choque da crise no AUC do champion (intervenções)",
+    )
+    ablation.add_argument(
+        "--seeds",
+        type=int,
+        default=DEFAULT_SEEDS,
+        help=f"quantidade de sementes pareadas (padrão: {DEFAULT_SEEDS})",
+    )
+    ablation.add_argument(
+        "--rows", type=int, default=None, help="clientes por amostra (padrão: a janela)"
+    )
+    ablation.set_defaults(handler=_run_ablation)

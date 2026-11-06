@@ -99,6 +99,8 @@ make train                           # valida, treina e registra o baseline no M
 make simulate                        # três janelas de produção (5.000 linhas cada)
 make drift                           # testes de drift, scores e relatórios do Evidently
 make pipeline                        # logs, Data SLOs, alertas, painel de saúde e runs no MLflow
+make audit                           # fairness de champion e challenger (3 atributos, 4/5)
+make causal                          # intervenções no simulador: efeito de cada choque no AUC
 make explainers                      # gera docs/index.html e docs/releases/*.html
 make mlflow                          # MLflow UI em http://localhost:5001
 ```
@@ -119,6 +121,8 @@ porta 5001 (a 5000 é usada pelo AirPlay no macOS), lendo o mesmo `mlruns/`.
 | `credit-sentinel run-pipeline [--window all\|<janela>] [--quick] [--strict] [--no-mlflow]` | executa os 6 estágios por janela, avalia os SLOs e grava `reports/slo_audit_report.json`, `reports/health_dashboard.html` e `logs/` | 0 · 2 com `--strict` se alguma janela for bloqueada |
 | `credit-sentinel retrain-challenger [--promote] [--no-mlflow]` | retreina o challenger, avalia os 5 guardrails, registra a versão `@challenger` | 0 aprovado · 3 reprovado |
 | `credit-sentinel promote-challenger` | promove o challenger registrado a `@champion` (exige guardrails aprovados) | 0 · 3 recusado · 1 sem relatório do challenger atual |
+| `credit-sentinel fairness-audit [--strict]` | audita gênero, região e faixa etária de champion e challenger e grava `reports/fairness_audit.{json,md}` | 0 · 3 com `--strict` se algum grupo sair dos 4/5 |
+| `credit-sentinel causal-ablation [--seeds N] [--rows N]` | regera a crise com um choque por vez e mede o AUC do champion; grava `reports/causal_ablation.{json,md}` | 0 · 1 sem baseline treinado |
 | `credit-sentinel scan-pii <caminhos…>` | procura CPF, e-mail, telefone e ids em claro | 0 limpo · 1 achados |
 | `credit-sentinel export-contract` | exporta `config/data_contract.yaml` | 0 |
 | `credit-sentinel build-explainers [--etapa 1,2]` | gera as páginas didáticas | 0 |
@@ -921,17 +925,18 @@ Evidência por aresta:
 | estresse das famílias → endividamento e utilização ↑ | PSI de 0,632 e 0,660 em `mes_3_crise` (0,171 e 0,065 em `mes_2`) | as duas features críticas; sobem de forma gradual |
 | Selic → parcela → comprometimento ↑ | `comprometimento_renda`: PSI 0,031 → 0,145 | confirmada nas features; o efeito sobre o AUC é pequeno (8.3) |
 | estresse → risco extra na faixa 550–700 | inadimplência da faixa: 5,0 % → 18,9 % | confirmada; é o que derruba o AUC (8.3) |
-| desemprego → taxa base ↑ | na amostra da janela, só o desemprego adiciona cerca de 0,6 ponto percentual à taxa base | existe, mas é pequeno |
-| aperto da concessão → taxa base ↓ | sem o ajuste de − 0,64 a taxa da janela seria 19,2 %, não 12,96 % | mitigador forte, ver 8.5 |
+| desemprego → taxa base ↑ | só o desemprego eleva a taxa base de 5,99 % para 6,48 % (média de 10 sementes, seção 8.3) | existe, mas é pequeno |
+| aperto da concessão → taxa base ↓ | sem o ajuste de − 0,64 a taxa média seria 18,9 %, e não 12,2 % (seção 8.3) | mitigador forte, ver 8.5 |
 
 ### 8.3 Intervenções: o que derruba o AUC?
 
-Cada linha gera a janela de crise com a **mesma semente** da janela do repositório, mas só
-com os choques indicados; o restante fica nos valores da referência. Mantendo a semente,
-os sorteios aleatórios são os mesmos entre cenários, e a comparação isola o efeito do
-choque. O baseline é o mesmo modelo de produção (`baseline-1.0.0`), sem retreino. Foram
-usadas 10 sementes (45 a 54; a 45 é a da janela `mes_3_crise` versionada) e a tabela traz a média e o desvio-padrão da queda de AUC em
-relação ao controle da mesma semente.
+Cada linha gera a janela de crise (5.000 clientes) só com os choques indicados; o restante fica nos
+valores da referência. As **mesmas 10 sementes** (45 a 54; a 45 é a da janela `mes_3_crise` versionada) valem
+para todos os cenários, então os sorteios aleatórios são comuns e a comparação isola o efeito do choque. O
+modelo medido é o de produção (`baseline-1.0.0`), sem retreino, e a tabela traz a média e o desvio-padrão
+da queda de AUC em relação ao controle da mesma semente. Os números vêm de
+[`reports/causal_ablation.json`](reports/causal_ablation.json) (parâmetros de cada cenário em
+[`causal_ablation.md`](reports/causal_ablation.md)).
 
 | Cenário | Taxa base | AUC do baseline | Δ AUC vs. controle |
 | :--- | ---: | ---: | :--- |
@@ -942,8 +947,10 @@ relação ao controle da mesma semente.
 | Só **concept drift** (peso da parcela + faixa 550–700) | 10,75 % | 0,759 | **− 0,036 ± 0,011** |
 |  · só a faixa 550–700 | 10,32 % | 0,752 | **− 0,043 ± 0,011** |
 |  · só juros + peso da parcela | 6,49 % | 0,800 | + 0,005 ± 0,005 |
+| Só **desemprego** | 6,48 % | 0,799 | + 0,003 ± 0,006 |
 | Crise **sem** concept drift | 6,49 % | 0,793 | − 0,002 ± 0,007 |
-| Crise **sem** o risco extra da faixa 550–700 | 7,21 % | 0,797 | + 0,002 ± 0,005 |
+| Crise **sem** o risco extra da faixa 550–700 | 7,21 % | 0,797 | + 0,001 ± 0,005 |
+| Crise **sem** o aperto da concessão | 18,89 % | 0,756 | − 0,039 ± 0,015 |
 
 **O que isso diz**
 
@@ -963,47 +970,9 @@ relação ao controle da mesma semente.
    veio do concept drift. Em produção essa ordem é natural: o PSI sai na hora, e o AUC só
    depois que os rótulos amadurecem (inadimplência é atraso acima de 90 dias).
 
-<details>
-<summary>Como reproduzir as intervenções</summary>
-
-```python
-import numpy as np
-from pathlib import Path
-from sklearn.metrics import roc_auc_score
-from credit_sentinel.data.generator import generate_portfolio, load_scenarios
-from credit_sentinel.drift.simulator import load_windows
-from credit_sentinel.ml.train_baseline import load_model_bundle, predict_proba
-from credit_sentinel.utils.seeds import make_rng
-
-cfg = Path("config/simulation_scenarios.yaml")
-ref = load_scenarios(cfg)["reference"]
-crise = next(w for w in load_windows(cfg) if w.name == "mes_3_crise")
-modelo = load_model_bundle(Path("models/baseline"))
-COVARIATE = ["income_real_factor", "debt_logit_shift", "utilization_shift",
-             "monthly_interest", "employment_shares", "purpose_shares"]
-CONCEPT = ["coef_commitment", "gamma_concept"]
-
-def so(campos):    # referência + só estes choques
-    return ref.model_copy(update={c: getattr(crise.params, c) for c in campos})
-
-def sem(campos):   # crise sem estes choques
-    return crise.params.model_copy(update={c: getattr(ref, c) for c in campos})
-
-cenarios = {"controle": ref, "crise": crise.params, "só covariate": so(COVARIATE),
-            "só concept": so(CONCEPT), "só faixa 550-700": so(["gamma_concept"]),
-            "crise sem concept": sem(CONCEPT)}
-auc = {nome: [] for nome in cenarios}
-for semente in range(45, 55):
-    for nome, params in cenarios.items():
-        df = generate_portfolio(5000, params, make_rng(semente), crise.period)
-        auc[nome].append(roc_auc_score(df.inadimplente, predict_proba(modelo, df)))
-controle = np.array(auc["controle"])
-for nome, valores in auc.items():
-    delta = np.array(valores) - controle
-    print(f"{nome:20s} AUC {np.mean(valores):.3f}  Δ {delta.mean():+.3f} ± {delta.std(ddof=1):.3f}")
-```
-
-</details>
+Para reproduzir: `make causal` (`credit-sentinel causal-ablation`, cerca de 5 s). O catálogo de cenários e
+o cálculo estão em `src/credit_sentinel/governance/causal_ablation.py`; `tests/unit/test_causal_ablation.py`
+garante que um cenário "só" liga apenas os choques listados e que um "sem" desliga apenas eles.
 
 ### 8.4 Por que o modelo estático erra: a faixa intermediária
 
@@ -1035,7 +1004,7 @@ manter o monitoramento mesmo depois da promoção.
   gerador permite intervir. Em produção, o caminho seria comparar carteiras expostas e não
   expostas ao mesmo choque (diferenças em diferenças) ou usar janelas pareadas.
 - **Política de concessão (viés de seleção).** O ajuste de intercepto de − 0,64 representa a
-  fintech apertando o crédito: sem ele a taxa base da janela de crise seria **19,2 %**, e não 12,96 %.
+  fintech apertando o crédito: sem ele a taxa base média da crise seria **18,9 %**, e não 12,2 % (média de 10 sementes).
   É um mitigador que esconde parte da deterioração. Em produção há um problema pior:
   só se observa o desfecho de quem foi aprovado, o que distorce o treino (inferência de
   rejeitados). No simulador todos os clientes têm rótulo.
