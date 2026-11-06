@@ -19,7 +19,8 @@
   --grid: #e1e0d9;
   --axis: #c3c2b7;
   --border: rgba(11, 11, 11, 0.1);
-  --accent: #2a78d6;
+  --accent: #1f5fb8;
+  --link: #1f5fb8;
   --accent-soft: #cde2fb;
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -46,11 +47,12 @@
     --grid: #2c2c2a;
     --axis: #383835;
     --border: rgba(255, 255, 255, 0.1);
-    --accent: #3987e5;
+    --accent: #2b6fc8;
+    --link: #7ab3f5;
     --accent-soft: #184f95;
     --series-1: #3987e5;
     --series-2: #d95926;
-    --good-text: #0ca30c;
+    --good-text: #3fcf3f;
     --critical-text: #e66767;
     --code-bg: #262624;
     --shadow: none;
@@ -67,11 +69,12 @@
   --grid: #2c2c2a;
   --axis: #383835;
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #3987e5;
+  --accent: #2b6fc8;
+  --link: #7ab3f5;
   --accent-soft: #184f95;
   --series-1: #3987e5;
   --series-2: #d95926;
-  --good-text: #0ca30c;
+  --good-text: #3fcf3f;
   --critical-text: #e66767;
   --code-bg: #262624;
   --shadow: none;
@@ -86,7 +89,7 @@ body {
   font: 16px/1.6 var(--font);
   overflow-x: hidden;
 }
-a { color: var(--accent); }
+a { color: var(--link); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
@@ -112,14 +115,14 @@ p { margin: 0 0 1em; }
 }
 .site-header .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; }
 .brand { font-weight: 700; color: var(--ink); text-decoration: none; margin-right: auto; }
-.brand span { color: var(--accent); }
+.brand span { color: var(--link); }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; }
 .nav a, .nav span {
   padding: 4px 10px; border-radius: 999px; font-size: 0.875rem; text-decoration: none; color: var(--ink-2);
 }
 .nav a:hover { background: var(--surface-2); color: var(--ink); }
 .nav a[aria-current="page"] { background: var(--accent); color: #fff; }
-.nav span { opacity: 0.55; }
+.nav span { color: var(--muted); font-style: italic; }
 .theme-toggle {
   border: 1px solid var(--border); background: var(--surface); color: var(--ink);
   border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.875rem; cursor: pointer;
@@ -129,7 +132,7 @@ p { margin: 0 0 1em; }
 .hero { padding: 40px 0 24px; }
 .eyebrow {
   display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--link); margin-bottom: 8px;
 }
 .tag { white-space: nowrap; font-family: var(--mono); background: var(--accent-soft); color: var(--ink); padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
 .lead { font-size: 1.125rem; color: var(--ink-2); max-width: 70ch; }
@@ -247,7 +250,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
       <a href="releases/etapa-1-contratos.html">Etapa 1</a>
       <a href="releases/etapa-2-drift.html">Etapa 2</a>
       <a href="releases/etapa-3-observabilidade.html">Etapa 3</a>
-      <span title="Em breve">Etapa 4</span>
+      <a href="releases/etapa-4-governanca.html">Etapa 4</a>
       <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">GitHub</a>
     </nav>
     <button class="theme-toggle" type="button" aria-label="Alternar tema claro e escuro">☾ Tema escuro</button>
@@ -301,7 +304,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
         <p class="rubric">Governança LGPD (15 %) e Vídeo STAR (15 %)</p>
         <ul class="small">
 <li>Plano LGPD e retenção</li><li>Fairness e DAG causal</li><li>Roteiro STAR</li>        </ul>
-        <p><span class="status na">Em breve</span> <span class="small muted">previsão 2026-11-14</span></p>
+        <p><span class="status ok">Publicada</span> <span class="small muted">2026-11-14</span></p>
+        <a class="btn primary" href="releases/etapa-4-governanca.html">Abrir a página didática</a>
       </article>
     </div>
   </section>
@@ -315,6 +319,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
         <li><a href="reports/validation/credit_ref_report.json">Relatório de validação da referência</a> (JSON)</li>
         <li><a href="reports/evidently_drift_report.html">Relatório do Evidently AI</a> (HTML, Mês 3 · crise) e o <a href="reports/evidently_drift_summary.json">sumário de drift</a> (JSON)</li>
         <li><a href="reports/health_dashboard.html">Painel de saúde do pipeline</a> (HTML), a <a href="reports/slo_audit_report.json">auditoria de SLOs</a> e os <a href="reports/gates_report.json">guardrails do challenger</a> (JSON)</li>
+        <li>A <a href="reports/fairness_audit.md">auditoria de fairness</a> e a <a href="reports/causal_ablation.md">ablação causal</a> da Etapa 4 (Markdown, com os JSON ao lado)</li>
       </ul>
     </div>
   </section>
@@ -325,10 +330,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     <p><strong>Credit Sentinel</strong> · Tech Challenge Fase 4 · Pós-Tech FIAP Machine Learning Engineering.
     Dados 100 % sintéticos (ADR 001); nenhum dado pessoal real.</p>
     <p>Página gerada por <code>credit-sentinel build-explainers</code> a partir do commit
-    <code>083cffd</code> · <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">repositório</a> · licença MIT.</p>
+    <code>23da147</code> · <a href="https://github.com/humbertosena/fiap-fase4-tech-challenge">repositório</a> · licença MIT.</p>
   </div>
 </footer>
-<script type="application/json" id="payload">{"releases": [{"etapa": 1, "tag": "v0.1.0-alpha", "date": "2026-10-11", "title": "Contratos de dados e modelo baseline", "slug": "etapa-1-contratos", "rubric": "Validação de Dados (25 %)", "bullets": ["Contrato Pandera com 12 regras ICRA", "Circuit breaker bloqueia o lote corrompido", "Baseline HistGradientBoosting com AUC 0,83"], "commit_sha": "083cffd", "status": "publicada"}, {"etapa": 2, "tag": "v0.2.0-beta", "date": "2026-10-21", "title": "Simulação temporal e detecção de drift", "slug": "etapa-2-drift", "rubric": "Detecção de Drift (25 %)", "bullets": ["Três janelas de produção", "KS, PSI, χ² e Evidently", "Degradação medida"], "commit_sha": "083cffd", "status": "publicada"}, {"etapa": 3, "tag": "v0.3.0-rc", "date": "2026-10-31", "title": "Observabilidade, Data SLOs e MLflow", "slug": "etapa-3-observabilidade", "rubric": "Observabilidade e Logs (20 %)", "bullets": ["Logs JSON com run_id", "Error budget e alertas", "Champion vs. challenger"], "commit_sha": "083cffd", "status": "publicada"}, {"etapa": 4, "tag": "v1.0.0-ga", "date": "2026-11-14", "title": "Governança LGPD, análise causal e entrega final", "slug": "etapa-4-governanca", "rubric": "Governança LGPD (15 %) e Vídeo STAR (15 %)", "bullets": ["Plano LGPD e retenção", "Fairness e DAG causal", "Roteiro STAR"], "commit_sha": "083cffd", "status": "em breve"}]}</script>
+<script type="application/json" id="payload">{"releases": [{"etapa": 1, "tag": "v0.1.0-alpha", "date": "2026-10-11", "title": "Contratos de dados e modelo baseline", "slug": "etapa-1-contratos", "rubric": "Validação de Dados (25 %)", "bullets": ["Contrato Pandera com 12 regras ICRA", "Circuit breaker bloqueia o lote corrompido", "Baseline HistGradientBoosting com AUC 0,83"], "commit_sha": "23da147", "status": "publicada"}, {"etapa": 2, "tag": "v0.2.0-beta", "date": "2026-10-21", "title": "Simulação temporal e detecção de drift", "slug": "etapa-2-drift", "rubric": "Detecção de Drift (25 %)", "bullets": ["Três janelas de produção", "KS, PSI, χ² e Evidently", "Degradação medida"], "commit_sha": "23da147", "status": "publicada"}, {"etapa": 3, "tag": "v0.3.0-rc", "date": "2026-10-31", "title": "Observabilidade, Data SLOs e MLflow", "slug": "etapa-3-observabilidade", "rubric": "Observabilidade e Logs (20 %)", "bullets": ["Logs JSON com run_id", "Error budget e alertas", "Champion vs. challenger"], "commit_sha": "23da147", "status": "publicada"}, {"etapa": 4, "tag": "v1.0.0-ga", "date": "2026-11-14", "title": "Governança LGPD, análise causal e entrega final", "slug": "etapa-4-governanca", "rubric": "Governança LGPD (15 %) e Vídeo STAR (15 %)", "bullets": ["Plano LGPD e retenção", "Fairness e DAG causal", "Roteiro STAR"], "commit_sha": "23da147", "status": "publicada"}]}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 /* Credit Sentinel — utilitários comuns das páginas didáticas (JS vanilla). */

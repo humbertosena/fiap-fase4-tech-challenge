@@ -925,10 +925,11 @@ ETAPA1_COMMANDS = [
 
 
 def _builders() -> dict[int, Callable[[Settings, ReleaseInfo], BaseModel]]:
-    """Construtores por etapa (a Etapa 3 fica em módulo próprio, sem ciclo)."""
+    """Construtores por etapa (as Etapas 3 e 4 ficam em módulos próprios, sem ciclo)."""
     from credit_sentinel.explainers.payloads_etapa3 import build_etapa3  # noqa: PLC0415
+    from credit_sentinel.explainers.payloads_etapa4 import build_etapa4  # noqa: PLC0415
 
-    return {1: build_etapa1, 2: build_etapa2, 3: build_etapa3}
+    return {1: build_etapa1, 2: build_etapa2, 3: build_etapa3, 4: build_etapa4}
 
 
 def build_payload(

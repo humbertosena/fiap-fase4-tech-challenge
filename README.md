@@ -9,7 +9,8 @@
 > **Páginas didáticas:** [índice das releases](docs/index.html) ·
 > [Etapa 1 — contratos de dados](docs/releases/etapa-1-contratos.html) ·
 > [Etapa 2 — drift](docs/releases/etapa-2-drift.html) ·
-> [Etapa 3 — observabilidade](docs/releases/etapa-3-observabilidade.html)
+> [Etapa 3 — observabilidade](docs/releases/etapa-3-observabilidade.html) ·
+> [Etapa 4 — governança](docs/releases/etapa-4-governanca.html)
 > (também no GitHub Pages: <https://humbertosena.github.io/fiap-fase4-tech-challenge/>).
 
 ## 1. Resumo executivo
@@ -36,7 +37,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
 | 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
-| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🚧 em andamento | — |
+| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🚧 em andamento | [etapa-4-governanca.html](docs/releases/etapa-4-governanca.html) |
 
 ## 2. Arquitetura
 
@@ -480,7 +481,9 @@ na auditoria.
 A Etapa 4 responde às perguntas que a diretoria e o regulador fazem a um modelo de
 crédito: que dados pessoais ele toca, com que base legal, por quanto tempo os guarda e se
 trata grupos de forma desigual. As decisões estão no
-[ADR 006](docs/adr/006-privacidade-e-governanca.md).
+[ADR 006](docs/adr/006-privacidade-e-governanca.md), e a
+[página didática da Etapa 4](docs/releases/etapa-4-governanca.html) mostra o fluxo de dados, a auditoria
+de fairness, o grafo causal e a retenção de forma interativa.
 
 > **Sobre o escopo.** Os dados são sintéticos e não há titulares reais. As seções 7.3 e
 > 7.4 descrevem a política que valeria em **produção**, e cada tabela diz o que o

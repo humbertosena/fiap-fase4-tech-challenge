@@ -28,7 +28,7 @@ pytestmark = pytest.mark.smoke
 @pytest.fixture(scope="module")
 def built(tmp_path_factory: pytest.TempPathFactory) -> Path:
     out = tmp_path_factory.mktemp("docs")
-    build_all(settings=Settings(_env_file=None), etapas=[1, 2, 3], out_dir=out)
+    build_all(settings=Settings(_env_file=None), etapas=[1, 2, 3, 4], out_dir=out)
     return out
 
 
@@ -39,6 +39,7 @@ def _pages(root: Path) -> list[Path]:
         releases / "etapa-1-contratos.html",
         releases / "etapa-2-drift.html",
         releases / "etapa-3-observabilidade.html",
+        releases / "etapa-4-governanca.html",
     ]
 
 
@@ -59,7 +60,9 @@ def test_index_lists_the_published_stages(built: Path) -> None:
     html = (built / "index.html").read_text(encoding="utf-8")
     assert 'href="releases/etapa-2-drift.html"' in html
     assert 'href="reports/evidently_drift_report.html"' in html
-    assert html.count("Em breve") >= 1
+    assert 'href="releases/etapa-4-governanca.html"' in html
+    assert 'href="reports/fairness_audit.md"' in html
+    assert "Em breve" not in html
     assert 'href="releases/etapa-3-observabilidade.html"' in html
     assert 'href="reports/health_dashboard.html"' in html
 
@@ -83,7 +86,7 @@ def test_etapa2_page_has_its_interactive_components(built: Path) -> None:
     assert "v0.2.0-beta" in html
 
 
-@pytest.mark.parametrize("index", [0, 1, 2, 3])
+@pytest.mark.parametrize("index", [0, 1, 2, 3, 4])
 def test_pages_are_self_contained(built: Path, index: int) -> None:
     html = _pages(built)[index].read_text(encoding="utf-8")
     assert "<style>" in html
@@ -95,7 +98,7 @@ def test_pages_are_self_contained(built: Path, index: int) -> None:
     assert '<link rel="stylesheet"' not in html
 
 
-@pytest.mark.parametrize("index", [0, 1, 2, 3])
+@pytest.mark.parametrize("index", [0, 1, 2, 3, 4])
 def test_payload_is_valid_json_and_page_fits_limit(built: Path, index: int) -> None:
     page = _pages(built)[index]
     html = page.read_text(encoding="utf-8")
@@ -134,7 +137,7 @@ def test_etapa3_page_embeds_at_most_three_screenshots(built: Path) -> None:
     assert 1 <= html.count('<img src="data:image/jpeg;base64,') <= 3
 
 
-@pytest.mark.parametrize("index", [0, 1, 2, 3])
+@pytest.mark.parametrize("index", [0, 1, 2, 3, 4])
 def test_pages_never_carry_personal_data(built: Path, index: int) -> None:
     html = _pages(built)[index].read_text(encoding="utf-8")
     assert scan_for_pii(html) == []
@@ -147,3 +150,31 @@ def test_etapa3_numbers_come_from_the_audit(built: Path) -> None:
     assert audit["run_id"] in html
     crisis = next(w for w in audit["windows"] if w["window"] == "mes_3_crise")
     assert f"{round(100 * crisis['slo']['remaining_budget'])} %" in html
+
+
+def test_etapa4_page_has_its_interactive_components(built: Path) -> None:
+    html = _pages(built)[4].read_text(encoding="utf-8")
+    for element in (
+        'id="stepper"',
+        'id="inventory-filters"',
+        'id="fair-list"',
+        'id="dag"',
+        'id="interv-canvas"',
+        'id="ret-slider"',
+        'id="star-start"',
+    ):
+        assert element in html, element
+    assert "v1.0.0-ga" in html
+    assert "reports/causal_ablation.json" in html
+    assert 'href="../releases/etapa-3-observabilidade.html"' in html
+
+
+def test_etapa4_numbers_come_from_the_reports(built: Path) -> None:
+    html = _pages(built)[4].read_text(encoding="utf-8")
+    reports = Settings(_env_file=None).reports_dir
+    audit = read_json(reports / "fairness_audit.json")
+    worst = min(g["disparate_impact"] for r in audit["reports"] for g in r["groups"])
+    assert f"Menor razão: {worst:.3f}".replace(".", ",") in html
+    ablation = read_json(reports / "causal_ablation.json")
+    concept = next(s for s in ablation["scenarios"] if s["key"] == "so_concept")
+    assert f"{concept['delta_auc']:.3f}".replace(".", ",") in html

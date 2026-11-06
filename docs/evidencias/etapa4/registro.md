@@ -1,0 +1,58 @@
+# Registro de verificação: página didática da Etapa 4
+
+Página: [`docs/releases/etapa-4-governanca.html`](../../releases/etapa-4-governanca.html), gerada por
+`credit-sentinel build-explainers` a partir de `reports/fairness_audit.json`,
+`reports/causal_ablation.json`, `reports/evidently_drift_summary.json`,
+`reports/slo_audit_report.json`, `config/simulation_scenarios.yaml`, dos modelos e de
+`docs/video_star_roteiro.md`. O texto jurídico e a política de retenção estão em
+`src/credit_sentinel/explainers/static/etapa4_content.yaml`.
+
+## Como foi verificado
+
+O Chrome da automação não abre `file://`, e subir um servidor local só para isso foi descartado.
+A página foi aberta pelo Chrome 156 em modo headless, direto do disco, com scripts de teste injetados
+em **cópias** da página (nada disso vai para o HTML publicado).
+
+| Verificação | Como | Resultado |
+| :--- | :--- | :--- |
+| Interação dos componentes | 17 asserções em uma cópia da página: passo do fluxo LGPD, filtros do inventário, seletores de fairness, nós e janelas do grafo, slider de retenção, cronômetro e tabela das intervenções | 17 de 17 em 1280 px, 768 px e 390 px |
+| Largura de celular de verdade | a cópia dentro de um `iframe` de 390 px (a janela headless não desce de cerca de 500 px) | sem rolagem horizontal; `scrollWidth` igual a 390 |
+| Acessibilidade | axe-core 4.9.1 (regras WCAG 2 A e AA, WCAG 2.1 A e AA e boas práticas), nos temas claro e escuro | 0 violações nos dois temas |
+| Funções puras do JavaScript | asserções em Node sobre `blockAt`, `retentionState`, `ratioPos`, `clock`, `useKind` e `daysLabel` | todas aprovadas |
+| Tamanho | `ls -l` da página | 111 KB (limite de 2,5 MB) |
+| Números iguais aos artefatos | `tests/integration/test_explainer_numbers.py` e `tests/smoke/test_build_explainers.py` | verdes |
+| Dados pessoais | `credit-sentinel scan-pii docs` | nenhum achado |
+
+**Sobre o Lighthouse.** O critério do spec fala em Lighthouse de acessibilidade com nota de 90 ou mais. O
+Lighthouse não foi executado (a ferramenta não está instalada e não foi baixada). A categoria de
+acessibilidade dele é calculada com o axe-core, o mesmo motor usado aqui, que encontrou 0 violações; isso
+sustenta a nota, mas **não é a nota**. Quem quiser a pontuação oficial pode abrir a página no Chrome e rodar
+o Lighthouse pelo DevTools.
+
+## O que a verificação de acessibilidade corrigiu
+
+O primeiro passe do axe-core achou três tipos de problema, todos corrigidos antes do commit:
+
+- **Contraste (`color-contrast`).** O azul de destaque (`#2a78d6`) dava 4,2:1 sobre o fundo claro e o texto
+  branco sobre ele dava 4,4:1, abaixo dos 4,5:1 exigidos; no tema escuro, o verde dos selos também. Os tokens
+  compartilhados em `explainer.css` mudaram (`--accent`, novo `--link`, `--good-text`), então as páginas das
+  Etapas 1 a 3 foram regeneradas com as mesmas cores melhores. Nenhum texto ou dado mudou nelas, só o
+  link para a Etapa 4 na navegação e o hash do commit no rodapé.
+- **`nested-interactive`.** O grafo SVG tinha `role="img"` e nós focáveis dentro; virou `role="group"`.
+- **`heading-order`.** Os cartões da retenção usavam `h4` logo depois de um `h2`; viraram `h3`.
+
+## Prints
+
+- [`pagina_etapa4_fairness.jpg`](pagina_etapa4_fairness.jpg): fairness por grupo (holdout da crise, região, champion).
+- [`pagina_etapa4_grafo_causal.jpg`](pagina_etapa4_grafo_causal.jpg): grafo causal com o nó "Concept drift" selecionado.
+- [`pagina_etapa4_mobile.jpg`](pagina_etapa4_mobile.jpg): a página em 390 px.
+
+## Componentes interativos (7, o mínimo é 3)
+
+1. Fluxo LGPD em 8 passos, com artefato, comando de verificação e a marca "implementado" ou "política".
+2. Inventário das 18 colunas com filtro por uso no modelo.
+3. Fairness por grupo: seletores de conjunto, modelo e atributo, com a faixa dos 4/5.
+4. Grafo causal em SVG, com seleção de nó e de janela e evidências numéricas.
+5. Intervenções: gráfico de barras (Chart.js, com tabela equivalente se o Chart.js faltar).
+6. Linha do tempo da retenção: slider de dias e atalhos.
+7. Roteiro STAR com cronômetro de 5 minutos.
