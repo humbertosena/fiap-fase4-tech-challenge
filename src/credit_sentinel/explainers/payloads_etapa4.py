@@ -47,7 +47,7 @@ CELLS_PER_ROW = 6
 MAX_VIDEO_SECONDS = 300
 MIN_CONCEPT_DROP = 0.02
 EXPECTED_REPORTS = 12
-README_SECTIONS = ("## 7. ", "## 8. ", "## 9. ", "## 10. ")
+README_SECTIONS = tuple(f"## {n}. " for n in range(7, 13))
 PREDICTION_COLUMNS = ["id_cliente_hash", "score", "pred"]
 AUDIT_HINT = "uv run credit-sentinel fairness-audit"
 CAUSAL_HINT = "uv run credit-sentinel causal-ablation"
@@ -629,9 +629,9 @@ def _document_items(
             evidence=f"{star.total_seconds} s em {len(star.blocks)} blocos",
         ),
         _item(
-            "O README traz as seções de governança, causalidade, runbook e roteiro",
+            "O README traz as seções 7 a 12, da governança aos agradecimentos",
             ok=not missing,
-            evidence="seções 7 a 10 presentes" if not missing else f"faltam: {missing}",
+            evidence="seções 7 a 12 presentes" if not missing else f"faltam: {missing}",
         ),
         _item(
             "O ADR 006 e o relatório de fairness não contêm dados pessoais",

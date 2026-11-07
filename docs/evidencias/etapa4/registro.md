@@ -56,3 +56,40 @@ O primeiro passe do axe-core achou três tipos de problema, todos corrigidos ant
 5. Intervenções: gráfico de barras (Chart.js, com tabela equivalente se o Chart.js faltar).
 6. Linha do tempo da retenção: slider de dias e atalhos.
 7. Roteiro STAR com cronômetro de 5 minutos.
+
+## Reprodução do zero
+
+Feita em um clone limpo (`git clone` do repositório local, commit `66db984`, em um diretório novo), seguindo o
+guia da seção 3 do README: `cp .env.example .env`, `uv sync --all-groups` e depois cada alvo do
+`make reproduce`, cronometrado em separado. MacBook com Apple Silicon e cache de pacotes do `uv` aquecido; a
+instalação sem cache depende da rede e não foi medida.
+
+| Passo | Tempo | Saída |
+| :--- | ---: | :--- |
+| `uv sync --all-groups` | 3 s | ambiente criado |
+| `make data` | 43 s (4 s na 2ª execução) | 12.000 linhas, taxa base 6,45 %, SHA-256 igual ao do README |
+| `make validate` | 7 s | referência aprovada; lote corrompido `BLOCKED` (exit 2, ignorado pelo `make`) |
+| `make train` | 11 s | baseline treinado e registrado |
+| `make simulate` | 3 s | `mes_1`, `mes_2` e `mes_3_crise` |
+| `make drift` | 5 s | testes de drift e relatórios do Evidently |
+| `make pipeline` | 6 s | logs, SLOs, alertas, painel de saúde e runs no MLflow |
+| `make audit` | 3 s | 12 relatórios de fairness |
+| `make causal` | 4 s | 11 cenários, 10 sementes |
+| `make explainers` | 3 s | quatro páginas e o índice |
+| **Soma** | **cerca de 85 s** | todos com exit 0 |
+
+No clone, `uv run pytest` passou com **530 testes em 92 s**.
+
+**O que mudou em relação aos arquivos versionados.** `data/`, `models/*/model.joblib` e `models/challenger/` ficam
+idênticos byte a byte (o único campo que muda em `models/baseline/metrics.json` é `trained_at`). Mudam os
+relatórios que carregam carimbo de tempo, `run_id` ou latência medida (validação, drift, SLOs, painel de saúde,
+fairness e ablação) e as predições, porque o guia manda copiar `.env.example`, cujo salt é diferente do salt de
+desenvolvimento com que os artefatos versionados foram gerados. Os números que importam (AUC, PSI, razões de
+impacto) são os mesmos.
+
+**O que a reprodução apontou.** `make lint` falhou no clone: o `ruff format --check .` também formata os trechos
+Python dos arquivos Markdown, e dois trechos do README (seções 7.2 e 7.5) tinham comentários alinhados com
+espaços extras. A falha apareceria na CI do GitHub. Foi corrigida neste commit, e agora `ruff check .` e
+`ruff format --check .` passam no repositório inteiro.
+
+**Ubuntu.** A execução em Ubuntu acontece na CI do GitHub depois do push e ainda não foi observada.

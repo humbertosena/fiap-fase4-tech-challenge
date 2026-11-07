@@ -5,7 +5,8 @@
 ![Pandera](https://img.shields.io/badge/contratos-pandera-0a7d5a)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-> **Vídeo STAR (5 min):** *link publicado na release `v1.0.0-ga`.*
+> 🎬 **Vídeo STAR (5 min):** ⏳ *o link será inserido aqui assim que o vídeo for gravado e publicado.*
+> Enquanto isso, o [roteiro cronometrado](docs/video_star_roteiro.md) mostra o que será apresentado.
 > **Páginas didáticas:** [índice das releases](docs/index.html) ·
 > [Etapa 1 — contratos de dados](docs/releases/etapa-1-contratos.html) ·
 > [Etapa 2 — drift](docs/releases/etapa-2-drift.html) ·
@@ -83,6 +84,20 @@ expõe seus subcomandos na CLI `credit-sentinel`:
 | `tracking` | Hook do MLflow por janela, Model Registry com aliases `champion` e `challenger` | v0.3.0-rc |
 | `governance` | Auditoria de fairness por subgrupos (`fairness-audit`), também usada no G4 do retreino | v0.3.0-rc e v1.0.0-ga |
 
+### Mapa das releases
+
+Cada etapa é uma release com tag anotada, notas no GitHub e uma página didática única (HTML autocontido), publicada no
+[GitHub Pages](https://humbertosena.github.io/fiap-fase4-tech-challenge/).
+
+| Release | Data | Etapa | Rubrica | Notas | Página didática |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `v0.1.0-alpha` | 11/10/2026 | 1 · contratos de dados | Validação de dados (25 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.1.0-alpha) | [etapa-1-contratos](docs/releases/etapa-1-contratos.html) |
+| `v0.2.0-beta` | 21/10/2026 | 2 · simulação e drift | Detecção de drift (25 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.2.0-beta) | [etapa-2-drift](docs/releases/etapa-2-drift.html) |
+| `v0.3.0-rc` | 31/10/2026 | 3 · observabilidade | Observabilidade e logs (20 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.3.0-rc) | [etapa-3-observabilidade](docs/releases/etapa-3-observabilidade.html) |
+| `v1.0.0-ga` | data real da publicação, até 14/11/2026 | 4 · governança e vídeo | Governança LGPD (15 %) e vídeo STAR (15 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v1.0.0-ga) | [etapa-4-governanca](docs/releases/etapa-4-governanca.html) |
+
+O [CHANGELOG](CHANGELOG.md) detalha o que entrou em cada versão.
+
 ## 3. Guia de reprodução
 
 Pré-requisitos: Python 3.12, [uv](https://docs.astral.sh/uv/) ≥ 0.12 e, opcionalmente,
@@ -106,8 +121,22 @@ make explainers                      # gera docs/index.html e docs/releases/*.ht
 make mlflow                          # MLflow UI em http://localhost:5001
 ```
 
-Tempos aproximados em um MacBook (Apple Silicon): `make setup` ≈ 1 min na primeira vez,
-`make data` ≈ 2 s, `make train` ≈ 10 s, `make simulate` ≈ 3 s, `make drift` ≈ 6 s, `make pipeline` ≈ 7 s, suíte de testes ≈ 2 min.
+`make reproduce` é o atalho que executa, em ordem, `data`, `validate`, `train`, `simulate`, `drift`,
+`pipeline`, `audit`, `causal` e `explainers`.
+
+**Tempos medidos em um clone limpo** (MacBook com Apple Silicon, cache de pacotes do `uv` aquecido, commit
+`66db984`): `uv sync --all-groups` leva 3 s (sem cache, a primeira instalação depende da rede e leva cerca de
+1 min) e `make reproduce` leva **cerca de 85 s** no total:
+
+| Passo | Tempo | Passo | Tempo |
+| :--- | ---: | :--- | ---: |
+| `make data` | 43 s na 1ª vez (compila os módulos das dependências), 4 s depois | `make drift` | 5 s |
+| `make validate` | 7 s | `make pipeline` | 6 s |
+| `make train` | 11 s | `make audit` | 3 s |
+| `make simulate` | 3 s | `make causal` e `make explainers` | 4 s e 3 s |
+
+A suíte de testes leva de 1,5 a 2,5 minutos. O registro completo, com o que mudou entre o clone e os artefatos
+versionados, está em [`docs/evidencias/etapa4/registro.md`](docs/evidencias/etapa4/registro.md).
 
 Alternativa ao `make mlflow`: `docker compose up -d mlflow` sobe o mesmo servidor na
 porta 5001 (a 5000 é usada pelo AirPlay no macOS), lendo o mesmo `mlruns/`.
@@ -616,7 +645,7 @@ from credit_sentinel.contracts.privacy_sanitizer import hash_identifier
 from credit_sentinel.settings import get_settings
 
 salt = get_settings().pii_salt.get_secret_value()
-chave = hash_identifier("CLI-XXXXXXXXXX", salt)       # id informado pelo titular
+chave = hash_identifier("CLI-XXXXXXXXXX", salt)  # id informado pelo titular
 scores = pd.read_parquet("reports/predictions/mes_3_crise_scores.parquet")
 print(scores[scores.id_cliente_hash == chave])
 ```
@@ -811,7 +840,7 @@ from credit_sentinel.ml.train_baseline import load_model_bundle, predict_proba
 
 modelo = load_model_bundle(Path("models/baseline"))
 d = pd.read_parquet("data/production/mes_3_crise.parquet")
-d = d[d.data_referencia >= "2026-09-16"].copy()          # holdout: dias 16 a 30
+d = d[d.data_referencia >= "2026-09-16"].copy()  # holdout: dias 16 a 30
 d["negado"] = (predict_proba(modelo, d) >= decision_threshold(modelo)).astype(int)
 bons = d[d.inadimplente == 0].copy()
 bons["faixa_renda"] = pd.qcut(bons.renda_mensal, 3, labels=False)
@@ -1070,11 +1099,9 @@ A soma dos blocos é de exatamente 5:00, e o teste `tests/smoke/test_video_rotei
 se o cronograma ficar descontínuo, passar de 5 minutos, citar um artefato que não existe ou
 mencionar um comando que não existe.
 
-## Próximas seções (releases seguintes)
+## 11. Decisões, estrutura e rastreabilidade
 
-11. Decisões, estrutura e rastreabilidade · 12. Agradecimentos e transparência.
-
-## Decisões de arquitetura
+### 11.1 Decisões de arquitetura
 
 - [ADR 001 — Dataset sintético com processo gerador explícito](docs/adr/001-dataset-sintetico.md)
 - [ADR 002 — Contrato Pandera com circuit breaker em dois níveis](docs/adr/002-pandera-circuit-breaker.md)
@@ -1083,6 +1110,69 @@ mencionar um comando que não existe.
 - [ADR 005 — Observabilidade: Data SLOs, error budget e MLflow](docs/adr/005-observabilidade-slos-mlflow.md)
 - [ADR 006 — Privacidade e governança: LGPD por desenho, fairness como controle contínuo](docs/adr/006-privacidade-e-governanca.md)
 
-## Licença
+### 11.2 Estrutura de pastas
+
+```text
+src/credit_sentinel/   pacote por capacidade: data, contracts, ml, drift, observability,
+                       tracking, governance e explainers (cada um registra seus subcomandos)
+tests/                 unit, integration, smoke, schema e performance (markers do pytest)
+config/                contrato de dados, cenários de drift e Data SLOs, em YAML
+data/                  reference, production e corrupted (sintéticos, bit a bit reproduzíveis)
+models/                baseline (champion inicial) e challenger, com métricas e assinatura
+reports/               validação, drift, SLOs, guardrails, fairness e ablação causal
+docs/                  ADRs, runbook, model card, roteiro STAR, páginas didáticas e evidências
+notebooks/             EDA com diagnóstico ICRA
+.github/workflows/     CI: ruff, pytest com cobertura, smoke do pipeline e varredura de PII
+```
+
+`.plan/`, `.claude/`, `SPEC*`, `tasks/`, `logs/`, `mlruns/` e `.env` não são versionados.
+
+### 11.3 Matriz de rastreabilidade com a rubrica
+
+| Critério | Peso | Onde está | Como verificar | Estado |
+| :--- | ---: | :--- | :--- | :--- |
+| Validação de dados | 25 % | seção 4, [ADR 002](docs/adr/002-pandera-circuit-breaker.md) | `credit-sentinel validate --input data/corrupted/bad_batch.parquet` termina com exit 2; [`bad_batch_report.json`](reports/validation/bad_batch_report.json) lista 8 regras violadas; contrato com 12 regras | ✅ |
+| Detecção de drift | 25 % | seção 5, [ADR 004](docs/adr/004-cenarios-de-drift.md) | [`drift_table.md`](reports/drift_table.md), [relatório do Evidently](reports/evidently_drift_report.html) com 6 de 14 colunas em drift na crise; `data/reference` separada de `data/production` | ✅ |
+| Observabilidade e logs | 20 % | seção 6, [ADR 005](docs/adr/005-observabilidade-slos-mlflow.md) | [amostra de log](docs/evidencias/etapa3/pipeline_events_sample.jsonl) com os 8 campos, [`slo_audit_report.json`](reports/slo_audit_report.json), [painel de saúde](reports/health_dashboard.html), prints do MLflow | ✅ |
+| Governança (LGPD) | 15 % | seções 7 a 9, [ADR 006](docs/adr/006-privacidade-e-governanca.md) | [`fairness_audit.json`](reports/fairness_audit.json) (12 relatórios), [`causal_ablation.json`](reports/causal_ablation.json), sanitizador com testes, runbook | ✅ |
+| Vídeo STAR | 15 % | seção 10 | [roteiro de 5:00](docs/video_star_roteiro.md) com teste de cronograma; páginas HTML como apoio; link em destaque no topo deste README | ⏳ falta gravar e linkar |
+
+Critérios globais: `make reproduce` conclui do zero (registro em
+[`docs/evidencias/etapa4/registro.md`](docs/evidencias/etapa4/registro.md)); a CI cobre ruff, pytest com
+cobertura mínima de 85 %, o smoke do pipeline e a varredura de PII; as quatro páginas didáticas estão em
+`docs/` para o GitHub Pages.
+
+### 11.4 Limitações e trabalhos futuros
+
+- **Mundo sintético.** AUC, PSI e razões de impacto valem para o cenário simulado. A análise causal diz o
+  que o **modelo** faz diante das hipóteses do gerador, não como a economia real se comporta.
+- **Políticas que não são código.** Retenção, RBAC, expurgo, salt em cofre, revisão humana (art. 20) e
+  *shadow mode* estão descritos como alvo de produção, não executados aqui.
+- **Salt padrão.** Sem `CS_PII_SALT`, o código usa um salt de desenvolvimento em vez de abortar; em
+  produção a execução deveria falhar.
+- **Razões de recusa individuais.** A importância por permutação é global e não explica uma decisão isolada;
+  falta um explicador local para o art. 20.
+- **Retreino manual.** O alerta P2 é automático, mas `retrain-challenger` é disparado pelo operador; ligar
+  alerta e comando em um orquestrador é evolução natural.
+- **Rótulo com atraso.** O SLO de AUC depende de verdade de campo, que em produção chega depois de 90 dias;
+  um indicador por faixa de score com rótulos precoces seria o próximo SLO.
+- **Fairness.** Gênero é binário no dataset, a regra dos 4/5 é uma heurística de triagem e os grupos pequenos
+  têm TPR instável; o Nordeste fica sob vigilância contínua.
+- **Sem serviço de inferência.** O escopo é a camada de sustentação (validação, drift, SLOs, governança);
+  API, containerização do modelo e Kubernetes são das fases anteriores.
+
+### 11.5 Licença
 
 Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE).
+
+## 12. Agradecimentos e transparência
+
+Este projeto foi feito com o apoio de um assistente de IA, o **Claude Code (Anthropic)**, na especificação, na
+implementação, nos testes e na documentação. As decisões de escopo, a revisão do que foi gerado e a validação
+dos resultados foram do autor, Humberto Sena Santos. Os commits não levam trailer de coautoria, por decisão do
+autor, e esta seção existe para que o apoio fique registrado de forma explícita.
+
+Também fazem parte do que sustenta o trabalho: as aulas e o enunciado do Tech Challenge da FIAP (Pós-Tech em
+Machine Learning Engineering), as bibliotecas de código aberto citadas em `pyproject.toml` (Pandera, scikit-learn,
+Evidently, MLflow, pandas, entre outras) e a documentação oficial da LGPD (Lei 13.709/2018). Todos os dados são
+sintéticos; nenhuma informação de pessoa real foi usada.
