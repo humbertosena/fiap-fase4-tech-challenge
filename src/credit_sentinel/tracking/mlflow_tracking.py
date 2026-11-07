@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from credit_sentinel.settings import Settings
 
 EXPERIMENT_MONITORING = "credit-sentinel/monitoring"
-CURRENT_RELEASE = "v0.3.0-rc"
+CURRENT_RELEASE = "v1.0.0-ga"
 STAGE_TAG = "monitoring"
 _SQLITE_PREFIX = "sqlite:///"
 _SEVERITIES = ("P1", "P2", "P3", "P4")

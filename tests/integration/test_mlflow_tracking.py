@@ -122,7 +122,7 @@ def test_run_tags_and_params_identify_the_window(tracked: Tracked) -> None:
     assert crisis.data.tags["stage"] == "monitoring"
     assert crisis.data.tags["decision"] == "SUCCESS"
     assert crisis.data.tags["window"] == "mes_3_crise"
-    assert crisis.data.tags["release"] == "v0.3.0-rc"
+    assert crisis.data.tags["release"] == "v1.0.0-ga"
     assert crisis.data.tags["git_sha"]
     assert crisis.data.params["window"] == "mes_3_crise"
     assert crisis.data.params["schema"] == "credit_scoring_inference"

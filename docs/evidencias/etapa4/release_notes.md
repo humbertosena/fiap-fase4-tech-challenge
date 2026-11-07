@@ -32,7 +32,7 @@ Página didática: <https://humbertosena.github.io/fiap-fase4-tech-challenge/rel
 
 | Comando | Resultado |
 | :--- | :--- |
-| `uv run pytest --cov=credit_sentinel --cov-fail-under=85` | 537 testes passando, cobertura de 98 % |
+| `uv run pytest --cov=credit_sentinel --cov-fail-under=85` | 539 testes passando, cobertura de 98,1 % |
 | `uv run ruff check .` e `uv run ruff format --check .` | limpos no repositório inteiro |
 | `git clone` + `uv sync --all-groups` + `make reproduce` em diretório limpo | todos os passos com exit 0, cerca de 85 s |
 | `uv run credit-sentinel fairness-audit` | 12 relatórios, todos dentro de 4/5 |

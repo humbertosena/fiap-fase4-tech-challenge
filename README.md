@@ -38,7 +38,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
 | 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
-| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🚧 em andamento | [etapa-4-governanca.html](docs/releases/etapa-4-governanca.html) |
+| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🎬 implementada, falta o vídeo | [etapa-4-governanca.html](docs/releases/etapa-4-governanca.html) |
 
 ## 2. Arquitetura
 
@@ -313,8 +313,6 @@ marca drift significativo (KS com Bonferroni ou qui-quadrado).
 | `valor_parcela` | 0,4096 | 0,003 · estável | **2,1e-05** | 0,014 · estável | **5,5e-15** | 0,033 · estável |
 | `possui_imovel` | 1,0000 | 0,000 · estável | 1,0000 | 0,000 · estável | 0,9999 | 0,000 · estável |
 | `comprometimento_renda` | 0,8786 | 0,003 · estável | **2,2e-15** | 0,031 · estável | **2,6e-77** | 0,145 · atenção |
-
-PSI: menor que 0,10 estável; de 0,10 a 0,25 atenção; 0,25 ou mais crítico.
 
 PSI: menor que 0,10 estável; de 0,10 a 0,25 atenção; 0,25 ou mais crítico.
 

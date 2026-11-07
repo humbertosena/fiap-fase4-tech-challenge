@@ -93,3 +93,28 @@ espaços extras. A falha apareceria na CI do GitHub. Foi corrigida neste commit,
 `ruff format --check .` passam no repositório inteiro.
 
 **Ubuntu.** A execução em Ubuntu acontece na CI do GitHub depois do push e ainda não foi observada.
+
+## Revisão de conformidade com a rubrica
+
+Cada critério da seção 9 do spec foi conferido com um comando ou um artefato. O que depende do push, do vídeo
+ou da tag fica marcado como pendente, sem ser dado como feito.
+
+| Critério | Peso | O que foi verificado | Resultado | Estado |
+| :--- | ---: | :--- | :--- | :---: |
+| Validação de dados | 25 % | `credit-sentinel validate --input data/corrupted/bad_batch.parquet`; `uv run pytest -m schema`; `config/data_contract.yaml` | exit 2 e `BLOCKED`; 8 regras violadas (R01, R02, R03, R04, R07, R08, R10 e R11); 21 testes de schema passam; contrato com 12 regras | ✅ |
+| Detecção de drift | 25 % | `reports/evidently_drift_summary.json` e `reports/drift_table.md` | 6 de 14 colunas com drift em `mes_3_crise` (mais o alvo e o score); tabela com p(KS) e PSI por feature e janela; `data/reference` separada de `data/production` | ✅ |
+| Observabilidade e logs | 20 % | amostra de log, `slo_audit_report.json`, painel de saúde e prints do MLflow | 4 janelas (1 `BLOCKED` e 3 `SUCCESS`); 40 eventos com os 8 campos; painel gerado; 6 prints em `docs/evidencias/etapa3/` | ✅ |
+| Governança (LGPD) | 15 % | README seções 7 a 9, `fairness_audit.json` e o sanitizador | 12 relatórios com `passed: true`; sanitizador coberto por `tests/unit/test_privacy_sanitizer.py` | ✅ |
+| Vídeo STAR | 15 % | `docs/video_star_roteiro.md` e o link no README | roteiro de 5:00 com teste de cronograma verde; **link do vídeo pendente** (o autor grava e publica) | ⏳ |
+| `git clone` + `uv sync` + `make reproduce` | | seção "Reprodução do zero" acima | exit 0 em todos os passos, cerca de 85 s no macOS; Ubuntu só na CI | ✅ macOS, ⏳ Ubuntu |
+| CI verde na `main` | | `ruff check .`, `ruff format --check .`, `pytest --cov-fail-under=85`, smoke do pipeline e `scan-pii` | tudo verde localmente (539 testes, 98,11 % de cobertura); a CI ainda não rodou sobre esta branch | ⏳ |
+| 4 tags e 4 GitHub Releases | | `git tag -l` e `gh release list` | 3 tags e 3 releases publicadas (`v0.1.0-alpha`, `v0.2.0-beta`, `v0.3.0-rc`); a GA espera o vídeo | ⏳ |
+| `docs/index.html` e 4 páginas no Pages | | `docs/` e o Pages | índice e as 4 páginas versionados; as Etapas 1 a 3 já estão no ar, a 4 sobe com o push | ⏳ |
+| Sem temporários, segredos ou PII no histórico | | `git log --all --name-only`, `git log --all --format=%B` e `scan-pii` | 244 caminhos distintos, nenhum `.env`, `mlruns/`, `logs/`, `SPEC*`, `tasks/`, `.plan/` ou `.claude/`; maior arquivo de 4,6 MB (relatório do Evidently); 77 commits de um só autor e nenhum trailer de coautoria; `scan-pii` limpo em README, CHANGELOG, `docs`, `reports`, `config`, `logs` e `notebooks` | ✅ |
+| Agradecimentos e transparência sobre o assistente de IA | | README, seção 12 | presente, coberta por `tests/smoke/test_readme_sections.py` | ✅ |
+| Tag `v1.0.0-ga` depois do commit do vídeo | | | pendente | ⏳ |
+
+**Limpeza.** Foram removidos os arquivos `.DS_Store` e um CSV solto da ablação; `logs/` e `mlruns/` ficam locais e
+fora do git (o estado do MLflow serve à demonstração do vídeo). A versão do pacote passou de `0.1.0` para `1.0.0`
+e a tag `release` gravada nos runs do MLflow, de `v0.3.0-rc` para `v1.0.0-ga`, com um teste que impede os dois de
+ficarem para trás da última release.
