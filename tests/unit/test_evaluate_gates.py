@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
 import pytest
 
+from credit_sentinel.drift.predictions import decision_threshold
 from credit_sentinel.governance.fairness_audit import (
-    FAIRNESS_ATTRIBUTES,
+    AuditSubject,
     GroupImpact,
-    age_band,
-    approval_impact_ratios,
+    audit_subject,
+    to_group_impacts,
 )
 from credit_sentinel.ml.evaluate_gates import (
     GATE_IDS,
@@ -24,9 +23,11 @@ from credit_sentinel.ml.evaluate_gates import (
     gate_input_contract,
     gate_latency,
 )
-from credit_sentinel.ml.train_baseline import train_and_analyze
+from credit_sentinel.ml.train_baseline import predict_proba, train_and_analyze
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from credit_sentinel.settings import Settings
 
 pytestmark = pytest.mark.unit
@@ -128,39 +129,6 @@ def test_latency_gate(seconds: float, *, passed: bool) -> None:
     assert result.threshold == 5.0
 
 
-def test_age_band_uses_four_bands() -> None:
-    bands = age_band(pd.Series([18, 29, 30, 44, 45, 59, 60, 85]))
-    assert list(bands) == [
-        "18-29",
-        "18-29",
-        "30-44",
-        "30-44",
-        "45-59",
-        "45-59",
-        "60+",
-        "60+",
-    ]
-
-
-def test_approval_ratios_are_relative_to_the_largest_group() -> None:
-    frame = pd.DataFrame(
-        {
-            "genero": ["F"] * 40 + ["M"] * 60,
-            "regiao": ["Sul"] * 100,
-            "idade": [35] * 100,
-        }
-    )
-    approved = np.array([True] * 20 + [False] * 20 + [True] * 54 + [False] * 6)
-    impacts = {
-        (i.attribute, i.group): i for i in approval_impact_ratios(frame, approved)
-    }
-    assert impacts[("genero", "M")].ratio == 1.0
-    assert impacts[("genero", "M")].reference_group == "M"
-    assert impacts[("genero", "F")].approval_rate == pytest.approx(0.5)
-    assert impacts[("genero", "F")].ratio == pytest.approx(0.5 / 0.9)
-    assert {i.attribute for i in impacts.values()} == set(FAIRNESS_ATTRIBUTES)
-
-
 def test_report_passes_only_when_every_gate_passes(
     df_reference_small: pd.DataFrame, settings_tmp: Settings
 ) -> None:
@@ -178,3 +146,23 @@ def test_report_passes_only_when_every_gate_passes(
     assert report.passed is False
     assert report.champion.roc_auc == report.challenger.roc_auc
     assert report.holdout_rows == len(df_reference_small)
+
+
+def test_g4_is_computed_by_the_full_fairness_audit(
+    df_reference_small: pd.DataFrame, settings_tmp: Settings
+) -> None:
+    model = train_and_analyze(df_reference_small, settings=settings_tmp)
+    report = evaluate_promotion_gates(
+        model, model, df_reference_small, settings=settings_tmp
+    )
+    subject = AuditSubject(
+        model_version=model.version,
+        role="challenger",
+        dataset="holdout",
+        threshold=decision_threshold(model),
+    )
+    scores = predict_proba(model, df_reference_small)
+    audited = audit_subject(df_reference_small, scores, subject)
+    assert report.fairness == to_group_impacts(audited)
+    by_id = {r.gate_id: r for r in report.results}
+    assert by_id["G4_fairness_aprovacao"].passed is all(r.passed for r in audited)

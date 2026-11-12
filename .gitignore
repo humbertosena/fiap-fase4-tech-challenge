@@ -1,6 +1,7 @@
 # Planejamento e ferramentas locais (nao versionados)
 .plan/
 .claude/
+.video/
 SPEC*
 tasks/
 

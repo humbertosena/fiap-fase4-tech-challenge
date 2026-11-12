@@ -1,0 +1,222 @@
+{% extends "base.html.j2" %}
+{% set fair = payload.fairness %}
+{% set ns = namespace(worst=none) %}
+{% for r in fair.reports %}{% for g in r.groups %}{% if ns.worst is none or g.disparate_impact < ns.worst.ratio %}{% set ns.worst = {"ratio": g.disparate_impact, "group": g.group, "attribute": r.attribute, "role": r.role, "dataset": r.dataset} %}{% endif %}{% endfor %}{% endfor %}
+{% set abl = {} %}
+{% for s in payload.causal.scenarios %}{% set _ = abl.update({s.key: s}) %}{% endfor %}
+{% set champ = payload.band[0] %}
+{% set chall = payload.band[1] %}
+{% set total = payload.star.total_seconds %}
+{% block title %}Etapa 4 · Governança{% endblock %}
+{% block description %}Como o projeto trata dados pessoais com a LGPD, audita a justiça do modelo por grupo e explica, com intervenções no simulador, por que ele piorou e como corrigir.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span>Etapa 4 · Governança, LGPD e análise causal</span><span class="tag">{{ release.tag }}</span><span>{{ release.date }}</span></div>
+    <h1>Provar que o modelo é seguro, justo e explicável, e entender por que ele piorou</h1>
+    <p class="lead">Um modelo de crédito decide sobre pessoas. Esta etapa mostra que dados pessoais são tratados com
+    base legal e prazo, que a decisão não discrimina grupos de forma desproporcional e que a queda de desempenho tem uma causa
+    identificável, testada por intervenção no simulador, e uma resposta que funciona.</p>
+  </section>
+
+  <section aria-labelledby="resumo">
+    <h2 id="resumo">Resumo em 60 segundos</h2>
+    <div class="grid grid-4">
+      <div class="panel kpi"><div class="label">Auditoria de fairness</div><div class="value num">{{ fair.reports|length }}</div>
+        <div class="note">relatórios; {% if fair.passed %}todos os grupos dentro de 4/5{% else %}há grupo fora de 4/5{% endif %}. Menor razão: {{ ns.worst.ratio|br(3) }} ({{ ns.worst.group }})</div></div>
+      <div class="panel kpi"><div class="label">Queda de AUC só pelo concept drift</div><div class="value num">{{ abl.so_concept.delta_auc|br(3) }}</div>
+        <div class="note">covariate shift sozinho: {{ abl.so_covariate.delta_auc|br(3) }} ± {{ abl.so_covariate.delta_auc_std|br(3) }} (ruído)</div></div>
+      <div class="panel kpi"><div class="label">Aprovações falsas na faixa 550-700</div><div class="value num">{{ champ.defaulters_approved }}</div>
+        <div class="note">o champion esperava {{ champ.expected_defaulters|round|int }}; o challenger aprova {{ chall.defaulters_approved }}</div></div>
+      <div class="panel kpi"><div class="label">Roteiro do vídeo STAR</div><div class="value num">{{ total // 60 }}:{{ '%02d'|format(total % 60) }}</div>
+        <div class="note">{{ payload.star.blocks|length }} blocos, cada um com tela, artefato e fala</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="implementado">
+    <h2 id="implementado">O que foi implementado</h2>
+    <div class="grid grid-3">
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Inventário e minimização</h3>
+        <p class="small">{{ payload.inventory|length }} colunas, cada uma com finalidade. CPF, nome, endereço, telefone e e-mail não existem no contrato: a regra R01 bloqueia o lote que os traga.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Proteção técnica (PETs)</h3>
+        <p class="small">Pseudonimização HMAC-SHA-256 com salt, mascaramento nos logs, deny-list de identificadores e <code>scan-pii</code> na CI.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Base legal e direitos</h3>
+        <p class="small">Proteção ao crédito como base principal, direitos do titular (art. 18) e a revisão de decisão automatizada (art. 20).</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Retenção e acesso</h3>
+        <p class="small">{{ payload.retention|length }} tipos de dado com prazo-alvo, papel com acesso e descarte. É política de produção, não automatizada aqui.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Auditoria de fairness</h3>
+        <p class="small">Gênero, região e faixa etária, em champion e challenger, com a regra dos 4/5, TPR, FPR e diferença de oportunidade.</p></article>
+      <article class="panel card"><p class="rubric">{{ release.rubric }}</p><h3>Análise causal</h3>
+        <p class="small">Grafo causal, intervenções no simulador ({{ payload.causal.scenarios|length }} cenários, {{ payload.causal.seeds|length }} sementes) e uma política de mitigação.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="fluxo-titulo">
+    <h2 id="fluxo-titulo">1 · O caminho do dado pessoal</h2>
+    <p class="muted">Clique em um passo (ou use as setas do teclado). Cada um mostra a medida de privacidade aplicada, o artefato que a prova e
+    o comando para verificar. Os dois últimos passos são política de produção, e a página diz isso.</p>
+    <div class="panel" id="steps-box" data-repo="{{ repo_url }}">
+      <div class="stepper" id="stepper" role="group" aria-label="Passos do fluxo de dados"></div>
+      <div class="step-detail" id="step-detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="legal-titulo">
+    <h2 id="legal-titulo">2 · Base legal e inventário de dados</h2>
+    <p class="muted">As citações são da Lei 13.709/2018 (LGPD). As exigências do Banco Central entram só de forma genérica.</p>
+    <div class="legal-grid">
+      {% for item in payload.legal %}
+      <article class="panel legal-card"><span class="art">{{ item.article }}</span><h3>{{ item.title }}</h3>
+        <p>{{ item.summary }}</p><p class="muted"><strong>No projeto:</strong> {{ item.use }}</p></article>
+      {% endfor %}
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>Inventário das {{ payload.inventory|length }} colunas</h3>
+      <div class="controls" id="inventory-filters" role="group" aria-label="Filtrar o inventário por uso"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Coluna</th><th>Papel</th><th>Finalidade</th><th>Uso no modelo</th></tr></thead>
+        <tbody id="inventory-body"></tbody>
+      </table></div>
+      <p class="small muted" id="inventory-note" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="fair-titulo">
+    <h2 id="fair-titulo">3 · Fairness por grupo</h2>
+    <p class="muted">Cada ponto é a razão de impacto do grupo: a aprovação dele dividida pela do maior grupo do atributo. A faixa verde é a
+    regra dos 4/5 (0,80 a 1,25), e a linha preta marca 1,00. Troque o conjunto, o modelo e o atributo.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="fair-dataset">Conjunto de dados<select id="fair-dataset" class="select"></select></label>
+        <label class="field" for="fair-role">Modelo<select id="fair-role" class="select"></select></label>
+        <label class="field" for="fair-attr">Atributo<select id="fair-attr" class="select"></select></label>
+      </div>
+      <p class="small muted" id="fair-dataset-note"></p>
+      <div class="fair-list" id="fair-list" aria-live="polite"></div>
+      <div class="fair-axis" aria-hidden="true"><span>0,60</span><span>0,80</span><span>1,00</span><span>1,25</span><span>1,40</span></div>
+      <div class="verdict-note" id="fair-verdict" aria-live="polite"></div>
+      <div class="table-wrap" style="margin-top:12px"><table>
+        <thead><tr><th>Grupo</th><th class="num">n</th><th class="num">Aprovação</th><th class="num">Razão</th><th class="num">TPR</th><th class="num">FPR</th><th class="num">Inadimpl. obs.</th><th class="num">Δ oportunidade</th></tr></thead>
+        <tbody id="fair-body"></tbody>
+      </table></div>
+      <p class="small muted">Aprovação é <code>score &lt; limiar</code>. TPR é a fração dos inadimplentes negados; FPR, a dos bons pagadores negados.
+      Em grupos pequenos o TPR tem intervalo largo, então diferenças de oportunidade não são conclusivas sozinhas.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="dag-titulo">
+    <h2 id="dag-titulo">4 · O grafo causal da degradação</h2>
+    <p class="muted">Linhas tracejadas são a narrativa econômica (hipóteses que calibram o simulador); linhas contínuas são mecanismos do gerador, que
+    podem ser ligados e desligados. Clique em um nó e escolha a janela para ver as evidências numéricas, ou use a lista.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field" for="dag-select">Nó<select id="dag-select" class="select"></select></label>
+        <div class="controls" id="dag-windows" role="group" aria-label="Janela das evidências" style="margin:0"></div>
+      </div>
+      <div class="dag-wrap"><svg id="dag" viewBox="0 0 1100 520" role="group" aria-label="Grafo causal: narrativa, mecanismos, efeitos e consequências"></svg></div>
+      <div class="grid grid-2" style="margin-top:12px">
+        <div class="panel" id="dag-detail" aria-live="polite"></div>
+        <div class="panel">
+          <h3>Como ler</h3>
+          <ul class="small">
+            <li><strong>Narrativa:</strong> o que acontece no mundo (inflação, Selic, desemprego).</li>
+            <li><strong>Mecanismo:</strong> o parâmetro do gerador que o código transforma em colunas e em risco.</li>
+            <li><strong>Efeito:</strong> o tipo de drift que o parâmetro produz.</li>
+            <li><strong>Consequência:</strong> o que a operação enxerga.</li>
+          </ul>
+          <p class="small muted">O PSI avisa (covariate shift), mas o dano ao AUC vem do concept drift, que o PSI da própria feature não vê.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="interv-titulo">
+    <h2 id="interv-titulo">5 · Intervenções: o que derruba o AUC?</h2>
+    <p class="muted">Cada barra regera a janela de crise com as mesmas {{ payload.causal.seeds|length }} sementes e só com os choques indicados
+    (<em>só</em>) ou sem eles (<em>sem</em>), e mede o {{ payload.causal.model_version }} sem retreino. A barra é a variação média do AUC contra o controle; as vermelhas são quedas de 0,02 ou mais.</p>
+    <div class="panel">
+      <div class="chart-box tall"><canvas id="interv-canvas" role="img" aria-label="Variação do AUC por cenário de intervenção"></canvas></div>
+      <div class="table-wrap" id="interv-table"></div>
+      <p class="small muted">Diferenças abaixo de 0,01 são ruído amostral. Fonte: <a href="{{ depth }}reports/causal_ablation.json"><code>reports/causal_ablation.json</code></a>.</p>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>Por que o modelo estático erra: a faixa intermediária de score</h3>
+      <p class="small muted">Holdout da crise (dias 16 a 30). A faixa de 550 a 700 de <code>score_bureau</code> inadimple bem mais, sem que o score se mova.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Modelo</th><th class="num">Clientes na faixa</th><th class="num">Inadimpl. observada</th><th class="num">Risco médio previsto</th><th class="num">Aprovados</th><th class="num">Inadimplentes aprovados</th><th class="num">Esperados</th><th class="num">Observado ÷ esperado</th></tr></thead>
+        <tbody>
+          {% for b in payload.band %}
+          <tr><td><code>{{ b.model }}</code> ({{ b.role }})</td><td class="num">{{ b.clients|thousands }}</td><td class="num">{{ b.observed_rate|pct(1) }}</td><td class="num">{{ b.mean_score|pct(1) }}</td><td class="num">{{ b.approved|thousands }}</td><td class="num">{{ b.defaulters_approved }}</td><td class="num">{{ b.expected_defaulters|br(0) }}</td><td class="num">{{ (b.defaulters_approved / b.expected_defaulters)|br(1) }}×</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+      <p class="small muted">O challenger aprende parte do novo conceito, mas não todo: a previsão média na faixa ainda fica abaixo da inadimplência observada.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="ret-titulo">
+    <h2 id="ret-titulo">6 · Linha do tempo da retenção</h2>
+    <p class="muted">Arraste para ver o que ainda existe depois de certo tempo desde o encerramento da operação. Os prazos são o <strong>alvo de produção</strong>
+    (seção 7.4 do README) e precisam ser confirmados com o jurídico; este repositório não os executa.</p>
+    <div class="panel">
+      <label class="field" for="ret-slider">Tempo desde o encerramento da operação: <strong id="ret-label"></strong></label>
+      <input id="ret-slider" class="slider" type="range" min="0" max="2190" step="15" value="0" aria-describedby="ret-summary">
+      <div class="controls" id="ret-presets" role="group" aria-label="Atalhos de tempo" style="margin-top:8px"></div>
+      <p class="small" id="ret-summary" aria-live="polite"></p>
+      <div class="ret-grid" id="ret-grid"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="star-titulo">
+    <h2 id="star-titulo">7 · Roteiro do vídeo STAR</h2>
+    <p class="muted">Situation, Task, Action e Result em até 5 minutos. O cronômetro destaca o bloco da vez para ensaiar.
+    O texto vem de <a href="{{ repo_url }}/blob/main/docs/video_star_roteiro.md"><code>docs/video_star_roteiro.md</code></a>.
+    O vídeo gravado está <a href="{{ payload.video_url }}">no YouTube</a>.</p>
+    <div class="panel">
+      <div class="star-timer">
+        <span class="star-clock" id="star-clock" role="timer" aria-live="off">0:00</span>
+        <button class="btn primary" type="button" id="star-start">Iniciar</button>
+        <button class="btn" type="button" id="star-reset">Zerar</button>
+        <div class="star-bar" aria-hidden="true"><span id="star-progress"></span></div>
+        <span class="small muted" id="star-now" aria-live="polite"></span>
+      </div>
+      <div id="star-blocks"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="relatorios">
+    <h2 id="relatorios">Relatórios e documentos</h2>
+    <div class="panel">
+      <ul>
+        <li><a href="{{ depth }}reports/fairness_audit.md"><code>reports/fairness_audit.md</code></a> e <a href="{{ depth }}reports/fairness_audit.json"><code>.json</code></a> · a auditoria completa por grupo</li>
+        <li><a href="{{ depth }}reports/causal_ablation.md"><code>reports/causal_ablation.md</code></a> e <a href="{{ depth }}reports/causal_ablation.json"><code>.json</code></a> · as intervenções no simulador</li>
+        <li><a href="{{ repo_url }}/blob/main/README.md">README</a> · seções 7 (LGPD e fairness), 8 (análise causal), 9 (runbook) e 10 (roteiro)</li>
+        <li><a href="{{ repo_url }}/blob/main/docs/adr/006-privacidade-e-governanca.md">ADR 006</a> · decisões de privacidade e governança</li>
+        <li><a href="{{ payload.video_url }}">Vídeo STAR no YouTube</a> · os 5 minutos gravados</li>
+        <li><a href="{{ repo_url }}/blob/main/docs/video_star_roteiro.md">Roteiro do vídeo</a> · falas, telas e plano B</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="reproduzir">
+    <h2 id="reproduzir">Como reproduzir</h2>
+    <div class="panel">
+      {% for command in payload.commands %}
+      <div class="cmd"><pre id="cmd-{{ loop.index }}">{{ command }}</pre><button class="btn" type="button" data-copy="cmd-{{ loop.index }}" aria-label="Copiar comando">Copiar</button></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="aceitacao">
+    <h2 id="aceitacao">Critérios de aceitação</h2>
+    <div class="panel">
+      <ul class="checklist">
+        {% for item in payload.acceptance %}
+        <li><span class="status {{ 'ok' if item.ok else 'fail' }}">{{ 'OK' if item.ok else 'Falhou' }}</span>
+          <div><strong>{{ item.criterion }}</strong><div class="evidence">{{ item.evidence }}</div></div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

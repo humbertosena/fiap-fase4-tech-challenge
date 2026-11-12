@@ -47,6 +47,9 @@
         {% if 3 in published %}
         <li><a href="reports/health_dashboard.html">Painel de saúde do pipeline</a> (HTML), a <a href="reports/slo_audit_report.json">auditoria de SLOs</a> e os <a href="reports/gates_report.json">guardrails do challenger</a> (JSON)</li>
         {% endif %}
+        {% if 4 in published %}
+        <li>A <a href="reports/fairness_audit.md">auditoria de fairness</a> e a <a href="reports/causal_ablation.md">ablação causal</a> da Etapa 4 (Markdown, com os JSON ao lado)</li>
+        {% endif %}
       </ul>
       {% if 3 not in published %}
       <p class="small muted">{% if 2 in published %}O painel de saúde (Etapa 3) aparece{% else %}Os relatórios de drift (Etapa 2) e o painel de saúde (Etapa 3) aparecem{% endif %} aqui quando as releases forem publicadas.</p>

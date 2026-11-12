@@ -7,6 +7,34 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [1.0.0-ga] - 2026-11-11
+
+Etapa 4 — governança LGPD, análise causal e entrega final.
+
+### Adicionado
+
+- Auditoria de fairness por subgrupos (`fairness-audit`, `make audit`): gênero, região e faixa etária em
+  champion e challenger, em dois conjuntos de dados (12 relatórios), com razão de impacto desigual (regra dos
+  4/5), TPR, FPR e diferença de oportunidade em `reports/fairness_audit.{json,md}`. `--strict` termina com
+  exit 3 se algum grupo sair dos 4/5. O gate G4 do retreino passou a usar a mesma implementação.
+- Ablação causal por intervenção (`causal-ablation`, `make causal`): regera a janela de crise com um choque por
+  vez, nas mesmas sementes, e mede o AUC do champion (`reports/causal_ablation.{json,md}`).
+- README com as seções 7 (LGPD: inventário, PETs, base legal, retenção e mitigação de viés), 8 (análise causal e
+  prescrição), 9 (runbook), 10 (roteiro), 11 (decisões, estrutura, rastreabilidade e limitações) e 12
+  (agradecimentos e transparência).
+- ADR 006 (privacidade e governança) e runbook refinado com ligação para as seções de governança.
+- Roteiro do vídeo STAR cronometrado em 5:00 (`docs/video_star_roteiro.md`) e teste que valida o cronograma.
+- Página didática da Etapa 4 (fluxo LGPD, inventário, fairness por grupo, grafo causal, intervenções, retenção
+  e roteiro com cronômetro) e índice com as quatro releases.
+- Registro de reprodução do zero em `docs/evidencias/etapa4/registro.md` e teste das seções do README.
+- Vídeo STAR de 5 minutos publicado no YouTube (<https://youtu.be/IYjAByEJ048>), com o link em destaque no topo
+  do README e na página da Etapa 4.
+
+### Alterado
+
+- `make reproduce` passou a incluir `audit` e `causal`.
+- Contraste das páginas didáticas (tokens `--accent`, `--link` e `--good-text`), verificado com o axe-core.
+
 ## [0.3.0-rc] - 2026-10-31
 
 Etapa 3 — observabilidade, Data SLOs e MLflow.
@@ -95,6 +123,8 @@ Etapa 1 — validação de dados e contratos.
 
 - Amostras do relatório de validação quando a única falha da linha é no `id_cliente`.
 
-[Unreleased]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.2.0-beta...HEAD
+[Unreleased]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v1.0.0-ga...HEAD
+[1.0.0-ga]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.3.0-rc...v1.0.0-ga
+[0.3.0-rc]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.2.0-beta...v0.3.0-rc
 [0.2.0-beta]: https://github.com/humbertosena/fiap-fase4-tech-challenge/compare/v0.1.0-alpha...v0.2.0-beta
 [0.1.0-alpha]: https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.1.0-alpha

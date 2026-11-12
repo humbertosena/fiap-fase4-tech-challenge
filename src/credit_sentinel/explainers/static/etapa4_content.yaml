@@ -1,0 +1,208 @@
+# Conteúdo textual da página da Etapa 4. Os números vêm dos artefatos, não deste arquivo,
+# com exceção dos prazos de retenção, que são a política-alvo da seção 7.4 do README.
+steps:
+  - key: coleta
+    title: Coleta
+    measure: >-
+      Só as 18 colunas do contrato. CPF, nome, endereço, telefone e e-mail não são coletados.
+    artifact: docs/data_dictionary.md
+    verify: uv run pytest tests/unit/test_dictionary.py
+    status: implementado
+  - key: contrato
+    title: Contrato de dados
+    measure: >-
+      A regra R01 (schema estrito) bloqueia o lote que traga uma coluna fora da lista, como cpf.
+    artifact: reports/validation/bad_batch_report.json
+    verify: uv run credit-sentinel validate --input data/corrupted/bad_batch.parquet
+    status: implementado
+  - key: pseudonimizacao
+    title: Pseudonimização
+    measure: >-
+      id_cliente vira HMAC-SHA-256 com salt secreto antes de qualquer saída.
+    artifact: src/credit_sentinel/contracts/privacy_sanitizer.py
+    verify: uv run pytest tests/unit/test_privacy_sanitizer.py
+    status: implementado
+  - key: treino
+    title: Treino
+    measure: >-
+      13 features mais a derivada comprometimento_renda. genero e regiao ficam fora do modelo
+      e servem só à auditoria.
+    artifact: models/baseline/signature.json
+    verify: uv run pytest tests/unit/test_features.py
+    status: implementado
+  - key: inferencia
+    title: Inferência
+    measure: >-
+      As predições gravam só id_cliente_hash, score e pred; o id em claro não sai.
+    artifact: reports/predictions/mes_3_crise_scores.parquet
+    verify: uv run credit-sentinel detect-drift --window mes_3_crise
+    status: implementado
+  - key: logs
+    title: Logs
+    measure: >-
+      O filtro troca por *** id, CPF, e-mail e telefone antes de gravar qualquer evento.
+    artifact: docs/evidencias/etapa3/pipeline_events_sample.jsonl
+    verify: uv run credit-sentinel scan-pii logs reports docs
+    status: implementado
+  - key: retencao
+    title: Retenção
+    measure: >-
+      Cada tipo de dado tem prazo-alvo e papel com acesso (seção 7.4 do README).
+    artifact: docs/adr/006-privacidade-e-governanca.md
+    verify: Revisão do encarregado e do jurídico; não é automatizada neste repositório.
+    status: política
+  - key: expurgo
+    title: Expurgo
+    measure: >-
+      Ao fim do prazo, eliminação segura ou anonimização irreversível (art. 16 da LGPD).
+    artifact: README.md
+    verify: Rotina de produção; fora do escopo de um repositório de arquivos.
+    status: política
+
+legal:
+  - article: Art. 7º, X
+    title: Proteção ao crédito
+    summary: Base principal do scoring; o tratamento existe para avaliar e proteger o crédito concedido.
+    use: Decisão de crédito, monitoramento de drift e auditoria.
+  - article: Art. 7º, V
+    title: Execução de contrato
+    summary: Procedimentos preliminares a pedido do titular.
+    use: Coleta dos dados da proposta que o próprio cliente fez.
+  - article: Art. 7º, IX e art. 10
+    title: Legítimo interesse
+    summary: Com teste de balanceamento (finalidade, necessidade, impacto e salvaguardas).
+    use: Somente a prevenção à fraude.
+  - article: Art. 18
+    title: Direitos do titular
+    summary: Confirmação, acesso, correção, eliminação do desnecessário, portabilidade e oposição.
+    use: Localização por id_cliente_hash; correção por novo lote validado.
+  - article: Art. 20
+    title: Decisão automatizada
+    summary: Direito de pedir revisão e de receber informações claras sobre os critérios.
+    use: Importância das features; a revisão por analista é política interna.
+  - article: Art. 16
+    title: Conservação
+    summary: Os dados são eliminados ao fim do tratamento, salvo exceções como obrigação legal.
+    use: Apoio ao prazo-alvo de cinco anos para registros de crédito.
+
+retention:
+  - key: propostas
+    label: Propostas pseudonimizadas
+    where: data/reference, data/production
+    personal: true
+    days: 1826
+    until: 5 anos após o encerramento da operação
+    after: eliminadas, ou anonimizadas se mantidas para estatística
+    basis: Art. 16, I, II e IV
+  - key: quarentena
+    label: Linhas em quarentena
+    where: data/quarantine
+    personal: true
+    days: 30
+    until: 30 dias, o tempo de corrigir na origem
+    after: eliminadas
+    basis: Art. 6º, III (necessidade)
+  - key: scores
+    label: Scores e decisões
+    where: reports/predictions
+    personal: true
+    days: 1826
+    until: 5 anos (rastreabilidade da decisão)
+    after: eliminados
+    basis: Art. 20 e art. 16, I
+  - key: logs
+    label: Logs do pipeline
+    where: logs/
+    personal: false
+    days: 90
+    until: 90 dias
+    after: rotação automática
+    basis: Necessidade operacional
+  - key: relatorios
+    label: Relatórios de drift, SLO e fairness
+    where: reports/
+    personal: false
+    days: null
+    until: vida do modelo, mais 5 anos
+    after: arquivados
+    basis: Auditoria
+  - key: modelos
+    label: Modelos e metadados
+    where: models/, mlruns/
+    personal: false
+    days: null
+    until: vigência, mais 5 anos após a aposentadoria
+    after: arquivados
+    basis: Reprodução da decisão
+  - key: salt
+    label: Salt do HMAC
+    where: .env (cofre em produção)
+    personal: false
+    days: null
+    until: enquanto existir dado associado
+    after: destruído depois do último descarte
+    basis: Permitir a busca por titular
+
+purpose:
+  id_cliente: unicidade (R02), junção com a verdade de campo, rastreabilidade
+  data_referencia: janela temporal e contagem da retenção
+  idade: capacidade de pagamento; também auditada em faixas etárias
+  renda_mensal: capacidade de pagamento
+  score_bureau: histórico de crédito no mercado
+  taxa_endividamento: endividamento existente
+  utilizacao_credito: uso do crédito rotativo
+  tempo_emprego_meses: estabilidade da renda
+  qtd_parcelas_atraso_12m: comportamento de pagamento recente
+  valor_emprestimo: característica da operação pedida
+  prazo_meses: característica da operação pedida
+  valor_parcela: característica da operação pedida
+  situacao_emprego: estabilidade da renda
+  finalidade_credito: finalidade declarada
+  possui_imovel: garantia potencial
+  genero: exclusivamente a auditoria de fairness
+  regiao: exclusivamente a auditoria de fairness
+  inadimplente: "alvo: atraso acima de 90 dias"
+
+dag:
+  nodes:
+    INF: {label: "Inflação ↑", kind: narrativa, column: 0, row: 0, text: "A inflação corrói a renda real das famílias. É hipótese da narrativa: o simulador a traduz em um fator sobre a renda."}
+    SEL: {label: "Selic ↑", kind: narrativa, column: 0, row: 1, text: "A Selic alta encarece o crédito. No simulador vira a taxa de juros mensal da tabela Price."}
+    DES: {label: "Desemprego ↑", kind: narrativa, column: 0, row: 2, text: "O desemprego sobe e a carteira passa a ter mais clientes sem vínculo de trabalho."}
+    EST: {label: "Estresse das famílias", kind: narrativa, column: 0, row: 3, text: "O aperto financeiro das famílias: mais endividamento, mais uso do rotativo, mais dívida consolidada e um risco maior na faixa intermediária de score."}
+    APE: {label: "Aperto da concessão", kind: narrativa, column: 0, row: 4, text: "A própria fintech aperta a concessão. É um mitigador: sem ele, a taxa de inadimplência seria bem maior."}
+    REN: {label: "Renda real ↓", kind: mecanismo, column: 1, row: 0, text: "Renda real menor pesa mais no orçamento e entra direto no risco de inadimplência."}
+    JUR: {label: "Juros ↑", kind: mecanismo, column: 1, row: 1, text: "Juros maiores encarecem a parcela de um mesmo empréstimo."}
+    EMP: {label: "Mais desempregados", kind: mecanismo, column: 1, row: 2, text: "Mais desempregados na carteira: menos renda e um risco maior para cada um deles."}
+    DIV: {label: "Endividamento e utilização ↑", kind: mecanismo, column: 1, row: 3, text: "Endividamento e utilização do crédito sobem. As duas features entram no risco e são as que mais se movem."}
+    COM: {label: "Comprometimento ↑", kind: mecanismo, column: 1, row: 4, text: "A parcela cresce e a renda cai, então comprometimento_renda sobe."}
+    PES: {label: "Peso da parcela ↑", kind: mecanismo, column: 1, row: 5, text: "O peso do comprometimento no risco aumenta e muda a relação entre a feature e o desfecho."}
+    FAI: {label: "Risco extra na faixa 550-700", kind: mecanismo, column: 1, row: 6, text: "Clientes com score de 550 a 700 passam a inadimplir bem mais, sem que o score se mova."}
+    INT: {label: "Intercepto menor", kind: mecanismo, column: 1, row: 7, text: "Ajuste de intercepto que representa o aperto da concessão; reduz a taxa base."}
+    COV: {label: "Covariate shift", kind: efeito, column: 2, row: 1, text: "A distribuição das features muda, mas a relação entre features e risco continua valendo. Eleva taxas e quase não afeta o ranking."}
+    CON: {label: "Concept drift", kind: efeito, column: 2, row: 4, text: "A relação entre features e risco muda. O modelo treinado antes não sabe disso e erra de forma sistemática."}
+    PRI: {label: "Prior shift", kind: efeito, column: 2, row: 6, text: "A taxa de inadimplência da carteira sobe. É consequência dos outros choques."}
+    SLO: {label: "PSI alto, SLO2 estoura (P2)", kind: consequencia, column: 3, row: 1, text: "O PSI das features e do score acende o alerta P2 e o SLO de estabilidade estoura. É o primeiro sinal, e vem do covariate shift."}
+    AUC: {label: "AUC cai, aprovações falsas", kind: consequencia, column: 3, row: 4, text: "A discriminação do modelo cai e ele aprova inadimplentes na faixa intermediária. É o dano real, e vem do concept drift."}
+    BRI: {label: "Brier piora", kind: consequencia, column: 3, row: 6, text: "A calibração piora: o risco previsto fica abaixo do risco observado."}
+  edges:
+    - [INF, REN, true]
+    - [SEL, JUR, true]
+    - [DES, EMP, true]
+    - [EST, DIV, true]
+    - [EST, PES, true]
+    - [EST, FAI, true]
+    - [APE, INT, true]
+    - [JUR, COM, false]
+    - [REN, COM, false]
+    - [REN, COV, false]
+    - [EMP, COV, false]
+    - [DIV, COV, false]
+    - [COM, COV, false]
+    - [PES, CON, false]
+    - [FAI, CON, false]
+    - [INT, PRI, false]
+    - [COV, PRI, false]
+    - [CON, PRI, false]
+    - [COV, SLO, false]
+    - [CON, AUC, false]
+    - [PRI, BRI, false]

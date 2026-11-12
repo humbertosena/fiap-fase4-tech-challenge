@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-11-06T14:00:00Z",
+  "model_version": "baseline-1.0.0",
+  "window": "mes_3_crise",
+  "rows": 5000,
+  "seeds": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54
+  ],
+  "scenarios": [
+    {
+      "key": "controle",
+      "label": "Controle (sem nenhum choque)",
+      "mode": "only",
+      "fields": [],
+      "base_rate": 0.059899999999999995,
+      "auc": 0.7952904812492395,
+      "delta_auc": 0.0,
+      "delta_auc_std": 0.0
+    },
+    {
+      "key": "crise",
+      "label": "Crise completa",
+      "mode": "without",
+      "fields": [],
+      "base_rate": 0.12215999999999998,
+      "auc": 0.7573836194448329,
+      "delta_auc": -0.03790686180440646,
+      "delta_auc_std": 0.012373979651620917
+    },
+    {
+      "key": "so_covariate",
+      "label": "Só covariate shift (6 choques)",
+      "mode": "only",
+      "fields": [
+        "income_real_factor",
+        "debt_logit_shift",
+        "utilization_shift",
+        "monthly_interest",
+        "employment_shares",
+        "purpose_shares"
+      ],
+      "base_rate": 0.10691999999999999,
+      "auc": 0.7850076517857633,
+      "delta_auc": -0.010282829463476173,
+      "delta_auc_std": 0.01223137916533496
+    },
+    {
+      "key": "so_renda_endividamento_utilizacao",
+      "label": "Só renda + endividamento + utilização",
+      "mode": "only",
+      "fields": [
+        "income_real_factor",
+        "debt_logit_shift",
+        "utilization_shift"
+      ],
+      "base_rate": 0.09796,
+      "auc": 0.7809767498868566,
+      "delta_auc": -0.014313731362382964,
+      "delta_auc_std": 0.012360523525279922
+    },
+    {
+      "key": "so_concept",
+      "label": "Só concept drift (peso da parcela + faixa 550–700)",
+      "mode": "only",
+      "fields": [
+        "coef_commitment",
+        "gamma_concept"
+      ],
+      "base_rate": 0.10751999999999999,
+      "auc": 0.7588156600139585,
+      "delta_auc": -0.0364748212352811,
+      "delta_auc_std": 0.010857813821544854
+    },
+    {
+      "key": "so_faixa_550_700",
+      "label": "Só a faixa 550–700",
+      "mode": "only",
+      "fields": [
+        "gamma_concept"
+      ],
+      "base_rate": 0.1032,
+      "auc": 0.7519733263222748,
+      "delta_auc": -0.04331715492696477,
+      "delta_auc_std": 0.010718270197645593
+    },
+    {
+      "key": "so_juros_peso_parcela",
+      "label": "Só juros + peso da parcela",
+      "mode": "only",
+      "fields": [
+        "monthly_interest",
+        "coef_commitment"
+      ],
+      "base_rate": 0.06494000000000001,
+      "auc": 0.7998626219699914,
+      "delta_auc": 0.004572140720751794,
+      "delta_auc_std": 0.004602518925220774
+    },
+    {
+      "key": "so_desemprego",
+      "label": "Só desemprego",
+      "mode": "only",
+      "fields": [
+        "employment_shares"
+      ],
+      "base_rate": 0.06482,
+      "auc": 0.7987518224683012,
+      "delta_auc": 0.0034613412190617086,
+      "delta_auc_std": 0.0056293921138009535
+    },
+    {
+      "key": "crise_sem_concept",
+      "label": "Crise sem concept drift",
+      "mode": "without",
+      "fields": [
+        "coef_commitment",
+        "gamma_concept"
+      ],
+      "base_rate": 0.06492,
+      "auc": 0.7929586662735315,
+      "delta_auc": -0.0023318149757079578,
+      "delta_auc_std": 0.007370843976443115
+    },
+    {
+      "key": "crise_sem_faixa_550_700",
+      "label": "Crise sem o risco extra da faixa 550–700",
+      "mode": "without",
+      "fields": [
+        "gamma_concept"
+      ],
+      "base_rate": 0.07208,
+      "auc": 0.7967664399984569,
+      "delta_auc": 0.0014759587492174208,
+      "delta_auc_std": 0.005151015348277107
+    },
+    {
+      "key": "crise_sem_aperto",
+      "label": "Crise sem o aperto da concessão",
+      "mode": "without",
+      "fields": [
+        "beta0_adjustment"
+      ],
+      "base_rate": 0.18885999999999997,
+      "auc": 0.7558488239595714,
+      "delta_auc": -0.039441657289668045,
+      "delta_auc_std": 0.015459875363202452
+    }
+  ]
+}
