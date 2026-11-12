@@ -93,7 +93,7 @@ Cada etapa é uma release com tag anotada, notas no GitHub e uma página didáti
 | `v0.1.0-alpha` | 11/10/2026 | 1 · contratos de dados | Validação de dados (25 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.1.0-alpha) | [etapa-1-contratos](docs/releases/etapa-1-contratos.html) |
 | `v0.2.0-beta` | 21/10/2026 | 2 · simulação e drift | Detecção de drift (25 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.2.0-beta) | [etapa-2-drift](docs/releases/etapa-2-drift.html) |
 | `v0.3.0-rc` | 31/10/2026 | 3 · observabilidade | Observabilidade e logs (20 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v0.3.0-rc) | [etapa-3-observabilidade](docs/releases/etapa-3-observabilidade.html) |
-| `v1.0.0-ga` | data real da publicação, até 14/11/2026 | 4 · governança e vídeo | Governança LGPD (15 %) e vídeo STAR (15 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v1.0.0-ga) | [etapa-4-governanca](docs/releases/etapa-4-governanca.html) |
+| `v1.0.0-ga` | 11/11/2026 | 4 · governança e vídeo | Governança LGPD (15 %) e vídeo STAR (15 %) | [GitHub Release](https://github.com/humbertosena/fiap-fase4-tech-challenge/releases/tag/v1.0.0-ga) | [etapa-4-governanca](docs/releases/etapa-4-governanca.html) |
 
 O [CHANGELOG](CHANGELOG.md) detalha o que entrou em cada versão.
 

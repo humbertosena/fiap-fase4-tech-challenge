@@ -221,3 +221,17 @@ def test_etapa4_acceptance_items_all_pass(etapa4: Etapa4Payload) -> None:
     failed = [i.criterion for i in etapa4.acceptance if not i.ok]
     assert failed == []
     assert len(etapa4.acceptance) >= 8
+
+
+def test_etapa4_video_link_is_the_one_highlighted_in_the_readme(
+    etapa4: Etapa4Payload,
+) -> None:
+    readme = (SETTINGS.project_root / "README.md").read_text(encoding="utf-8")
+    assert etapa4.video_url.startswith("https://youtu.be/")
+    assert readme.count(etapa4.video_url) >= 2
+
+
+def test_etapa4_release_date_respects_the_official_deadline(
+    etapa4: Etapa4Payload,
+) -> None:
+    assert "2026-11-08" <= etapa4.release.date <= "2026-11-14"

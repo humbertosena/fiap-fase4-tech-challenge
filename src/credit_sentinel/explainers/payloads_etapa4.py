@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 CONTENT_FILE = "etapa4_content.yaml"
+VIDEO_URL = "https://youtu.be/IYjAByEJ048"
 ROTEIRO_FILE = "video_star_roteiro.md"
 CRISIS = "mes_3_crise"
 WINDOW_NAMES = ("mes_1", "mes_2", CRISIS)
@@ -220,6 +221,7 @@ class Etapa4Payload(BaseModel):
     dag: CausalDag
     band: list[BandRow]
     star: StarScript
+    video_url: str
     acceptance: list[AcceptanceItem]
     commands: list[str]
 
@@ -683,6 +685,7 @@ def build_etapa4(settings: Settings, release: ReleaseInfo) -> Etapa4Payload:
         dag=build_dag(content, ctx),
         band=bands,
         star=star,
+        video_url=VIDEO_URL,
         acceptance=[
             *_fairness_items(fairness, settings),
             *_privacy_items(settings),

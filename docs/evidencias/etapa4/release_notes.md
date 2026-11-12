@@ -2,10 +2,12 @@
 
 Esta release (`v1.0.0-ga`) fecha o Tech Challenge da Fase 4: entram a governança de dados sob a LGPD, a auditoria de
 fairness por subgrupos, a análise causal da degradação, o runbook, o roteiro do vídeo STAR e o guia de reprodução.
-O link do vídeo é adicionado pelo autor, em um commit próprio, antes da tag. Não entram um serviço de inferência nem
+O vídeo STAR de 5 minutos está no YouTube (<https://youtu.be/IYjAByEJ048>), com o link em destaque no topo do
+README, em um commit próprio anterior à tag. Não entram um serviço de inferência nem
 as rotinas de produção de retenção, que ficam descritas como política.
 
 Página didática: <https://humbertosena.github.io/fiap-fase4-tech-challenge/releases/etapa-4-governanca.html>
+Vídeo STAR: <https://youtu.be/IYjAByEJ048>
 
 ## Entregue
 
@@ -32,7 +34,7 @@ Página didática: <https://humbertosena.github.io/fiap-fase4-tech-challenge/rel
 
 | Comando | Resultado |
 | :--- | :--- |
-| `uv run pytest --cov=credit_sentinel --cov-fail-under=85` | 539 testes passando, cobertura de 98,1 % |
+| `uv run pytest --cov=credit_sentinel --cov-fail-under=85` | 541 testes passando, cobertura de 98,1 % |
 | `uv run ruff check .` e `uv run ruff format --check .` | limpos no repositório inteiro |
 | `git clone` + `uv sync --all-groups` + `make reproduce` em diretório limpo | todos os passos com exit 0, cerca de 85 s |
 | `uv run credit-sentinel fairness-audit` | 12 relatórios, todos dentro de 4/5 |

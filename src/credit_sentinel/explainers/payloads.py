@@ -117,7 +117,7 @@ RELEASES: dict[int, ReleaseInfo] = {
     4: ReleaseInfo(
         etapa=4,
         tag="v1.0.0-ga",
-        date="2026-11-14",
+        date="2026-11-11",
         title="Governança LGPD, análise causal e entrega final",
         slug="etapa-4-governanca",
         rubric="Governança LGPD (15 %) e Vídeo STAR (15 %)",

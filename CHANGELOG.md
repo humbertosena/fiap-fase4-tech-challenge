@@ -7,9 +7,9 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-## [1.0.0-ga] - em preparação
+## [1.0.0-ga] - 2026-11-11
 
-Etapa 4 — governança LGPD, análise causal e entrega final. A data entra na publicação da release.
+Etapa 4 — governança LGPD, análise causal e entrega final.
 
 ### Adicionado
 
@@ -27,6 +27,8 @@ Etapa 4 — governança LGPD, análise causal e entrega final. A data entra na p
 - Página didática da Etapa 4 (fluxo LGPD, inventário, fairness por grupo, grafo causal, intervenções, retenção
   e roteiro com cronômetro) e índice com as quatro releases.
 - Registro de reprodução do zero em `docs/evidencias/etapa4/registro.md` e teste das seções do README.
+- Vídeo STAR de 5 minutos publicado no YouTube (<https://youtu.be/IYjAByEJ048>), com o link em destaque no topo
+  do README e na página da Etapa 4.
 
 ### Alterado
 
