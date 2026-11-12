@@ -96,8 +96,8 @@ espaços extras. A falha apareceria na CI do GitHub. Foi corrigida neste commit,
 
 ## Revisão de conformidade com a rubrica
 
-Cada critério da seção 9 do spec foi conferido com um comando ou um artefato. O que depende do push, do vídeo
-ou da tag fica marcado como pendente, sem ser dado como feito.
+Cada critério da seção 9 do spec foi conferido com um comando ou um artefato. Os itens que dependiam do push, do
+vídeo e da tag foram conferidos de novo depois da publicação da `v1.0.0-ga`, em 11/11/2026.
 
 | Critério | Peso | O que foi verificado | Resultado | Estado |
 | :--- | ---: | :--- | :--- | :---: |
@@ -107,12 +107,12 @@ ou da tag fica marcado como pendente, sem ser dado como feito.
 | Governança (LGPD) | 15 % | README seções 7 a 9, `fairness_audit.json` e o sanitizador | 12 relatórios com `passed: true`; sanitizador coberto por `tests/unit/test_privacy_sanitizer.py` | ✅ |
 | Vídeo STAR | 15 % | `docs/video_star_roteiro.md` e o link no README | roteiro de 5:00 com teste de cronograma verde; vídeo publicado no YouTube (<https://youtu.be/IYjAByEJ048>, título "FIAP Fase 4 Tech Challenge Pitch", confirmado pelo oEmbed do YouTube em 11/11/2026); link em destaque no topo do README, no commit `docs(readme): adiciona link do video star` | ✅ |
 | `git clone` + `uv sync` + `make reproduce` | | seção "Reprodução do zero" acima | exit 0 em todos os passos, cerca de 85 s no macOS; no Ubuntu, a CI do GitHub roda `uv sync --locked`, ruff, pytest e o smoke do pipeline (commit `e360b0e` da branch `etapa/4-governanca`, 11/11/2026, três jobs verdes), mas não o `make reproduce` inteiro | ✅ macOS, ✅ Ubuntu (parcial) |
-| CI verde na `main` | | `ruff check .`, `ruff format --check .`, `pytest --cov-fail-under=85`, smoke do pipeline e `scan-pii` | tudo verde localmente (541 testes, 98,11 % de cobertura) e na CI da branch `etapa/4-governanca` (commit `e360b0e`: lint, testes e smoke com `scan-pii`); a execução na `main` é conferida depois do merge | ✅ branch |
-| 4 tags e 4 GitHub Releases | | `git tag -l` e `gh release list` | 3 tags e 3 releases publicadas (`v0.1.0-alpha`, `v0.2.0-beta`, `v0.3.0-rc`); a GA espera o vídeo | ⏳ |
-| `docs/index.html` e 4 páginas no Pages | | `docs/` e o Pages | índice e as 4 páginas versionados; as Etapas 1 a 3 já estão no ar, a 4 sobe com o push | ⏳ |
-| Sem temporários, segredos ou PII no histórico | | `git log --all --name-only`, `git log --all --format=%B` e `scan-pii` | 244 caminhos distintos, nenhum `.env`, `mlruns/`, `logs/`, `SPEC*`, `tasks/`, `.plan/` ou `.claude/`; maior arquivo de 4,6 MB (relatório do Evidently); 77 commits de um só autor e nenhum trailer de coautoria; `scan-pii` limpo em README, CHANGELOG, `docs`, `reports`, `config`, `logs` e `notebooks` | ✅ |
+| CI verde na `main` | | `ruff check .`, `ruff format --check .`, `pytest --cov-fail-under=85`, smoke do pipeline e `scan-pii` | tudo verde localmente (541 testes, 98,11 % de cobertura) e na CI da branch `etapa/4-governanca` (commit `e360b0e`: lint, testes e smoke com `scan-pii`); na `main`, os três jobs também passaram no merge `5954148` da `v1.0.0-ga` | ✅ |
+| 4 tags e 4 GitHub Releases | | `git tag -l` e `gh release list` | 4 tags anotadas e 4 releases publicadas, nenhuma como pre-release: `v0.1.0-alpha`, `v0.2.0-beta`, `v0.3.0-rc` e `v1.0.0-ga` (Latest, "Etapa 4 — Governança LGPD, análise causal e entrega final", 11/11/2026, notas em `docs/evidencias/etapa4/release_notes.md`) | ✅ |
+| `docs/index.html` e 4 páginas no Pages | | `docs/` e o Pages | índice e as 4 páginas respondem 200 em <https://humbertosena.github.io/fiap-fase4-tech-challenge/> depois do build do Pages no merge `5954148`; o índice mostra as quatro datas (11/10, 21/10, 31/10 e 11/11) e a página da Etapa 4 traz o link do vídeo | ✅ |
+| Sem temporários, segredos ou PII no histórico | | `git log main --name-only`, `git log main --format=%B` e `scan-pii` | 245 caminhos distintos, nenhum `.env` (só o `.env.example`), `mlruns/`, `logs/`, `SPEC*`, `tasks/`, `.plan/`, `.claude/` ou `.video/`; maior arquivo de 4,7 MB (relatório do Evidently da crise); 61 commits até a tag `v1.0.0-ga`, de 01/10 a 11/11/2026, de um só autor e sem trailer de coautoria; `scan-pii` limpo em README, CHANGELOG, `docs`, `reports`, `config`, `logs` e `notebooks` | ✅ |
 | Agradecimentos e transparência sobre o assistente de IA | | README, seção 12 | presente, coberta por `tests/smoke/test_readme_sections.py` | ✅ |
-| Tag `v1.0.0-ga` depois do commit do vídeo | | | pendente | ⏳ |
+| Tag `v1.0.0-ga` depois do commit do vídeo | | `git merge-base --is-ancestor 70c90dd v1.0.0-ga` | a tag anotada aponta para o merge `5954148` e contém o commit `70c90dd` (`docs(readme): adiciona link do video star`); o README da tag tem o link do vídeo | ✅ |
 
 **Limpeza.** Foram removidos os arquivos `.DS_Store` e um CSV solto da ablação; `logs/` e `mlruns/` ficam locais e
 fora do git (o estado do MLflow serve à demonstração do vídeo). A versão do pacote passou de `0.1.0` para `1.0.0`
