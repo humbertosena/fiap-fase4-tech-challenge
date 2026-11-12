@@ -5,8 +5,7 @@
 ![Pandera](https://img.shields.io/badge/contratos-pandera-0a7d5a)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-> 🎬 **Vídeo STAR (5 min):** ⏳ *o link será inserido aqui assim que o vídeo for gravado e publicado.*
-> Enquanto isso, o [roteiro cronometrado](docs/video_star_roteiro.md) mostra o que será apresentado.
+> 🎬 **Vídeo STAR (5 min):** [Assistir no YouTube](https://youtu.be/IYjAByEJ048) (<https://youtu.be/IYjAByEJ048>) · [roteiro cronometrado](docs/video_star_roteiro.md)
 > **Páginas didáticas:** [índice das releases](docs/index.html) ·
 > [Etapa 1 — contratos de dados](docs/releases/etapa-1-contratos.html) ·
 > [Etapa 2 — drift](docs/releases/etapa-2-drift.html) ·
@@ -38,7 +37,7 @@ Todos os dados são **sintéticos** (ADR 001); nenhum dado pessoal real é usado
 | 1 | Validação de dados e contratos | `v0.1.0-alpha` | ✅ concluída | [etapa-1-contratos.html](docs/releases/etapa-1-contratos.html) |
 | 2 | Simulação e detecção de drift | `v0.2.0-beta` | ✅ concluída | [etapa-2-drift.html](docs/releases/etapa-2-drift.html) |
 | 3 | Observabilidade de pipelines e modelos | `v0.3.0-rc` | ✅ concluída | [etapa-3-observabilidade.html](docs/releases/etapa-3-observabilidade.html) |
-| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | 🎬 implementada, falta o vídeo | [etapa-4-governanca.html](docs/releases/etapa-4-governanca.html) |
+| 4 | Governança (LGPD) e vídeo STAR | `v1.0.0-ga` | ✅ concluída ([vídeo](https://youtu.be/IYjAByEJ048)) | [etapa-4-governanca.html](docs/releases/etapa-4-governanca.html) |
 
 ## 2. Arquitetura
 
@@ -1081,7 +1080,7 @@ de `SUCCESS`), o [painel de saúde](reports/health_dashboard.html),
 
 ## 10. Roteiro do vídeo STAR (resumo)
 
-O vídeo tem 5 minutos e segue o método STAR. O roteiro completo, com a fala de cada bloco,
+O vídeo tem 5 minutos, segue o método STAR e está publicado no YouTube em <https://youtu.be/IYjAByEJ048>. O roteiro completo, com a fala de cada bloco,
 as telas na ordem, os comandos pré-executados e o plano B, está em
 [`docs/video_star_roteiro.md`](docs/video_star_roteiro.md).
 
@@ -1133,7 +1132,7 @@ notebooks/             EDA com diagnóstico ICRA
 | Detecção de drift | 25 % | seção 5, [ADR 004](docs/adr/004-cenarios-de-drift.md) | [`drift_table.md`](reports/drift_table.md), [relatório do Evidently](reports/evidently_drift_report.html) com 6 de 14 colunas em drift na crise; `data/reference` separada de `data/production` | ✅ |
 | Observabilidade e logs | 20 % | seção 6, [ADR 005](docs/adr/005-observabilidade-slos-mlflow.md) | [amostra de log](docs/evidencias/etapa3/pipeline_events_sample.jsonl) com os 8 campos, [`slo_audit_report.json`](reports/slo_audit_report.json), [painel de saúde](reports/health_dashboard.html), prints do MLflow | ✅ |
 | Governança (LGPD) | 15 % | seções 7 a 9, [ADR 006](docs/adr/006-privacidade-e-governanca.md) | [`fairness_audit.json`](reports/fairness_audit.json) (12 relatórios), [`causal_ablation.json`](reports/causal_ablation.json), sanitizador com testes, runbook | ✅ |
-| Vídeo STAR | 15 % | seção 10 | [roteiro de 5:00](docs/video_star_roteiro.md) com teste de cronograma; páginas HTML como apoio; link em destaque no topo deste README | ⏳ falta gravar e linkar |
+| Vídeo STAR | 15 % | seção 10 | [vídeo no YouTube](https://youtu.be/IYjAByEJ048); [roteiro de 5:00](docs/video_star_roteiro.md) com teste de cronograma; páginas HTML como apoio; link em destaque no topo deste README | ✅ |
 
 Critérios globais: `make reproduce` conclui do zero (registro em
 [`docs/evidencias/etapa4/registro.md`](docs/evidencias/etapa4/registro.md)); a CI cobre ruff, pytest com
